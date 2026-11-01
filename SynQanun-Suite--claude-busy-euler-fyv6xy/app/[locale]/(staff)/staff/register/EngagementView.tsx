@@ -218,15 +218,26 @@ export function EngagementView({
             <bdi>{engagement.title[locale]}</bdi>
           </h2>
 
-          {!engagement.active && canReopen ? (
-            <div className="mt-3">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            {!engagement.active && canReopen ? (
               <ReopenMatterButton reference={engagement.reference} />
-            </div>
-          ) : engagement.active && canReopen ? (
-            <div className="mt-3">
+            ) : engagement.active && canReopen ? (
               <CloseMatterButton reference={engagement.reference} />
-            </div>
-          ) : null}
+            ) : null}
+            <GenerateLegalDocModal
+              engagementRef={engagement.reference}
+              engagementTitle={engagement.title[locale]}
+              clientName={record.client?.name?.[locale]}
+              opposingParty={record.counterpart?.[locale]}
+              venue={engagement.venue?.[locale]}
+              caseNumber={engagement.registryNumber || undefined}
+            />
+            <ExportExcelModal
+              engagementRef={engagement.reference}
+              clientId={record.client?.id}
+              clientName={record.client?.name?.[locale]}
+            />
+          </div>
 
           {/* WHAT the client owes, not just that they owe something — the same
               reason fixtures/matters.ts carries `attentionReason` at all. */}

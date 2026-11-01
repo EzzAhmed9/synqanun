@@ -123,24 +123,10 @@ export function FeatherGlyph() {
  * Review on the approvals rows, which points at a route that simply is not
  * built and therefore 404s honestly.
  */
+import { DashboardQuickActions } from './DashboardQuickActions';
+
 export function QuickActions() {
-  const t = useTranslations('staffDashboard.actions');
-
-  return (
-    <nav aria-label={t('label')} className="flex flex-wrap items-center gap-2">
-      <Button variant="primary" icon={<FilePlus2 aria-hidden size={15} />}>
-        {t('draft')}
-      </Button>
-
-      <Button
-        variant="secondary"
-        className="border-legal-navy/25 bg-legal-navy/5 text-legal-navy hover:bg-legal-navy/10"
-        icon={<FeatherGlyph />}
-      >
-        {t('report')}
-      </Button>
-    </nav>
-  );
+  return <DashboardQuickActions />;
 }
 
 /* ===========================================================================
