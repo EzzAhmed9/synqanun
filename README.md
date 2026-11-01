@@ -1,7 +1,7 @@
 # SynQanun Suite (منصة سن قانون)
 ### Bilingual Legal Practice Management & Client Portal Platform
 
-**SynQanun Suite** is an enterprise-grade, bilingual (**Arabic / English**, **RTL / LTR**) legal practice management system and client portal designed for premier law firms and corporate legal departments.
+**SynQanun Suite** is an enterprise-grade, bilingual (**Arabic / English**, **RTL / LTR**) legal practice management system and client portal designed for premier law firms, dispute resolution practices, and corporate legal departments.
 
 This repository implements **Track A.5 (Production Database Integration & Backend Persistence)**: replacing prototype mock fixtures with a real **PostgreSQL** relational database, **FastAPI** REST backend, and **Next.js 15** App Router frontend with strict role-based access control (RBAC).
 
@@ -11,25 +11,27 @@ This repository implements **Track A.5 (Production Database Integration & Backen
 
 ```mermaid
 flowchart TD
-    subgraph ClientLayer["🖥️ Frontend (Next.js 15)"]
+    subgraph ClientLayer["🖥️ Frontend (Next.js 15 - App Router)"]
         StaffApp["Staff Workspace (/staff)"]
         ClientPortal["Client Portal (/dashboard, /invoices)"]
+        AuthGateways["Dual Gateways (/gateway/firm & /gateway/client)"]
         I18n["next-intl (Arabic RTL & English LTR)"]
     end
 
-    subgraph APILayer["⚡ Backend (FastAPI Python)"]
+    subgraph APILayer["⚡ Backend (FastAPI Python 3.11+)"]
+        AuthAPI["Authentication & RBAC Middleware"]
         MattersAPI["Matters & Docket API"]
         ClientsAPI["CRM & Clients API"]
         BillingAPI["Billing & Time Tracking API"]
-        AuthMiddleware["JWT & Viewer Staff/Client Scoping"]
     end
 
-    subgraph DataLayer["🗄️ Database (PostgreSQL)"]
-        DB[(synqanun_db)]
-        T1["matters & team_members"]
-        T2["clients & contacts"]
-        T3["time_entries (WIP)"]
-        T4["invoices & line_items"]
+    subgraph DataLayer["🗄️ Database (PostgreSQL - synqanun_db)"]
+        DB[(PostgreSQL)]
+        T1["users & firm_roster"]
+        T2["clients & client_contacts"]
+        T3["matters, hearings & timeline"]
+        T4["time_entries (WIP)"]
+        T5["invoices & invoice_line_items"]
     end
 
     ClientLayer <-->|REST + Server Actions| APILayer
@@ -38,102 +40,167 @@ flowchart TD
 
 * **Frontend:** Next.js 15, React 19, Server Components & Server Actions, Tailwind CSS, `next-intl` bilingual localization.
 * **Backend:** FastAPI, Python 3.11+, SQLAlchemy ORM, Pydantic v2 schemas, OAuth2 / Bearer JWT security.
-* **Database:** PostgreSQL (`synqanun_db`) with relational integrity and transactional audit trails.
+* **Database:** PostgreSQL (`synqanun_db`) with relational modeling, foreign keys, and transactional audit trails.
 
 ---
 
-##  Key Achievements & Delivered Modules (ما تم إنجازه)
+## 🚀 ما تم إنجازه تفصيلياً (Delivered Modules & Features)
 
-### 1. إدارة العملاء وسجل الموكلين (CRM & Client Management)
-* **Real PostgreSQL Database Persistence:** Replaced fixture data with persistent client profiles, commercial register numbers, and corporate standings.
-* **Client Financial & Legal Metrics:** Automated calculation of outstanding balances, retainer standings, and active linked matters.
-* **Client Portal Scoping:** Strict tenant-safe isolation ensuring client accounts only view their authorized documents and dockets.
+### 1. نظام المصادقة وبوابات الدخول (Authentication & Dual Gateways)
+* **بوابتان منفصلتان للدخول (Dual Login Gateways):**
+  * **بوابة المكتب والمحامين (`/gateway/firm`):** مخصصة لفريق العمل القانوني والمحامين والشركاء لتسجيل الدخول إلى مساحة العمل الإدارية.
+  * **بوابة الموكلين (`/gateway/client`):** بوابة مستقلة لعملاء المكتب لمتابعة قضاياهم ومواعيد جلساتهم وسداد فواتيرهم.
+* **الأمان والعزل الكامل للمستأجرين (Tenant & Client Isolation):**
+  * اعتماد مصادقة قائمة على **JWT (JSON Web Tokens)** و OAuth2.
+  * تطبيق وسيط آمن (`X-Viewer-Staff-Id` و `X-Viewer-Client-Id`) لضمان عدم اطلاع أي موكل إلا على قضاياه وفواتيره الخاصة به فقط.
+* **أداة التبديل التجريبي السريع للدرجات الوظيفية (Demo Viewer Switcher):**
+  * إتاحة أداة مدمجة بأعلى الواجهة تتيح التبديل الفوري بين الدرجات الوظيفية الخمس (`Partner`، `Senior Associate`، `Junior Associate`، `Paralegal`، `Legal Secretary`) لاختبار مصفوفة الصلاحيات والحجب بدقة دون الحاجة لتسجيل الخروج والدخول المتكرر.
 
-### 2. المسائل والقضايا القانونية وسجل الجلسات (Legal Matters & Docket Register)
-* **Complete Legal Lifecycle:** Full tracking for commercial litigation, arbitration (CRCICA), regulatory compliance, and tax appeals.
-* **Hearings & Timeline Management:** Derived next hearing countdowns, procedural milestones, and official court file numbers.
-* **Bulk Lead Reassignment:** Bulk file transfer workflow with eligibility validation (restricted to Partners and Senior Associates).
-* **Docket Archiving & Reopening:** Formal archival and Partner-only reopening mechanisms with persistent audit timestamps.
+---
 
-### 3. بوابة الموكلين التفاعلية (Client Experience Portal)
-* **Dedicated Client Workspace:** Clients view case updates, court hearing schedules, and corporate records in real time.
-* **Direct Communication & Review:** Instant access to expert memoranda, hearing dates, and billing statements.
+### 2. إدارة العملاء وسجل الموكلين (CRM & Client Management)
+* **قاعدة بيانات حقيقية للموكلين (PostgreSQL CRM):**
+  * استبدال كافة البيانات الوهمية بجداول دائمة للشركات والمؤسسات والأفراد.
+  * تسجيل بيانات السجل التجاري، الرقم الضريبي، وتصنيف العميل ونطاق التعاقد.
+* **المؤشرات المالية والقانونية للعميل (Client Dashboard & Metrics):**
+  * حساب آلي لحظي للرصيد المستحق (Balance Due)، الفواتير قيد الاستحقاق، والقضايا النشطة المرتبطة بكل عميل.
+  * متابعة حالة العميل التعاقدية (عميل دائم بعقد سنوي Retainer، عميل نشط Active، أو عميل محتمل Prospect).
+* **سجل جهات الاتصال التابع للعميل (`Client Contacts`):**
+  * إدارة قائمة مسؤولي الاتصال والمديرين المعتمدين لدى الشركات الموكلة (الاسم، البريد الإلكتروني، الهاتف، والمنصب الإداري).
+* **الملف الشامل للموكل:**
+  * صفحة متكاملة لكل عميل تجمع قضاياه، خطوطها الزمنية، فواتيره، مستنداته المشتركة، وسجل الاعتمادات.
+
+---
+
+### 3. المسائل والقضايا القانونية وسجل الجلسات (Legal Matters & Docket Register)
+* **دورة الحياة الكاملة للمسائل القضائية:**
+  * دعم وتصنيف كافة مجالات الممارسة: النزاعات التجارية (Commercial Litigation)، التحكيم المحلي والدولي (CRCICA)، حوكمة الشركات والتراخيص الرقابية، والطعون الضريبية.
+  * تسجيل بيانات المحكمة المختصة، الدائرة، والجهة القضائية (مثل: محكمة استئناف القاهرة التجارية، المحاكم الاقتصادية، مركز القاهرة للتحكيم).
+  * قيد أرقام القضايا الرسمية، والخصوم والأطراف المقابلة، ومحامي الخصم.
+* **إدارة الجلسات ومواعيد المحاكم (`Court Hearings & Key Dates`):**
+  * جدول زمني دقيق لجلسات المرافعة، حجز الدعوى للحكم، وتقديم مذكرات الرد على تقارير الخبراء.
+  * احتساب المواعيد القضائية القادمة وتنبيه المحامين بالجلسات الحرجة الواقعة خلال 14 يوماً.
+* **الخط الزمني الإجرائي للملف (`Procedural Timeline`):**
+  * توثيق الوقائع والإجراءات وتقديم المذكرات ومباشرة مأموريات الخبراء لحظة بلحظة مع ربطها بقاعدة البيانات.
+* **نقل وتوزيع المسؤولية عن القضايا (`Bulk Lead Reassignment`):**
+  * آلية مخصصة لنقل الإشراف على ملف أو عدة ملفات قانونية دفعة واحدة من محامٍ لآخر مع فحص أهليّة المحامي المسؤول وصلاحياته.
+* **الأرشفة وإعادة الفتح بقرار الشريك (`Archiving & Reopening`):**
+  * أرشفة القضايا المنتهية ونقلها إلى سجل الأرشيف.
+  * صلاحية حصرية للشركاء (`Partner`) لإعادة فتح أي قضية مؤرشفة مع توثيق قرار إعادة الفتح وتحديث المرحلة الإجرائية في قاعدة البيانات.
+* **شارات الحالة التفاعلية الذكية:**
+  * تصنيف نبرة الحالة (`urgent`، `positive`، `neutral`) بما في ذلك شارة **"بانتظار الموكل"** لإبراز المسائل المتوقفة على اعتماد العميل.
+
+---
 
 ### 4. الفوترة والمطالبات المالية وتسجيل الوقت (Billing, Invoicing & Time Tracking)
-* **Floating Billable Timer Widget (`TimerPill` & `TimerLogModal`):**
-  * Persistent global timer available across all staff workspaces.
-  * Stop-and-log workflow allowing attorneys to log time directly against active legal matters.
-  * Live matter dropdown pre-populated from PostgreSQL with full Arabic and English labels.
-* **Automated Hourly Rates:**
-  * Dynamic rate calculation mapped to staff ranks (Partner: 3,500 EGP/hr, Senior Associate: 2,200 EGP/hr, etc.).
-  * Categorization of time into billable WIP vs. non-chargeable work.
-* **Invoice Builder (`/staff/billing/new`):**
-  * Automatically aggregates unbilled logged time entries for any selected matter.
-  * Allows adding manual disbursement line items (court fees, courier, expert expenses).
-* **Direct Official Issuance ("إرسال إلى العميل"):**
-  * Converts drafts directly into active claims (`status = due`) in PostgreSQL.
-  * Invoices immediately appear on the client portal (`/invoices`) and under the matter's fee records.
-  * Automatically flags associated time entries as billed to prevent double-billing.
-
-### 5. الصلاحيات والأمان (Role-Based Access Control - RBAC)
-* **Partner (شريك):** Full administrative and financial control (view ledger, issue invoices, mark invoices paid, reopen closed matters).
-* **Senior Associate (محامٍ أول):** Access to billing ledger, time logging, draft creation, and invoice issuance.
-* **Junior Associate & Paralegal (محامٍ مشارك / مساعد قانوني):** Permitted to record billable time only; financial ledger and invoice creation are strictly blocked.
-* **Legal Secretary (سكرتير قانوني):** Administrative tasks only; billable timer is suppressed, and billing access is restricted.
+* **المؤقت العائم الذكي (`Floating Timer` & `TimerLogModal`):**
+  * ويدجت عائم متاح ومستمر عبر كافة صفحات مساحة عمل المكتب لحساب زمن العمل الفعلي بدقة (ساعات، دقائق، ثوانٍ).
+  * عند الإيقاف: تفتح نافذة تسجيل الوقت المنجز المرتبطة مباشرة بقائمة القضايا النشطة في PostgreSQL لاختيار القضية وحفظ ساعات العمل.
+* **تسجيل ساعات العمل واحتساب التكلفة آلياً (Billable WIP):**
+  * تصنيف الوقت إلى عمل قابل للفوترة للعميل (`Billable`) أو عمل إداري غير مفوتر.
+  * احتساب التكلفة المالية تلقائياً بناءً على الرتبة الوظيفية للمحامي (الشريك: 3,500 ج.م/ساعة، المحامي الأول: 2,200 ج.م/ساعة، إلخ).
+* **دفتر الفوترة المركزي للمكتب (`/staff/billing`):**
+  * 4 بطاقات مؤشرات مالية رئيسية: المبالغ المستحقة غير المسددة، الفواتير المتأخرة، المصدر حديثاً، وعروض الأتعاب.
+  * عرض كشوف الأتعاب، مسودات الفواتير، وسجل الساعات غير المفوترة.
+* **منشئ الفواتير المتقدم (`InvoiceBuilder`):**
+  * سحب ساعات العمل المسجلة على أي قضية آلياً وتحويلها إلى بنود واضحة ومفصلة في الفاتورة مع عدد الساعات ومعدل الأتعاب.
+  * إمكانية إضافة مصروفات ورسوم محاكم ورسوم انتقال ومأموريات كبنود يدوية مستقلة.
+* **خيارات الإصدار والحفظ:**
+  * **"حفظ المسودة":** لحفظ الفاتورة كمسودة داخلية قيد المراجعة في المكتب دون إرسالها للعميل.
+  * **"إرسال إلى العميل":** لاعتماد الفاتورة فورياً برقم تسلسلي رسمي وترحيلها كـ (`قيد الاستحقاق - due`) في PostgreSQL لتظهر مباشرة في بوابة الموكل وملف القضية مع تعليم ساعاتها بأنها مفوترة لمنع تكرار احتسابها.
+* **تزامن كامل مع بوابة العميل (`/invoices`):**
+  * يستطيع الموكل الاطلاع على فواتيره، مراجعة بنودها وتفاصيل العمل المنجز وسدادها فورياً.
 
 ---
 
-## 🚀 Getting Started (دليل التشغيل)
+### 5. نظام الصلاحيات والأمان الهرمي (Role-Based Access Control - RBAC)
+تم تطبيق نظام صلاحيات صارم يضمن أعلى معايير السرية للمكاتب القانونية:
 
-### 1. Prerequisites
-* **Node.js** 18.18+ & **npm**
-* **Python** 3.11+
-* **PostgreSQL** 14+ running locally on port 5432
+| الدرجة الوظيفية | تسجيل الوقت (المؤقت) | الاطلاع على الفوترة المالية | إعداد واعتماد الفواتير للعملاء | أرشفة وإعادة فتح القضايا |
+| :--- | :---: | :---: | :---: | :---: |
+| **الشريك (Partner)** |  نعم |  نعم (صلاحية مالية شاملة) |  نعم (إصدار واعتماد وتسجيل السداد) |  نعم (صلاحية حصرية) |
+| **المحامي الأول (Senior Associate)** |  نعم |  نعم (دفتر الفوترة والمطالبات) |  نعم (إعداد وإرسال الفواتير) | ❌ لا (تحتاج شريكاً) |
+| **المحامي المشارك (Junior Associate)** |  نعم (ساعاته فقط) | ❌ **محظور تماماً** | ❌ **محظور تماماً** | ❌ محظور |
+| **المساعد القانوني / الباحث (Paralegal)** |  نعم (ساعاته فقط) | ❌ **محظور تماماً** | ❌ **محظور تماماً** | ❌ محظور |
+| **السكرتارية القانونية (Legal Secretary)** | ❌ **المؤقت محجوب** | ❌ **محظور تماماً** | ❌ **محظور تماماً** | ❌ محظور |
 
-### 2. Database Configuration
-Create the PostgreSQL database and user:
+---
+
+## ⏳ ما تبقى وقيد التطوير للمراحل القادمة (Pending Modules & Roadmap)
+
+العمل جاد ومستمر لاستكمال باقي مكونات المنصة وفقاً لخطة التطوير، والموديولات المتبقية هي:
+
+### 1. المساعد الذكي القانوني (معين - Mueen AI Assistant) 🤖
+* **الدردشة القانونية الذكية:** التفاعل المباشر مع ملفات القضايا والوثائق القانونية المرفوعة.
+* **التلخيص الآلي للوقائع:** استخلاص التسلسل الزمني للأحداث والمستندات في الدعاوى المعقدة.
+* **تحليل المخاطر القضائية:** دراسة نقاط القوة والضعف في مذكرات الخصم وتقديم توصيات استراتيجية.
+* **الصياغة الآلية:** مساعدة المحامين في الصياغة الأولية لصحف الدعاوى والعقود ومذكرات الدفاع.
+
+### 2. القاعدة القانونية وأبحاث الأحكام (Legal Database & Precedents) ⚖️
+* **مستودع السوابق القضائية:** أرشفة والبحث في مبادئ وأحكام محكمة النقض، المحكمة الإدارية العليا، والمحاكم الاقتصادية.
+* **نصوص القوانين والتشريعات:** فهرسة القوانين واللوائح التنفيذية المصرية والعربية وربطها التلقائي بموضوعات القضايا.
+* **محرك البحث الدلالي:** البحث بالمعنى والمصطلحات القانونية بدلاً من مجرد الكلمات المفتاحية المطابقة.
+
+### 3. إدارة المستندات والأرشفة والتوقيع الإلكتروني (DMS & Digital Signatures) 📁
+* **مستودع المستندات المركزي:** تصنيف وتخزين العقود والمذكرات مع سجل لإصدارات الملفات (Version Control).
+* **التوقيع الرقمي المعتمد:** إرسال الوكالات والعقود للموكلين للتوقيع الإلكتروني عن بُعد وتوثيق هوية الموقعين.
+
+---
+
+## 💻 دليل التثبيت والتشغيل المحلي (Setup & Run Guide)
+
+### 1. المتطلبات الأساسية
+* **Node.js** الإصدار 18.18 فما فوق و **npm**
+* **Python** الإصدار 3.11 فما فوق
+* خادم **PostgreSQL** يعمل محلياً على المنفذ `5432`
+
+### 2. إعداد قاعدة البيانات
+قم بإنشاء قاعدة البيانات ومستخدمها:
 ```sql
 CREATE DATABASE synqanun_db;
 CREATE USER postgres WITH PASSWORD 'postgres';
 GRANT ALL PRIVILEGES ON DATABASE synqanun_db TO postgres;
 ```
 
-### 3. Backend Setup (FastAPI)
+### 3. تشغيل الواجهة الخلفية (FastAPI Backend)
 ```bash
 cd backend
 python -m venv venv
 
-# Windows
+# تفعيل البيئة الافتراضية
+# Windows PowerShell:
 .\venv\Scripts\activate
-# Linux / macOS
+# Linux / macOS:
 source venv/bin/activate
 
+# تثبيت المكتبات المطلوبة
 pip install -r requirements.txt
 cp .env.example .env
 
-# Run FastAPI Server
+# تشغيل خادم FastAPI
 uvicorn app.main:app --reload --port 8000
 ```
-Backend API will be live at `http://127.0.0.1:8000` (Swagger docs: `/docs`).
+سيكون خادم الـ API متاحاً على الرابط: `http://127.0.0.1:8000` (وتوثيق Swagger التفاعلي على `/docs`).
 
-### 4. Frontend Setup (Next.js)
+### 4. تشغيل الواجهة الأمامية (Next.js Frontend)
 ```bash
 cd SynQanun-Suite--claude-busy-euler-fyv6xy
 npm install
 npm run dev
 ```
-Frontend will be live at `http://localhost:3000`.
+ستكون الواجهة الأمامية متاحة على الرابط: `http://localhost:3000`.
 
 ---
 
-## 🧪 Automated Testing & Verification
+## 🧪 الاختبارات الآلية والتحقق (Automated Audits)
 
-Run the automated audit test suite to verify PostgreSQL persistence and billing workflows:
+تم تضمين سكريبت فحص وتدقيق آلي شامل (`audit_module4.py`) للتأكد من سلامة كافة مسارات الـ API وحفظ البيانات الفعلي في PostgreSQL:
+
 ```bash
 python audit_module4.py
 ```
 
-Expected output:
+**نتيجة التدقيق المعتمدة:**
 ```text
 --- AUDITING MODULE 4: BILLING & INVOICING + TIME TRACKING ---
   [PASS] 1. GET /staff/billing/summary
@@ -154,5 +221,5 @@ AUDIT COMPLETE: 12 PASSED, 0 FAILED
 
 ---
 
-## 📄 License
-Proprietary & Confidential — Developed for SynQanun Legal Solutions.
+## 📄 الترخيص (License)
+جميع الحقوق محفوظة © لمنصة سن قانون (SynQanun Legal Solutions).
