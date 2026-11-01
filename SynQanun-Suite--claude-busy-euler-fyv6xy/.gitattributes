@@ -1,0 +1,15 @@
+# Normalise line endings to LF in the repository and in working copies on
+# every platform. Without this, Git for Windows' default core.autocrlf=true
+# rewrites every file to CRLF locally, and the Track B dev team — likely on
+# macOS/Linux — would see whole-file diffs on first checkout.
+* text=auto eol=lf
+
+# Brand assets and other binaries must never be line-ending converted.
+*.png binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.pdf binary

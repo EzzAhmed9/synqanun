@@ -1,0 +1,3090 @@
+{
+  "common": {
+    "search": "Search",
+    "notifications": "Notifications",
+    "digest": "Digest",
+    "account": "Account",
+    "close": "Close",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "switchLanguage": "العربية",
+    "poweredBy": "Powered by SynQanun",
+    "show": "Show",
+    "hide": "Hide",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "loading": "Loading…",
+    "inbox": "Inbox"
+  },
+  "password": {
+    "strengthLabel": "Password strength",
+    "weak": "Weak",
+    "fair": "Fair",
+    "good": "Good",
+    "strong": "Strong",
+    "rule": "Use at least 10 characters, including letters, numbers and a symbol."
+  },
+  "acceptInvite": {
+    "headerContext": "Client onboarding",
+    "channelStatus": "Encrypted invitation channel",
+    "helpdesk": "Portal helpdesk",
+    "verifiedInvite": "Verified invite link",
+    "panelBadge": "Privileged client workspace",
+    "panelHeading": "Secure access to your dedicated legal team",
+    "panelBody": "Once you activate your account you can review your legal matters, open shared documents and filings, follow fee statements, and message the lawyers responsible for your work.",
+    "cardHeading": "You have been invited to the {firm} client portal",
+    "cardSubtitle": "Set a password to get started, {name}.",
+    "emailLabel": "Email address",
+    "emailFixed": "Fixed to this invitation",
+    "createPassword": "Create password",
+    "confirmPassword": "Confirm password",
+    "mismatch": "The two passwords do not match.",
+    "tooWeak": "Choose a longer password with letters, numbers and a symbol.",
+    "termsPrefix": "I agree to the",
+    "terms": "terms of service",
+    "termsJoin": "and the",
+    "privacy": "privacy policy",
+    "activate": "Activate account",
+    "invitedBy": "Invited by {name}.",
+    "expires": "This invitation expires on {date}.",
+    "alreadyActive": "Already activated?",
+    "signInLink": "Sign in instead",
+    "copyright": "All legal rights reserved. Confidential client portal.",
+    "features": {
+      "vaultTitle": "Shared document vault",
+      "vaultBody": "Open executed contracts, board resolutions and court filings.",
+      "commsTitle": "Direct counsel messaging",
+      "commsBody": "A recorded, privileged channel with the lawyers on your legal matters."
+    }
+  },
+  "splash": {
+    "caption": "Preparing your workspace",
+    "descriptor": "AI-native legal operating system"
+  },
+  "clientGateway": {
+    "headerContext": "Client access",
+    "portalStatus": "Encrypted portal channel",
+    "helpdesk": "Portal helpdesk",
+    "aboutEyebrow": "Institutional counsel",
+    "introHeading": "Welcome to your client service gateway",
+    "introBody": "Through this private portal you can review current matter status, access and exchange shared documents, view billing statements, and message your assigned legal team directly.",
+    "signInEyebrow": "Secure sign in",
+    "signInHeading": "Sign in to your client account",
+    "signInSubtitle": "For authorised client representatives, corporate counsel and appointed parties.",
+    "emailLabel": "Client email address",
+    "emailPlaceholder": "name@organization.com",
+    "passwordLabel": "Password",
+    "forgotPassword": "Forgot password?",
+    "trustDevice": "Trust this workstation",
+    "signIn": "Sign in",
+    "accessHelp": "For access issues, contact your partner-in-charge at the firm.",
+    "staffPrompt": "Firm staff?",
+    "staffLink": "Sign in to the firm workspace",
+    "copyright": "All legal rights reserved. Confidential client portal.",
+    "services": {
+      "mattersTitle": "Matter status and updates",
+      "mattersBody": "Track milestones, court proceedings and timeline deliverables.",
+      "documentsTitle": "Shared documents",
+      "documentsBody": "Access executed agreements, filings and repository archives.",
+      "invoicesTitle": "Invoices and statements",
+      "invoicesBody": "Review itemised fee statements and retainer balances.",
+      "messagesTitle": "Direct messaging",
+      "messagesBody": "A privileged communication channel with your counsel."
+    }
+  },
+  "firmGateway": {
+    "workspaceLabel": "Enterprise legal workspace",
+    "eyebrow": "Firm single sign-on",
+    "heading": "One platform for drafting, documents, billing and workflow — run by AI agents.",
+    "subheading": "Authorised firm personnel only: partners, associates, paralegals and practice managers.",
+    "modulesHeading": "Core modules",
+    "signInHeading": "Sign in to your staff workstation",
+    "signInSubtitle": "Authenticate with your firm-issued corporate credentials.",
+    "emailLabel": "Staff corporate email",
+    "emailPlaceholder": "counsel@firm-domain.com",
+    "passwordLabel": "Password",
+    "forgotPassword": "Forgot password?",
+    "keepSignedIn": "Keep me signed in on this device",
+    "signIn": "Sign in to workspace",
+    "clientPrompt": "Are you a client?",
+    "clientLink": "Go to the client portal",
+    "copyright": "All internal rights reserved. Confidential practice system.",
+    "modules": {
+      "draftingTitle": "Drafting",
+      "draftingBody": "Documents and precedents",
+      "dmsTitle": "Document management",
+      "dmsBody": "Matter repositories",
+      "billingTitle": "Billing",
+      "billingBody": "Time ledger and invoicing",
+      "workflowTitle": "Workflow and AI",
+      "workflowBody": "Recorded agent activity"
+    }
+  },
+  "tenantAuth": {
+    "back": "Back to portal selection",
+    "help": "Need help?",
+    "rightsReserved": "All rights reserved",
+    "chooser": {
+      "heading": "Welcome to the {firm} platform",
+      "subheading": "Choose your portal to continue",
+      "staffTitle": "Staff portal",
+      "staffBody": "For {firm} staff",
+      "staffAction": "Staff sign-in",
+      "clientTitle": "Client portal",
+      "clientBody": "For clients of {firm}",
+      "clientAction": "Client sign-in"
+    },
+    "form": {
+      "usernameLabel": "Username or email",
+      "usernamePlaceholder": "Enter your username or email",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "remember": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "signIn": "Sign in"
+    },
+    "staff": {
+      "heading": "Staff sign-in",
+      "subtitle": "Sign in to continue your work.",
+      "note": "For {firm} staff only."
+    },
+    "client": {
+      "heading": "Client sign-in",
+      "subtitle": "Sign in to view your files and follow your legal matters.",
+      "note": "For clients of {firm}."
+    }
+  },
+  "passwordReset": {
+    "headerContext": "Client portal",
+    "portalStatus": "Encrypted portal channel",
+    "helpdesk": "Portal helpdesk",
+    "copyright": "All legal rights reserved. Confidential client portal.",
+    "backToSignIn": "Back to sign in",
+    "requestHeading": "Reset your password",
+    "requestSubtitle": "Enter the email address on your account and we will send you a link to set a new password.",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "name@organization.com",
+    "emailHint": "Use the address the firm holds on file for you.",
+    "sendLink": "Send reset link",
+    "requestPanelBadge": "Account recovery",
+    "requestPanelHeading": "Regain access to your portal",
+    "requestPanelBody": "We will email you a link to choose a new password. The link can be used once, and it expires {minutes} minutes after it is sent.",
+    "requestPanelNote": "If the address is not on an account, no email is sent — and this screen looks exactly the same either way.",
+    "sentHeading": "Check your email",
+    "sentBody": "We have sent a password reset link to <addr>{email}</addr> with instructions for choosing a new password.",
+    "expiryTitle": "The link expires in {minutes} minutes",
+    "expiryBody": "If it is not in your inbox, check your spam folder, or request another below.",
+    "resend": "Resend email",
+    "resending": "Sending",
+    "resent": "Sent again. Check your inbox.",
+    "demoOpenLink": "Demo: open the reset link",
+    "newHeading": "Set a new password",
+    "newSubtitle": "Enter and confirm the password you want to use from now on.",
+    "accountEmail": "Account email",
+    "verified": "Verified from your reset link",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "mismatch": "The two passwords do not match.",
+    "tooWeak": "Choose a longer password with letters, numbers and a symbol.",
+    "update": "Update password",
+    "newPanelBadge": "New password",
+    "newPanelHeading": "Your new password takes effect immediately",
+    "newPanelBody": "Once you update it, your previous password stops working. You will need the new one the next time you sign in."
+  },
+  "staffReset": {
+    "workspaceLabel": "Firm workspace",
+    "emailLabel": "Work email address",
+    "emailHint": "Use the address your firm issued you.",
+    "requestPanelHeading": "Regain access to your workspace",
+    "requestPanelBody": "We will email you a link to choose a new password. The link can be used once, and it expires {minutes} minutes after it is sent.",
+    "newPanelBody": "Once you update it, your previous password stops working — including the temporary one you were given when your account was created."
+  },
+  "ranks": {
+    "partner": "Partner",
+    "seniorAssociate": "Senior associate",
+    "juniorAssociate": "Junior associate",
+    "paralegal": "Paralegal",
+    "legalSecretary": "Legal secretary",
+    "holder": {
+      "partner": "Partner",
+      "seniorAssociate": "Senior associate",
+      "juniorAssociate": "Junior associate",
+      "paralegal": "Paralegal",
+      "legalSecretary": "Legal secretary"
+    }
+  },
+  "onboarding": {
+    "workspaceLabel": "Firm setup",
+    "stepCounter": "Step {current} of {total}",
+    "percentComplete": "{percent}% complete",
+    "progressLabel": "Setup progress",
+    "inProgress": "In progress",
+    "completed": "Completed",
+    "back": "Back",
+    "continue": "Continue",
+    "nextUp": "Next: {step}",
+    "saveAndFinishLater": "Save and finish later",
+    "steps": {
+      "branding": {
+        "label": "Firm identity",
+        "caption": "Name and brand marks"
+      },
+      "team": {
+        "label": "Add your team",
+        "caption": "People and ranks"
+      },
+      "integrations": {
+        "label": "Integrations",
+        "caption": "Email and meetings"
+      },
+      "billing": {
+        "label": "Billing",
+        "caption": "Rates and currency"
+      },
+      "review": {
+        "label": "Review and launch",
+        "caption": "Summary"
+      }
+    },
+    "branding": {
+      "title": "Firm identity and brand marks",
+      "cardTitle": "Organisation identity",
+      "cardBody": "Your firm's legal name, its workspace address, and the marks that appear in the sidebar and on documents you send to clients.",
+      "firmName": "Legal firm name",
+      "firmNameHint": "The full legal name shown on notices and invoice headers.",
+      "firmNamePlaceholder": "Your firm's registered name",
+      "subdomain": "Workspace address",
+      "subdomainHint": "Letters, numbers and hyphens. This becomes your sign-in address.",
+      "subdomainPlaceholder": "your-firm",
+      "subdomainTaken": "That address is already in use. Try another.",
+      "logoLight": "Logo for light backgrounds",
+      "logoDark": "Logo for dark backgrounds",
+      "logoHint": "PNG or SVG, up to 2 MB.",
+      "chooseFile": "Choose file",
+      "replaceFile": "Replace file",
+      "noFile": "No file chosen",
+      "accent": "Accent colour (optional)",
+      "accentHint": "Used only for card borders and background washes in the client portal. It never appears on buttons or on Mueen’s surfaces.",
+      "accentNone": "None",
+      "previewTitle": "Sidebar preview",
+      "previewBody": "How your firm appears beside the SynQanun mark.",
+      "previewPlaceholderName": "Your firm's name",
+      "whiteLabelNote": "Your logo sits alongside the SynQanun feather, which stays on every screen in every workspace."
+    },
+    "team": {
+      "title": "Add your team",
+      "cardTitle": "Who is joining the workspace",
+      "cardBody": "Add each person with their name, work email and rank. Each of them gets a temporary password to sign in with, which they can change whenever they like.",
+      "name": "Full name",
+      "namePlaceholder": "Name",
+      "email": "Work email",
+      "emailPlaceholder": "name@firm.com",
+      "rank": "Rank",
+      "remove": "Remove",
+      "removeRow": "Remove {name}",
+      "addAnother": "Add another",
+      "csvTitle": "Adding a lot of people?",
+      "csvBody": "Upload a CSV with three columns — name, email, rank — and we will fill the rows in for you.",
+      "csvChoose": "Upload CSV",
+      "csvAdded": "Added {count} people from the file.",
+      "csvNone": "No usable rows found. Check the file has name, email and rank columns.",
+      "countNone": "No one added yet",
+      "countSome": "{count} added"
+    },
+    "integrations": {
+      "title": "Connect your tools",
+      "cardBody": "Connect the services your firm already uses. You can skip any of these and connect them later from settings.",
+      "mailTitle": "Email",
+      "mailBody": "Brings your correspondence into the unified inbox and files it against the right matter.",
+      "calendarTitle": "Calendar",
+      "calendarBody": "Comes with your email account — hearings and deadlines sync both ways.",
+      "calendarFollows": "Connects with {provider}",
+      "calendarWaiting": "Choose an email provider first",
+      "meetingsTitle": "Meetings",
+      "meetingsBody": "Lets SynQanun join calls and produce transcripts. Choose as many as your firm uses.",
+      "google": "Google Workspace",
+      "microsoft": "Microsoft 365",
+      "zoom": "Zoom",
+      "teams": "Microsoft Teams",
+      "meet": "Google Meet",
+      "connect": "Connect",
+      "connecting": "Connecting",
+      "connected": "Connected",
+      "notConnected": "Not connected",
+      "disconnect": "Disconnect",
+      "skipNote": "Nothing here is required to launch."
+    },
+    "billing": {
+      "title": "Billing setup",
+      "currencyTitle": "Invoicing currency",
+      "currencyBody": "Every rate, invoice and statement in the workspace uses this currency.",
+      "currency": "Currency",
+      "ratesTitle": "Default hourly rates",
+      "ratesBody": "The starting rate for each rank. Individual legal matters can override these later.",
+      "rankColumn": "Rank",
+      "rateColumn": "Hourly rate",
+      "rateFor": "Hourly rate for {rank}",
+      "gatewayTitle": "Payment gateway",
+      "gatewayBody": "Lets clients settle invoices from the portal. You can add this after launch.",
+      "gatewayConnect": "Connect a gateway",
+      "gatewayConnected": "Gateway connected",
+      "gatewayNotConnected": "Not connected"
+    },
+    "review": {
+      "title": "Review and launch",
+      "cardBody": "Check everything below, then launch the workspace.",
+      "brandingSection": "Firm identity",
+      "teamSection": "Team",
+      "integrationsSection": "Integrations",
+      "billingSection": "Billing",
+      "edit": "Edit",
+      "notSet": "Not set",
+      "noneSelected": "None selected",
+      "teamEmpty": "No team members added",
+      "credentialsNoteOne": "1 team member will receive their temporary credentials by email.",
+      "credentialsNoteMany": "{count} team members will receive their temporary credentials by email.",
+      "credentialsNoteNone": "No team members have been added, so no credentials will be sent.",
+      "launch": "Launch workspace",
+      "launching": "Launching",
+      "incomplete": "Add your firm's name and workspace address before launching.",
+      "launched": "Workspace launched."
+    }
+  },
+  "projects": {
+    "emptyNone": "You have no projects yet.",
+    "emptyNoneBody": "Transactions, restructurings and corporate work appear here once the firm is instructed.",
+    "title": "My projects",
+    "subtitle": "Corporate structuring, transactions and asset management",
+    "searchLabel": "Search projects",
+    "searchPlaceholder": "Title, reference or project lead",
+    "clearSearch": "Clear search",
+    "forumLabel": "Category",
+    "allForums": "All categories",
+    "filterLabel": "Filter by status",
+    "filters": {
+      "all": "All",
+      "needsAttention": "Needs attention",
+      "inProgress": "In progress",
+      "completed": "Completed"
+    },
+    "columns": {
+      "matter": "Project",
+      "type": "Category and jurisdiction",
+      "counsel": "Project lead",
+      "status": "Status",
+      "updated": "Last updated",
+      "open": "Open"
+    },
+    "needsAttention": "Needs your attention",
+    "closed": "Completed",
+    "openMatter": "Open project {reference}",
+    "showing": "Showing {shown} of {total}",
+    "emptyFilter": "No projects in this view.",
+    "emptySearch": "No projects match \"{query}\".",
+    "detail": {
+      "back": "Back to my projects",
+      "notFound": "That project could not be found.",
+      "notFoundBody": "It may have been completed and archived, or the link may be wrong.",
+      "tabsLabel": "Project sections",
+      "tabs": {
+        "overview": "Overview",
+        "documents": "Documents",
+        "timeline": "Timeline",
+        "invoices": "Invoices"
+      },
+      "overdueCount": "{count} overdue",
+      "uploadFile": "Upload a file",
+      "overview": {
+        "title": "Project overview",
+        "opened": "Opened {date}",
+        "category": "Project category",
+        "jurisdiction": "Jurisdiction",
+        "registration": "Registration number",
+        "phase": "Current stage",
+        "entities": "Target entities",
+        "scope": "Scope of instruction"
+      },
+      "contact": {
+        "title": "Responsible lead",
+        "lead": "Lead",
+        "phone": "Direct line",
+        "email": "Email",
+        "supporting": "Supporting lead",
+        "message": "Message project lead",
+        "bookCall": "Request a briefing call"
+      },
+      "keyDates": {
+        "heading": "Next key dates",
+        "caption": "{count, plural, =0 {Nothing scheduled} one {# date ahead} other {# dates ahead}}",
+        "empty": "Nothing is scheduled on this project.",
+        "viewAll": "View the full timeline"
+      },
+      "timeline": {
+        "heading": "Project timeline",
+        "caption": "{count, plural, one {# recorded milestone} other {# recorded milestones}}",
+        "empty": "Nothing has been recorded on this project yet."
+      },
+      "documents": {
+        "emptyNone": "The firm has not shared any documents with you yet.",
+        "emptyNoneBody": "Agreements, filings and drafts appear here as soon as your legal team shares them.",
+        "heading": "Project documents",
+        "caption": "{count, plural, =0 {No shared files} one {# shared file} other {# shared files}}",
+        "empty": "No documents have been shared on this project.",
+        "download": "Download {name}"
+      },
+      "invoices": {
+        "emptyNone": "You have no invoices yet.",
+        "emptyNoneBody": "Nothing is outstanding. Fee statements appear here as the firm issues them.",
+        "heading": "Project invoices",
+        "balanceDue": "Balance due on this project",
+        "settled": "Nothing outstanding",
+        "pay": "Pay project invoice",
+        "empty": "No invoices have been raised on this project.",
+        "issued": "Issued {date}",
+        "paidOn": "Paid {date}",
+        "status": {
+          "overdue": "Overdue",
+          "due": "Due {date}",
+          "paid": "Paid"
+        }
+      }
+    }
+  },
+  "nav": {
+    "modules": "Modules",
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar",
+    "dashboard": "Dashboard",
+    "documents": "Documents",
+    "billing": "Billing",
+    "clients": "Clients",
+    "myMatters": "My legal matters",
+    "myProjects": "My projects",
+    "inbox": "Inbox",
+    "calendar": "Calendar",
+    "matters": "Legal matters",
+    "projects": "Projects",
+    "approvals": "Approvals",
+    "invoices": "Invoices",
+    "messages": "Messages",
+    "settings": "Settings",
+    "aiAssistant": "Mueen",
+    "aiReports": "AI reports",
+    "legalDatabase": "Legal database",
+    "conflicts": "Conflict check",
+    "more": "More",
+    "closeMore": "Close menu"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Client workspace",
+    "copyright": "All legal rights reserved. Confidential client portal.",
+    "quickActions": {
+      "label": "Quick actions",
+      "payBill": "Pay a bill",
+      "uploadDocument": "Upload a document",
+      "bookCall": "Book a call"
+    },
+    "keyDates": {
+      "heading": "Upcoming key dates",
+      "count": "{count, plural, =0 {No dates} one {# date} other {# dates}} in the next {days} days",
+      "empty": "Nothing falls due in the next {days} days.",
+      "matter": "Legal matter",
+      "project": "Project",
+      "completed": "Completed"
+    },
+    "needsAttention": "Needs your attention",
+    "matters": {
+      "emptyNone": "You have no legal matters on file yet.",
+      "emptyNoneBody": "Disputes, arbitrations and regulatory files the firm opens for you appear here.",
+      "title": "My legal matters",
+      "subtitle": "Active contentious and regulatory files",
+      "count": "{count, plural, one {# active file} other {# active files}}",
+      "leadCounsel": "Lead counsel: {name}",
+      "showing": "Showing {shown} of {total}",
+      "viewAll": "View all legal matters",
+      "empty": "You have no open legal files."
+    },
+    "projects": {
+      "emptyNone": "You have no projects yet.",
+      "emptyNoneBody": "Transactions, restructurings and corporate work appear here once the firm is instructed.",
+      "title": "My projects",
+      "subtitle": "Corporate structuring, transactions and assets",
+      "count": "{count, plural, one {# active project} other {# active projects}}",
+      "manager": "Corporate manager: {name}",
+      "showing": "Showing {shown} of {total}",
+      "viewAll": "View all projects",
+      "empty": "You have no open projects."
+    },
+    "documents": {
+      "emptyNone": "The firm has not shared any documents with you yet.",
+      "emptyNoneBody": "Agreements, filings and drafts appear here as soon as your legal team shares them.",
+      "title": "Shared documents",
+      "count": "{count, plural, one {# recent file} other {# recent files}}",
+      "sharedToday": "Shared today",
+      "sharedOn": "Shared {date}",
+      "needsSignature": "Needs signature",
+      "viewAll": "View all shared documents",
+      "empty": "Nothing has been shared with you yet."
+    },
+    "invoices": {
+      "emptyNone": "You have no invoices yet.",
+      "emptyNoneBody": "Nothing is outstanding. Fee statements appear here as the firm issues them.",
+      "title": "Invoices",
+      "balanceDue": "Total balance due",
+      "outstanding": "{count, plural, =0 {No outstanding invoices} one {# outstanding invoice} other {# outstanding invoices}}",
+      "overdueBadge": "{count, plural, one {# overdue} other {# overdue}}",
+      "settled": "All settled",
+      "dueOn": "Due {date}",
+      "overdueSince": "Overdue since {date}",
+      "viewAll": "View invoices",
+      "empty": "You have no invoices."
+    },
+    "messages": {
+      "title": "Messages",
+      "unread": "{count, plural, =0 {No unread} one {# unread} other {# unread}}",
+      "viewAll": "Open messages",
+      "empty": "No messages yet."
+    }
+  },
+  "documents": {
+    "emptyNone": "The firm has not shared any documents with you yet.",
+    "emptyNoneBody": "Agreements, filings and drafts appear here as soon as your legal team shares them.",
+    "title": "Documents",
+    "subtitle": "Everything the firm has shared with you",
+    "searchLabel": "Search documents",
+    "searchPlaceholder": "Filename, matter or project",
+    "clearSearch": "Clear search",
+    "engagementLabel": "Legal matter or project",
+    "allEngagements": "All legal matters and projects",
+    "typeLabel": "File type",
+    "allTypes": "All file types",
+    "upload": "Upload a document",
+    "filterLabel": "Filter by status",
+    "filters": {
+      "all": "All",
+      "awaitingSignature": "Needs signature",
+      "draft": "Draft",
+      "final": "Final"
+    },
+    "columns": {
+      "name": "Document",
+      "engagement": "Legal matter or project",
+      "shared": "Shared",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "awaitingSignature": "Needs signature",
+      "draft": "Draft",
+      "final": "Final"
+    },
+    "kind": {
+      "matter": "Legal matter",
+      "project": "Project"
+    },
+    "showing": "Showing {shown} of {total}",
+    "emptyFilter": "No documents in this view.",
+    "emptySearch": "No documents match \"{query}\".",
+    "download": "Download {name}",
+    "panel": {
+      "heading": "Document",
+      "signHeading": "Waiting on you",
+      "signBody": "The firm has asked you to sign this before it goes any further.",
+      "sign": "Review and sign",
+      "engagement": "Legal matter or project",
+      "reference": "Reference",
+      "shared": "Shared",
+      "file": "File",
+      "previewHeading": "No preview yet",
+      "previewBody": "Download the file to read it. Reading documents in the portal comes later.",
+      "download": "Download",
+      "ask": "Ask about this document"
+    }
+  },
+  "invoices": {
+    "emptyNone": "You have no invoices yet.",
+    "emptyNoneBody": "Nothing is outstanding. Fee statements appear here as the firm issues them.",
+    "title": "Invoices",
+    "subtitle": "Fee statements, outstanding balance and payment history",
+    "summary": {
+      "label": "Account summary",
+      "outstanding": "Outstanding",
+      "outstandingCount": "{count, plural, =0 {Nothing outstanding} one {# unpaid invoice} other {# unpaid invoices}}",
+      "overdue": "Overdue",
+      "overdueCount": "{count, plural, =0 {Nothing past its due date} one {# past its due date} other {# past their due date}}",
+      "settled": "Settled",
+      "settledCount": "{count, plural, =0 {Nothing settled yet} one {# invoice paid} other {# invoices paid}}"
+    },
+    "searchLabel": "Search invoices",
+    "searchPlaceholder": "Invoice number, matter or project",
+    "clearSearch": "Clear search",
+    "engagementLabel": "Legal matter or project",
+    "allEngagements": "All legal matters and projects",
+    "filterLabel": "Filter by status",
+    "filters": {
+      "all": "All",
+      "overdue": "Overdue",
+      "due": "Due",
+      "paid": "Paid"
+    },
+    "columns": {
+      "reference": "Invoice",
+      "engagement": "Legal matter or project",
+      "issued": "Issued",
+      "due": "Due",
+      "amount": "Amount",
+      "status": "Status",
+      "open": "Open"
+    },
+    "status": {
+      "overdue": "Overdue",
+      "due": "Due",
+      "paid": "Paid",
+      "draft": "Draft"
+    },
+    "kind": {
+      "matter": "Legal matter",
+      "project": "Project"
+    },
+    "showing": "Showing {shown} of {total}",
+    "emptyFilter": "No invoices in this view.",
+    "emptySearch": "No invoices match \"{query}\".",
+    "openInvoice": "Open invoice {reference}",
+    "detail": {
+      "back": "Back to invoices",
+      "notFound": "That invoice could not be found.",
+      "notFoundBody": "It may have been cancelled, or the link may be wrong.",
+      "amountDue": "Amount due",
+      "amountPaid": "Amount paid",
+      "daysOverdue": "{count, plural, one {# day past due} other {# days past due}}",
+      "downloadPdf": "Download PDF",
+      "viewReceipt": "View receipt",
+      "context": "Invoice details",
+      "engagement": "Legal matter or project",
+      "reference": "Invoice number",
+      "issued": "Issued",
+      "due": "Due",
+      "paid": "Paid",
+      "currency": "Currency",
+      "lineItems": "What this covers",
+      "lineItemCount": "{count, plural, one {# item} other {# items}}",
+      "columns": {
+        "description": "Description",
+        "amount": "Amount"
+      },
+      "total": "Total",
+      "settledHeading": "This invoice has been settled.",
+      "settledOn": "Paid {date}",
+      "query": "Ask about this invoice",
+      "pay": {
+        "heading": "Settle this invoice",
+        "body": "Pay the balance on this fee statement by card.",
+        "cta": "Pay now — {amount}",
+        "noticeTitle": "No payment provider is connected in this build",
+        "noticeBody": "The fields below show the shape of the flow. Nothing is sent anywhere, nothing is stored, and no payment can be taken.",
+        "nameLabel": "Name on card",
+        "namePlaceholder": "As printed on the card",
+        "cardLabel": "Card number",
+        "expiryLabel": "Expiry",
+        "expiryPlaceholder": "MM / YY",
+        "codeLabel": "Security code",
+        "submit": "Pay {amount}",
+        "cancel": "Cancel",
+        "notBuilt": "Nothing was submitted. The payment flow and its confirmation screen are not built yet."
+      }
+    }
+  },
+  "messages": {
+    "title": "Messages",
+    "subtitle": "Your correspondence with the firm",
+    "threadsLabel": "Conversations",
+    "threadsHeading": "Conversations",
+    "conversationLabel": "Open conversation",
+    "newMessage": "New message",
+    "searchLabel": "Search conversations",
+    "searchPlaceholder": "Name, subject, matter or project",
+    "clearSearch": "Clear search",
+    "filters": {
+      "all": "All {count}",
+      "unread": "Unread {count}"
+    },
+    "kind": {
+      "matter": "Legal matter",
+      "project": "Project"
+    },
+    "unreadBadge": "Unread",
+    "emptyNone": "No messages yet — start a conversation with your firm contact.",
+    "emptyNoneBody": "Your lead partner and the team on your files answer here.",
+    "emptySearch": "No conversations match \"{query}\".",
+    "emptyUnread": "Nothing unread.",
+    "noThreadSelected": "Choose a conversation to read it.",
+    "backToThreads": "Conversations",
+    "composerLabel": "Write to {name}",
+    "composerPlaceholder": "Write to {name}",
+    "composerHint": "Enter sends. Shift + Enter starts a new line.",
+    "send": "Send",
+    "notSent": "Not sent",
+    "noBackend": "Messages are not delivered in this build, and nothing typed here is saved.",
+    "today": "Today",
+    "yesterday": "Yesterday"
+  },
+  "matters": {
+    "emptyNone": "You have no legal matters on file yet.",
+    "emptyNoneBody": "Disputes, arbitrations and regulatory files the firm opens for you appear here.",
+    "title": "My legal matters",
+    "subtitle": "Active contentious and regulatory legal files",
+    "searchLabel": "Search legal matters",
+    "searchPlaceholder": "Title, reference or lead counsel",
+    "clearSearch": "Clear search",
+    "forumLabel": "Forum",
+    "allForums": "All forums",
+    "filterLabel": "Filter by status",
+    "filters": {
+      "all": "All",
+      "needsAttention": "Needs attention",
+      "inProgress": "In progress",
+      "closed": "Closed"
+    },
+    "columns": {
+      "matter": "Legal matter",
+      "type": "Type and forum",
+      "counsel": "Lead counsel",
+      "status": "Status",
+      "updated": "Last updated",
+      "open": "Open"
+    },
+    "needsAttention": "Needs your attention",
+    "needsAttentionWithReason": "Needs your attention — {reason}",
+    "closed": "Closed",
+    "openMatter": "Open matter {reference}",
+    "showing": "Showing {shown} of {total}",
+    "emptyFilter": "No legal matters in this view.",
+    "emptySearch": "No legal matters match \"{query}\".",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}",
+      "label": "Legal matters pagination"
+    },
+    "detail": {
+      "back": "Back to my legal matters",
+      "notFound": "That matter could not be found.",
+      "notFoundBody": "It may have been closed and archived, or the link may be wrong.",
+      "tabsLabel": "Matter sections",
+      "tabs": {
+        "overview": "Overview",
+        "documents": "Documents",
+        "timeline": "Timeline",
+        "invoices": "Invoices"
+      },
+      "overdueCount": "{count} overdue",
+      "uploadFile": "Upload a file",
+      "overview": {
+        "title": "Matter overview",
+        "opened": "Opened {date}",
+        "matterType": "Matter type",
+        "forum": "Forum",
+        "courtFile": "Court file number",
+        "phase": "Current phase",
+        "opposing": "Opposing party",
+        "scope": "Scope of instruction"
+      },
+      "contact": {
+        "title": "Responsible counsel",
+        "lead": "Lead",
+        "phone": "Direct line",
+        "email": "Email",
+        "supporting": "Supporting counsel",
+        "message": "Message lead counsel",
+        "bookCall": "Request a briefing call"
+      },
+      "keyDates": {
+        "heading": "Next key dates",
+        "caption": "{count, plural, =0 {Nothing scheduled} one {# date ahead} other {# dates ahead}}",
+        "empty": "Nothing is scheduled on this matter.",
+        "viewAll": "View the full timeline"
+      },
+      "timeline": {
+        "heading": "Matter timeline",
+        "caption": "{count, plural, one {# recorded event} other {# recorded events}}",
+        "empty": "Nothing has been recorded on this matter yet."
+      },
+      "documents": {
+        "emptyNone": "The firm has not shared any documents with you yet.",
+        "emptyNoneBody": "Agreements, filings and drafts appear here as soon as your legal team shares them.",
+        "heading": "Matter documents",
+        "caption": "{count, plural, =0 {No shared files} one {# shared file} other {# shared files}}",
+        "empty": "No documents have been shared on this matter.",
+        "download": "Download {name}"
+      },
+      "invoices": {
+        "emptyNone": "You have no invoices yet.",
+        "emptyNoneBody": "Nothing is outstanding. Fee statements appear here as the firm issues them.",
+        "heading": "Matter invoices",
+        "balanceDue": "Balance due on this matter",
+        "settled": "Nothing outstanding",
+        "pay": "Pay matter invoice",
+        "empty": "No invoices have been raised on this matter.",
+        "issued": "Issued {date}",
+        "paidOn": "Paid {date}",
+        "status": {
+          "overdue": "Overdue",
+          "due": "Due {date}",
+          "paid": "Paid"
+        }
+      }
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Your account, preferences and the people at your organisation",
+    "tabsLabel": "Settings sections",
+    "tabs": {
+      "profile": "Profile",
+      "notifications": "Notifications",
+      "security": "Security",
+      "team": "Team"
+    },
+    "unsaved": "You have unsaved changes.",
+    "save": "Save changes",
+    "discard": "Discard",
+    "notSaved": "Nothing was saved. Preferences are not stored in this build, so this page will look the same after a reload.",
+    "profile": {
+      "heading": "Your details",
+      "caption": "How the firm reaches you, and how your name appears in the portal.",
+      "name": "Full name",
+      "title": "Role",
+      "titleHint": "Your job title at your own organisation.",
+      "phone": "Direct line",
+      "email": "Email address",
+      "emailHint": "This is your sign-in address. To change it, ask the firm — it is verified before it moves.",
+      "organisation": "Organisation",
+      "organisationHint": "Held in the firm's records and shown on your invoices. The firm changes it.",
+      "region": {
+        "heading": "Language and region",
+        "caption": "How this portal reads and how its dates are counted.",
+        "language": "Interface language",
+        "languageHint": "Change it with the language button in the top bar, on any screen.",
+        "dates": "Dates and deadlines",
+        "datesValue": "Shown in the firm's jurisdiction",
+        "datesHint": "A hearing listed for the 14th is on the 14th at the court, wherever you are reading from.",
+        "numerals": "Numerals",
+        "numeralsValue": "Western digits (0–9) in both languages",
+        "numeralsHint": "Standard in Egyptian and Gulf legal and financial documents."
+      }
+    },
+    "notifications": {
+      "heading": "Email notifications",
+      "caption": "Email is the only channel this portal sends on. Everything else waits for you here.",
+      "emailFor": "Email me about {category}",
+      "on": "On",
+      "off": "Off",
+      "categories": {
+        "engagements": {
+          "title": "Legal matters and projects",
+          "body": "Hearings, filings and changes to where your work stands."
+        },
+        "documents": {
+          "emptyNone": "The firm has not shared any documents with you yet.",
+          "emptyNoneBody": "Agreements, filings and drafts appear here as soon as your legal team shares them.",
+          "title": "Documents",
+          "body": "New files shared with you, and anything waiting for your signature."
+        },
+        "invoices": {
+          "emptyNone": "You have no invoices yet.",
+          "emptyNoneBody": "Nothing is outstanding. Fee statements appear here as the firm issues them.",
+          "title": "Invoices",
+          "body": "New fee statements, and reminders as one falls due."
+        },
+        "messages": {
+          "title": "Messages",
+          "body": "New messages from the people working on your files."
+        }
+      }
+    },
+    "password": {
+      "heading": "Password",
+      "caption": "Change the password you use to sign in to this portal.",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "currentRequired": "Enter your current password.",
+      "tooWeak": "Choose a longer password with letters, numbers and a symbol.",
+      "mismatch": "The two passwords do not match.",
+      "update": "Update password",
+      "notChanged": "Your password was not changed. Sign-in is not built yet, so there is no credential to update."
+    },
+    "team": {
+      "heading": "People at your organisation",
+      "caption": "Everyone here can open your legal matters, documents and messages.",
+      "invite": "Invite a colleague",
+      "you": "You",
+      "columns": {
+        "person": "Name",
+        "email": "Email",
+        "role": "Access",
+        "status": "Status"
+      },
+      "roles": {
+        "admin": "Can manage",
+        "member": "Can view"
+      },
+      "statuses": {
+        "active": "Active",
+        "invited": "Invited"
+      },
+      "managedNote": "Inviting a colleague and removing access are not built in this version."
+    }
+  },
+  "upload": {
+    "title": "Upload a document",
+    "description": "Send a file to the firm and attach it to one of your legal matters or projects.",
+    "engagementLabel": "Attach to",
+    "engagementHint": "Only open legal matters and projects are listed.",
+    "engagementPlaceholder": "Choose a matter or project",
+    "dropHeading": "Drag a file here, or choose one from your device",
+    "accepted": "PDF or Word documents, up to {max} MB.",
+    "errorType": "That file type is not accepted. Choose a PDF or a Word document.",
+    "errorSize": "That file is larger than {max} MB.",
+    "errorEngagement": "Choose the matter or project this belongs to.",
+    "staged": "Ready to upload",
+    "remove": "Remove {name}",
+    "cancel": "Cancel",
+    "submit": "Upload",
+    "notUploaded": "Nothing was uploaded. The file stayed on your device — sending documents to the firm is not built yet."
+  },
+  "compose": {
+    "title": "New message",
+    "description": "Start a conversation with the lawyer leading one of your legal matters or projects.",
+    "engagementLabel": "About",
+    "engagementHint": "Only open legal matters and projects are listed.",
+    "engagementPlaceholder": "Choose a matter or project",
+    "errorEngagement": "Choose the matter or project this is about.",
+    "recipientLabel": "This goes to:",
+    "subjectLabel": "Subject",
+    "subjectPlaceholder": "E.g., question about the disclosure deadline",
+    "bodyLabel": "Message",
+    "bodyPlaceholder": "Write your message to the firm.",
+    "cancel": "Cancel",
+    "submit": "Send message",
+    "notSent": "Nothing was sent. No conversation was started and the firm has not seen this — sending is not built yet. Call the lawyer named above if it is urgent; their direct line is on the matter or project page."
+  },
+  "invite": {
+    "title": "Invite a teammate",
+    "description": "Give a colleague access to your legal matters, documents, invoices and messages.",
+    "emailLabel": "Their work email address",
+    "emailHint": "They will get an email with a link to set up their own sign-in.",
+    "errorEmail": "That does not look like an email address.",
+    "errorDuplicate": "Someone with that address is already on your team.",
+    "roleLabel": "Role",
+    "roles": {
+      "member": "Member",
+      "admin": "Admin"
+    },
+    "roleHint": {
+      "member": "Sees everything in the portal. Cannot invite or remove people.",
+      "admin": "Sees everything in the portal, and can invite or remove people."
+    },
+    "noteLabel": "Note for them",
+    "noteHint": "Optional. It goes in the invitation email.",
+    "notePlaceholder": "E.g., you will find the draft agreement under the restructuring project.",
+    "cancel": "Cancel",
+    "submit": "Send invitation",
+    "notSent": "No invitation was sent. Nobody has been given access and no email went out — inviting people is not built yet. Message the firm if a colleague needs access now."
+  },
+  "receipt": {
+    "title": "Receipt",
+    "back": "Back to the invoice",
+    "settledHeading": "Settled",
+    "settledBody": "The firm's records show this invoice was paid on {date}.",
+    "amount": "Amount",
+    "reference": "Invoice",
+    "description": "For",
+    "engagement": "Legal matter or project",
+    "issued": "Issued",
+    "paid": "Paid",
+    "ledgerNote": "This is the firm's record of the payment, not a receipt from a payment provider. A provider's receipt also carries the method used, its own reference and the exact time — the portal does not hold those yet. Ask the finance team if your accounts need them.",
+    "download": "Download receipt",
+    "notSettledHeading": "This invoice has not been paid",
+    "notSettledBody": "There is no payment to show yet. A receipt appears here once the firm records this invoice as settled.",
+    "viewInvoice": "View the invoice"
+  },
+  "sign": {
+    "title": "Review and sign",
+    "back": "Back to documents",
+    "documentHeading": "Document",
+    "panelHeading": "Your signature",
+    "panelSubtitle": "Type your name to sign this document.",
+    "nameLabel": "Your full legal name",
+    "nameHint": "Sign with the name the firm holds for you.",
+    "previewLabel": "Your signature",
+    "previewEmpty": "Your name appears here as you type.",
+    "consent": "I have read this document and I intend to sign it.",
+    "submit": "Sign document",
+    "decline": "Decline to sign",
+    "notRequested": "The firm has not asked you to sign this document.",
+    "notSigned": "Nothing was signed. This document is unchanged and the firm has not been told anything — signing is not built yet. Message the firm if you are ready to sign.",
+    "notDeclined": "Nothing was sent. The firm has not been told you declined — that is not built yet. Message them instead so your position is on the record."
+  },
+  "staff": {
+    "copyright": "All rights reserved. Firm workspace."
+  },
+  "staffMatters": {
+    "title": "Legal matters",
+    "subtitle": "{count, plural, =0 {No legal matters} one {1 legal matter on the firm's register} other {# legal matters on the firm's register}}",
+    "segments": {
+      "label": "Filter the register",
+      "all": "All",
+      "mine": "Mine",
+      "waitingOnClient": "Waiting on the client",
+      "soon": "Due within a fortnight"
+    },
+    "filters": {
+      "client": "Client",
+      "venue": "Forum or authority",
+      "lead": "Lead",
+      "allClients": "Every client",
+      "allVenues": "Every forum or authority",
+      "allLeads": "Every lead",
+      "clear": "Clear the filters",
+      "type": "Matter type",
+      "allTypes": "Every type"
+    },
+    "search": {
+      "label": "Search the register",
+      "placeholder": "Search by reference, title, type, client or forum…",
+      "noMatches": "No matter matches that",
+      "noMatchesBody": "Try a reference, part of a caption, or a client name."
+    },
+    "columns": {
+      "self": "Legal matter",
+      "client": "Client",
+      "venue": "Forum or authority",
+      "status": "Status",
+      "team": "Who is on it",
+      "next": "Next in the record",
+      "updated": "Last moved"
+    },
+    "team": {
+      "lead": "Lead",
+      "none": "No lead recorded"
+    },
+    "closed": "Closed",
+    "waitingOnClient": "Waiting on the client",
+    "soon": "Soon",
+    "noNextDate": "Nothing listed",
+    "empty": {
+      "title": "No matter in this view",
+      "body": "Nothing on the register matches what you have selected.",
+      "showAll": "Show the whole register",
+      "noneTitle": "The register is empty",
+      "noneBody": "No matter has been opened yet. The first one the firm takes on appears here."
+    },
+    "footer": "{count, plural, =0 {No legal matters} one {1 legal matter} other {# legal matters}}",
+    "footerFiltered": "{shown, plural, =0 {No matches} one {1 match} other {# matches}} of {total}",
+    "sortedBy": "most recently moved first",
+    "detail": {
+      "back": "The register",
+      "category": "Practice area",
+      "registry": "Court file",
+      "noRegistry": "None issued",
+      "instructed": "Instructed",
+      "phase": "Where it stands",
+      "counterpart": "Against",
+      "noCounterpart": "Non-contentious",
+      "teamCount": "{count, plural, =0 {Nobody assigned} one {1 person} other {# people}}",
+      "record": "The procedural record",
+      "recordCount": "{count, plural, =0 {Nothing recorded} one {1 entry} other {# entries}}",
+      "noRecord": "Nothing has been recorded on this file yet.",
+      "approvals": "Waiting on a decision",
+      "tasks": "Tasks on this file",
+      "documents": "Shared with the client",
+      "documentsCount": "{count, plural, =0 {Nothing shared} one {1 file} other {# files}}",
+      "noDocuments": "No file on this matter has been shared into the client portal.",
+      "invoices": "Fee statements",
+      "invoicesCount": "{count, plural, =0 {None issued} one {1 statement} other {# statements}}",
+      "noInvoices": "Nothing has been billed on this matter yet.",
+      "firmDocuments": "Drafts held by the firm",
+      "firmDocumentsCount": "{count, plural, =0 {Nothing in progress} one {1 in progress} other {# in progress}}",
+      "noFirmDocuments": "Nothing is being drafted on this file.",
+      "thisSession": "This session",
+      "requestSignature": "Request a signature",
+      "signaturePrepared": "{count, plural, one {Request prepared for 1 signatory — not sent} other {Request prepared for # signatories — not sent}}"
+    },
+    "new": {
+      "heading": "Open a legal matter",
+      "subtitle": "Creates the file. It does not notify the client.",
+      "intro": {
+        "heading": "What this does",
+        "body": "Opening a matter creates the file on the firm’s register and nothing else. No engagement letter is drafted and nothing is sent to the client. It does not run the conflict check either — that is its own screen, and it is run against a party rather than against a form.",
+        "locales": "The title and the scope are stored exactly as you type them, in one language. Everything chosen from a list carries both, because it comes from a record that already had both."
+      },
+      "title": "Matter title",
+      "titleHint": "What the firm and the client will both call this file.",
+      "titlePlaceholder": "Short and specific",
+      "client": "Client",
+      "lead": "Lead",
+      "leadHint": "Whoever the client deals with on this file.",
+      "practiceArea": "Practice area",
+      "forum": "Forum",
+      "derivedHint": "From the areas and forums this firm already works in.",
+      "scope": "Scope (optional)",
+      "scopeHint": "A sentence on what the firm is instructed to do.",
+      "scopePlaceholder": "Leave blank if it is not settled yet",
+      "choose": "Choose…",
+      "beforeYouOpen": "No conflict check runs here. Run one on the conflict-check screen against the client and the other side before accepting these instructions.",
+      "cancel": "Cancel",
+      "submit": "Open the matter",
+      "errors": {
+        "notPermitted": "Opening a matter is a partner’s or senior associate’s action.",
+        "titleRequired": "Give the matter a title.",
+        "clientRequired": "Choose the client.",
+        "practiceAreaRequired": "Choose a practice area.",
+        "forumRequired": "Choose a forum.",
+        "leadRequired": "Choose who leads the file.",
+        "workTypeRequired": "Choose the matter type."
+      },
+      "done": {
+        "title": "The matter is open",
+        "body": "It is on the register as",
+        "noConflictTitle": "No conflict check was run",
+        "noConflict": "Opening a file does not run one. The conflict-check screen searches the firm’s register — clients, opposing parties, transaction counterparties, recorded affiliations and declined work — and the judgement it informs is still yours.",
+        "session": "The matter also lasts only as long as this demo is running — it will not survive a restart.",
+        "open": "Open the file",
+        "register": "Back to the register"
+      },
+      "notPermitted": {
+        "title": "Opening a matter is a partner’s or senior associate’s action",
+        "body": "Your workspace is signed in as {rank}. The legal matters register is open to you from the sidebar."
+      },
+      "action": "New legal matter",
+      "noClients": {
+        "title": "There is no client to open this against",
+        "body": "A matter belongs to a client, and the firm has none on file yet. Take one on first and the form will have something to attach to.",
+        "action": "Add a client"
+      },
+      "workType": "Matter type",
+      "workTypeHint": "Which kind of work the file is kept under. The register filters on it."
+    },
+    "bulkSelectAll": "Select every file shown",
+    "leadReassigned": "Lead changed this session",
+    "types": {
+      "case": "Case",
+      "consultation": "Consultation",
+      "contract": "Contract",
+      "enforcement": "Enforcement",
+      "otherProject": "Other project"
+    },
+    "typesPlural": {
+      "case": "Cases",
+      "consultation": "Consultations",
+      "contract": "Contracts",
+      "enforcement": "Enforcement",
+      "otherProject": "Other projects"
+    },
+    "views": {
+      "label": "Which legal matters",
+      "active": "Active",
+      "archive": "Archive"
+    },
+    "archive": {
+      "closed": "Closed",
+      "archived": "Archived",
+      "intro": "Closed legal matters, kept for reference. A partner can reopen one.",
+      "emptyTitle": "The Archive is empty",
+      "emptyBody": "No legal matter has been closed yet. A closed matter moves here from the active list.",
+      "footer": "{count, plural, =0 {Nothing archived} one {1 archived legal matter} other {# archived legal matters}}",
+      "sortedBy": "most recently closed first"
+    },
+    "reopen": {
+      "action": "Reopen",
+      "label": "Reopen {reference}",
+      "pending": "Reopening…",
+      "done": "{reference} is reopened and back on the active list. This lasts for this session only.",
+      "thisSession": "Reopened this session",
+      "errors": {
+        "notPermitted": "Reopening a legal matter is a partner’s action.",
+        "notFound": "That legal matter is not on the register.",
+        "notClosed": "That legal matter is already open."
+      }
+    }
+  },
+  "clients": {
+    "title": "Clients",
+    "subtitle": "{count, plural, =0 {No clients} one {1 client} other {# clients}}",
+    "filters": {
+      "label": "Filter by standing",
+      "all": "All"
+    },
+    "standing": {
+      "retainer": "On retainer",
+      "active": "Active",
+      "prospect": "Prospect"
+    },
+    "sources": {
+      "portal": "Client portal",
+      "email": "Email — not connected",
+      "court": "Court filing — not connected"
+    },
+    "search": {
+      "label": "Search clients",
+      "placeholder": "Search by name or work…",
+      "noMatches": "No client matches that",
+      "noMatchesBody": "Try part of the organisation's name."
+    },
+    "footer": "{count, plural, =0 {No clients} one {1 client} other {# clients}}",
+    "footerFiltered": "{shown, plural, =0 {No matches} one {1 match} other {# matches}} of {total}",
+    "row": {
+      "engagements": "{matters, plural, =0 {No legal matters} one {1 legal matter} other {# legal matters}}",
+      "noEngagements": "No engagements recorded",
+      "correspondence": "{count, plural, one {1 unread} other {# unread}}",
+      "lastActivity": "Last activity {date}",
+      "approvals": "{count, plural, one {1 awaiting approval} other {# awaiting approval}}",
+      "portal": "Portal access"
+    },
+    "detail": {
+      "back": "All clients",
+      "theirEngagements": "Legal matters",
+      "theirApprovals": "Waiting on a decision",
+      "profile": "The client",
+      "lastActivity": "Last activity",
+      "engagements": "Engagements",
+      "portal": "Portal",
+      "portalYes": "Can sign in",
+      "portalNo": "No portal account",
+      "correspondence": "Correspondence",
+      "correspondenceCount": "{count, plural, =0 {Nothing filed} one {1 item} other {# items}}",
+      "noCorrespondence": "Nothing has been filed against this client.",
+      "forStaff": "For {name}",
+      "noEngagements": {
+        "title": "Nothing instructed yet",
+        "body": "No legal matter is recorded against this client. Any correspondence and pending approvals are listed below."
+      },
+      "portalContacts": "Portal contacts"
+    },
+    "add": {
+      "action": "Add client",
+      "heading": "Add a client",
+      "subtitle": "Creates the record. Nothing is sent to them.",
+      "intro": {
+        "heading": "What this does",
+        "body": "It creates the client on the firm’s list and nothing else. It does not run the conflict check — that is its own screen — and nothing is emailed.",
+        "contacts": "It does not set up portal access either. Most clients never use the portal, and inviting a named contact is a separate step.",
+        "locales": "The name and the summary are stored exactly as you type them, in one language."
+      },
+      "name": "Client name",
+      "nameHint": "The organisation as the firm and the client would both write it.",
+      "namePlaceholder": "Registered or trading name",
+      "standing": "Standing",
+      "standingHint": "How the firm holds the relationship today.",
+      "standings": {
+        "retainer": "On retainer",
+        "active": "Active",
+        "prospect": "Prospect"
+      },
+      "summary": "What the firm is doing for them (optional)",
+      "summaryHint": "One line. It appears on their card in the client list.",
+      "summaryPlaceholder": "Leave blank if no work has been agreed yet",
+      "choose": "Choose…",
+      "beforeYouAdd": "No conflict check runs here. Run one on the conflict-check screen against this party before agreeing to act.",
+      "cancel": "Cancel",
+      "submit": "Add the client",
+      "errors": {
+        "notPermitted": "Adding a client is a partner’s or senior associate’s action.",
+        "nameRequired": "Enter the client’s name.",
+        "nameTaken": "The firm already has a client under that name.",
+        "standingRequired": "Choose a standing."
+      },
+      "done": {
+        "title": "The client is on the list",
+        "body": "The firm now has a record for {name}.",
+        "notDoneTitle": "What did not happen",
+        "noPortal": "No portal access was set up, and no contact was invited.",
+        "noConflict": "Adding a client does not run one. The conflict-check screen searches the firm’s register, and the judgement it informs is still yours.",
+        "noMail": "Nothing was emailed to anyone.",
+        "session": "The record also lasts only as long as this demo is running — it will not survive a restart.",
+        "open": "Open their record",
+        "list": "Back to the client list"
+      },
+      "notPermitted": {
+        "title": "Adding a client is a partner’s or senior associate’s action",
+        "body": "Your workspace is signed in as {rank}. The client list is open to you from the sidebar."
+      }
+    },
+    "contacts": {
+      "subtitle": "Portal contacts",
+      "back": "Back to the client",
+      "scope": {
+        "heading": "What this list is",
+        "body": "Everyone at this client who can sign in to the portal — and nothing else. The firm keeps no separate directory of contacts without portal access, so a name here is a login.",
+        "omits": "Sending an invitation is not built. Nothing on this screen mails anyone, issues an activation link, resends one, or withdraws access."
+      },
+      "count": "{count, plural, =0 {No one at this client can sign in} one {1 person at this client can sign in} other {# people at this client can sign in}}",
+      "columns": {
+        "contact": "Contact",
+        "email": "Work email",
+        "role": "Portal role",
+        "status": "Access"
+      },
+      "roles": {
+        "admin": "Can manage",
+        "member": "Can view"
+      },
+      "status": {
+        "active": "Active",
+        "invited": "Invited, not taken up"
+      },
+      "invitedNote": "Invited before this prototype was built; nothing here can resend it.",
+      "empty": {
+        "title": "No one at this client can sign in",
+        "body": "That is the ordinary case — most clients instruct the firm without ever opening a portal."
+      },
+      "invite": {
+        "open": "Invite a contact",
+        "title": "Invite a contact to the portal",
+        "description": "Portal access lets this person read the files the firm shares with their organisation.",
+        "nameLabel": "Full name",
+        "nameHint": "As the firm would address them in writing.",
+        "nameError": "Enter the name of the person being invited.",
+        "emailLabel": "Work email",
+        "emailHint": "Their address at their own organisation, not the firm’s.",
+        "emailError": "Enter a valid email address.",
+        "duplicateError": "That address is already on this client’s list.",
+        "roleLabel": "Portal role",
+        "roleHint": {
+          "admin": "Can manage this client’s own list of people, alongside everything a member sees.",
+          "member": "Can read what the firm shares with this client, and cannot change who else has access."
+        },
+        "noteLabel": "Note",
+        "noteHint": "Optional. It would go in the body of the invitation.",
+        "notePlaceholder": "Anything this person should know before they sign in.",
+        "cancel": "Cancel",
+        "submit": "Send invitation",
+        "notSent": "Nothing was sent. No invitation was issued and the list behind this dialog is unchanged — this prototype has no mail, and the activation link an invitation carries is verified by nothing here, so a pending row would promise access that never arrives."
+      }
+    },
+    "empty": {
+      "filteredTitle": "No client in this view",
+      "filteredBody": "No client on the directory has that standing.",
+      "showAll": "Show every client",
+      "noneTitle": "No clients yet",
+      "noneBody": "Nobody has been taken on. A client has to exist before a matter can be opened against it."
+    }
+  },
+  "calendar": {
+    "title": "Calendar",
+    "subtitle": "{count, plural, =0 {Nothing in this period} one {1 entry in view} other {# entries in view}}",
+    "zone": "Time",
+    "allDay": "All day",
+    "today": "Today",
+    "previous": "Previous period",
+    "next": "Next period",
+    "close": "Close",
+    "range": "{from} – {to}",
+    "more": "{count, plural, one {1 more} other {# more}}",
+    "views": {
+      "label": "Calendar view",
+      "month": "Month",
+      "week": "Week",
+      "day": "Day"
+    },
+    "kinds": {
+      "internal": "Internal",
+      "client": "Client meeting",
+      "hearing": "Hearing",
+      "submission": "Filing deadline",
+      "conference": "Conference",
+      "filing": "Registry filing"
+    },
+    "empty": {
+      "title": "Nothing on this day",
+      "body": "No meetings and no dates on the files you are on.",
+      "weekend": "The office is closed on this day."
+    },
+    "panel": {
+      "when": "When",
+      "minutes": "{count, plural, one {1 minute} other {# minutes}}",
+      "noTime": "No time recorded — the matter's timeline carries the day, not the hour.",
+      "where": "Where",
+      "detail": "Detail",
+      "engagement": "On the file",
+      "fromFirm": "The firm's own diary entry.",
+      "fromTimeline": "Read from the matter's timeline. It cannot be changed here — the engagement's record is where this date lives.",
+      "transcript": "Read the minutes"
+    }
+  },
+  "inbox": {
+    "title": "Unified inbox",
+    "subtitle": "{count, plural, =0 {Nothing waiting on a reply} one {1 waiting on a reply} other {# waiting on a reply}}",
+    "listLabel": "Correspondence",
+    "readingLabel": "Selected item",
+    "backToList": "Back to the inbox",
+    "filters": {
+      "label": "Filter by source",
+      "all": "All",
+      "portal": "Client portal",
+      "email": "Email",
+      "court": "Court and registry"
+    },
+    "search": {
+      "label": "Search the inbox",
+      "placeholder": "Search senders, subjects, references…",
+      "noMatches": "Nothing matches that",
+      "noMatchesBody": "Try a sender, a subject or a matter reference.",
+      "footer": "{shown, plural, =0 {No matches} one {1 match} other {# matches}} of {total}"
+    },
+    "sources": {
+      "portal": "Client portal",
+      "email": "Email — not connected",
+      "court": "Court filing — not connected"
+    },
+    "awaitingReply": "Awaiting your reply",
+    "toYou": "To you",
+    "forStaff": "For {name}",
+    "fromName": "From {name}",
+    "fromFirm": "The firm",
+    "fromClient": "The client",
+    "footer": "{shown, plural, =0 {Nothing here} one {1 item} other {# items}}, {unread, plural, =0 {none unread} other {# unread}}",
+    "noReply": "Replying from the firm's side is not built yet. Nothing on this screen sends anything.",
+    "empty": {
+      "title": "Nothing in this view",
+      "body": "No correspondence matches the source you have selected.",
+      "noneTitle": "Nothing has come in",
+      "noneBody": "No correspondence has reached this firm yet — no client message, no email and no court filing."
+    },
+    "noSelection": {
+      "title": "Nothing open",
+      "body": "Choose something on the left to read it. Only client portal threads have a conversation behind them."
+    },
+    "notConnected": {
+      "email": {
+        "title": "The firm's mailbox is not connected",
+        "body": "This row records that an email arrived. Its contents are not in this product, because no mail account has been connected to it yet — so there is nothing here to read, and nothing here is a copy of the real message."
+      },
+      "court": {
+        "title": "Court and registry filing is not connected",
+        "body": "This row records that a notice arrived from a court or registry. The filing integration does not exist yet, so the notice itself is not in this product and nothing below stands in for it."
+      }
+    }
+  },
+  "staffDashboard": {
+    "title": "Good to see you, {name}",
+    "subtitle": "What needs you today",
+    "notBuilt": {
+      "subtitle": "Your workspace",
+      "title": "Your rank's dashboard isn't built yet",
+      "body": "Each rank gets its own dashboard, and only the partner's is finished so far. Showing that one here would put the firm's approvals, recorded hours and client list on a screen that isn't yours. Nothing is restricted — this screen is simply not done."
+    },
+    "actions": {
+      "label": "Quick actions",
+      "draft": "Draft a document",
+      "report": "Ask for a report"
+    },
+    "approvals": {
+      "heading": "Waiting on you",
+      "caption": "{count, plural, =0 {Nothing to approve} one {1 item to approve} other {# items to approve}}",
+      "empty": "Nothing is waiting on your approval.",
+      "submittedBy": "From {name}",
+      "overdue": "{count, plural, one {1 day late} other {# days late}}",
+      "dueToday": "Due today",
+      "due": "Due {date}",
+      "review": "Review"
+    },
+    "inbox": {
+      "viewAll": "{count, plural, =0 {Open the inbox} one {Open the inbox} other {Open the inbox — # items}}",
+      "empty": "Nothing in the inbox.",
+      "toYou": "To you",
+      "forStaff": "For {name}",
+      "heading": "Inbox",
+      "unread": "{count, plural, =0 {Nothing unread} one {1 unread} other {# unread}}",
+      "sources": {
+        "portal": "Client portal",
+        "email": "Email — not connected",
+        "court": "Court filing — not connected"
+      }
+    },
+    "correspondence": {
+      "heading": "Correspondence"
+    },
+    "supported": {
+      "heading": "Who you support",
+      "caption": "{count, plural, =0 {Nobody assigned} one {1 fee earner} other {# fee earners}}",
+      "empty": "Nobody has been assigned to you.",
+      "entriesToday": "{count, plural, =0 {Nothing today} one {1 today} other {# today}}",
+      "unreadForThem": "{count, plural, one {1 unread} other {# unread}}"
+    },
+    "submissions": {
+      "heading": "What you have sent up",
+      "caption": "{count, plural, =0 {Nothing with a reviewer} one {1 with a reviewer} other {# with a reviewer}}",
+      "empty": "You have nothing waiting on a reviewer.",
+      "with": "With {name}",
+      "state": {
+        "pending": "Being reviewed",
+        "changesRequested": "Changes requested",
+        "approved": "Approved"
+      }
+    },
+    "tasks": {
+      "heading": "Assigned to you",
+      "caption": "{count, plural, =0 {Nothing outstanding} one {1 outstanding} other {# outstanding}}",
+      "empty": "Nothing has been assigned to you.",
+      "from": "From {name}",
+      "due": "Due {date}",
+      "dueToday": "Due today",
+      "overdue": "{count, plural, one {1 day late} other {# days late}}",
+      "state": {
+        "done": "Done",
+        "inProgress": "In progress"
+      },
+      "with": "With {name}"
+    },
+    "engagements": {
+      "heading": "Your files",
+      "caption": "{count, plural, =0 {No open files} one {1 open file} other {# open files}}",
+      "empty": "You are not on any legal matter.",
+      "closed": "Closed",
+      "ledBy": "Led by {name}",
+      "role": {
+        "lead": "You lead this",
+        "drafting": "Drafting",
+        "evidence": "Evidence",
+        "filings": "Filings",
+        "diligence": "Due diligence",
+        "research": "Research",
+        "support": "Support Team"
+      }
+    },
+    "agenda": {
+      "heading": "Today",
+      "caption": "{count, plural, =0 {Nothing scheduled} one {1 entry} other {# entries}}",
+      "empty": "Nothing in the diary today.",
+      "allDay": "All day"
+    },
+    "clients": {
+      "heading": "Clients",
+      "caption": "{count, plural, one {1 client} other {# clients}}",
+      "standing": {
+        "retainer": "On retainer",
+        "active": "Active",
+        "prospect": "Prospect"
+      }
+    },
+    "billing": {
+      "heading": "Your recorded hours",
+      "caption": "This month, from your time entries",
+      "recorded": "Recorded this month",
+      "hours": "{hours} hrs",
+      "hoursShort": "{hours}h",
+      "weekly": "By week",
+      "week": "Week {number}",
+      "target": "Target {hours}h a week",
+      "notLive": "Logged entries feed this figure. The timer in the corner does not — it discards its seconds.",
+      "loggedThisSession": "{entries, plural, one {1 entry} other {# entries}} logged this session, {hours}h {minutes}m. Not saved."
+    },
+    "homeTitle": "Dashboard",
+    "mueen": {
+      "name": "Mueen",
+      "greeting": {
+        "morning": "Good morning, {name}",
+        "afternoon": "Good afternoon, {name}",
+        "evening": "Good evening, {name}"
+      },
+      "lead": "Today:",
+      "facts": {
+        "hearingsToday": "{count, plural, one {1 hearing} other {# hearings}}",
+        "agendaToday": "{count, plural, one {1 entry on your agenda} other {# entries on your agenda}}",
+        "decisions": "{count, plural, one {1 decision waiting on you} other {# decisions waiting on you}}",
+        "overdue": "{count, plural, one {1 past its deadline} other {# past their deadline}}",
+        "tasksDue": "{count, plural, one {1 task due today} other {# tasks due today}}",
+        "unread": "{count, plural, one {1 unread message} other {# unread messages}}"
+      },
+      "nothing": "Nothing is due today.",
+      "provenance": "Counted from your own files, not generated.",
+      "digest": "Open the Digest",
+      "ask": "Ask Mueen"
+    },
+    "kpi": {
+      "label": "At a glance",
+      "decisions": "Waiting on you",
+      "overdue": "Overdue",
+      "hearings": "Hearings ahead",
+      "unread": "Unread",
+      "openTasks": "Open tasks",
+      "dueToday": "Due today",
+      "supported": "People you support",
+      "agendaToday": "On today’s agenda",
+      "hearingsHint": "Next {days} days"
+    },
+    "hearings": {
+      "heading": "Upcoming hearings",
+      "caption": "{count, plural, =0 {None in the next {days} days} one {1 in the next {days} days} other {# in the next {days} days}}",
+      "empty": "No hearings on your files in the next {days} days.",
+      "calendar": "Open the calendar"
+    },
+    "chart": {
+      "label": "Recorded hours by week, against the weekly target",
+      "bar": "Week {number}: {hours} h"
+    },
+    "prompt": {
+      "label": "Your question for Mueen",
+      "placeholder": "Ask Mueen anything",
+      "send": "Ask",
+      "mic": "Voice input — not available in this demo",
+      "chipToday": "What’s on today?",
+      "chipMatter": "Any updates on {ref}?",
+      "demo": "Demo: your question opens in the Digest. Voice input is not built."
+    },
+    "checklist": {
+      "heading": "Work that needs you",
+      "progress": "{done} of {total} done",
+      "done": "Done",
+      "open": "Not done",
+      "dueToday": "Due today",
+      "late": "{days, plural, one {1 day late} other {# days late}}",
+      "due": "Due {date}",
+      "empty": "Nothing needs you today."
+    },
+    "court": {
+      "heading": "This week in court",
+      "caption": "{start} – {end}",
+      "kinds": {
+        "hearing": "Hearing",
+        "conference": "Conference",
+        "submission": "Filing deadline",
+        "filing": "Registry filing"
+      },
+      "legend": "Event types",
+      "rowsMatters": "Legal matter",
+      "rowsPeople": "Person",
+      "weekend": "Weekend",
+      "today": "Today",
+      "empty": "Nothing on your files in court this week.",
+      "done": "Done"
+    },
+    "hours": {
+      "ringHeading": "Recorded hours",
+      "ringCaption": "This month, against {target} h",
+      "ringLabel": "{hours} of {target} hours recorded this month, {pct}%",
+      "over": "{hours} h over target",
+      "remaining": "{hours} h to target",
+      "unit": "h",
+      "barsHeading": "This week",
+      "barsCaption": "Hours by week, this week highlighted"
+    }
+  },
+  "errors": {
+    "backToDashboard": "Back to the dashboard",
+    "notFound": {
+      "title": "This page doesn't exist",
+      "body": "The address may have changed, or the link that brought you here may be out of date."
+    },
+    "unexpected": {
+      "title": "Something went wrong",
+      "body": "This page could not be loaded. Nothing you have done has been lost — trying again usually works.",
+      "retry": "Try again"
+    },
+    "backToStaff": "Back to the workspace",
+    "backToStart": "Back to the start"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "close": "Close notifications",
+    "unreadCount": "{count, plural, one {1 unread} other {# unread}}",
+    "markAllRead": "Mark all as read",
+    "filters": {
+      "all": "All ({count})",
+      "unread": "Unread ({count})"
+    },
+    "items": {
+      "documentAwaitingSignature": "{subject} is waiting for your signature.",
+      "documentShared": "The firm shared {subject} with you.",
+      "invoiceOverdue": "{subject} is {days, plural, one {1 day} other {# days}} past its due date.",
+      "messageReceived": "New message from {subject} that you have not opened."
+    },
+    "empty": "Nothing from the firm in the last three weeks.",
+    "emptyUnread": "You have read everything here.",
+    "notPersisted": "What you have read is remembered until you reload — there is no notifications service behind this yet."
+  },
+  "staffNotifications": {
+    "title": "Notifications",
+    "close": "Close notifications",
+    "unreadCount": "{count, plural, one {1 unread} other {# unread}}",
+    "markAllRead": "Mark all as read",
+    "filters": {
+      "all": "All ({count})",
+      "unread": "Unread ({count})"
+    },
+    "items": {
+      "approvalWaiting": "Waiting for your decision: {subject}.",
+      "approvalOverdue": "Waiting for your decision, {days, plural, one {1 day} other {# days}} past the deadline: {subject}.",
+      "submissionApproved": "Your request was approved: {subject}.",
+      "submissionReturned": "Changes requested on your request: {subject}.",
+      "filingDue": "Deadline on one of your files: {subject}.",
+      "teamRequest": "New approval request from {actor}: {subject}.",
+      "teamApproved": "Approved by {actor}: {subject}.",
+      "teamReturned": "Changes requested by {actor}: {subject}."
+    },
+    "empty": "No decisions, deadlines or team activity for you in this two-week window.",
+    "emptyUnread": "You have read everything here.",
+    "notPersisted": "What you have read is remembered until you reload — there is no notifications service behind this yet."
+  },
+  "search": {
+    "title": "Search the portal",
+    "placeholder": "Search legal matters, projects, documents, invoices and messages",
+    "clear": "Clear search",
+    "prompt": "Type at least two characters to search everything the firm has shared with you.",
+    "searching": "Searching…",
+    "count": "{count, plural, one {1 match} other {# matches}} in {groups, plural, one {1 section} other {# sections}}",
+    "countZero": "No matches",
+    "navigate": "↑ ↓ to move, Enter to open",
+    "empty": "Nothing matches “{query}”.",
+    "kinds": {
+      "matter": "{count, plural, one {Legal matter} other {Legal matters}}",
+      "project": "{count, plural, one {Project} other {Projects}}",
+      "document": "{count, plural, one {Document} other {Documents}}",
+      "invoice": "{count, plural, one {Invoice} other {Invoices}}",
+      "message": "{count, plural, one {Message} other {Messages}}"
+    },
+    "status": {
+      "awaitingSignature": "Awaiting signature",
+      "draft": "Draft",
+      "final": "Final",
+      "paid": "Paid",
+      "due": "Due",
+      "overdue": "Overdue",
+      "unread": "Unread"
+    }
+  },
+  "staffSearch": {
+    "title": "Search the firm",
+    "placeholder": "Search legal matters, clients, documents and the legal database",
+    "clear": "Clear search",
+    "prompt": "Type at least two characters to search the firm’s records.",
+    "searching": "Searching…",
+    "count": "{count, plural, one {1 match} other {# matches}} in {groups, plural, one {1 section} other {# sections}}",
+    "countZero": "No matches",
+    "navigate": "↑ ↓ to move, Enter to open",
+    "empty": "Nothing in the firm’s records matches “{query}”.",
+    "withheld": "Not searched at your rank: {groups}.",
+    "kinds": {
+      "matter": "{count, plural, one {Legal matter} other {Legal matters}}",
+      "project": "{count, plural, one {Project} other {Projects}}",
+      "client": "{count, plural, one {Client} other {Clients}}",
+      "document": "{count, plural, one {Document} other {Documents}}",
+      "invoice": "{count, plural, one {Invoice} other {Invoices}}",
+      "legalEntry": "{count, plural, one {Legal database entry} other {Legal database entries}}"
+    },
+    "status": {
+      "standing": {
+        "retainer": "On retainer",
+        "active": "Active",
+        "prospect": "Prospect"
+      },
+      "documentStatus": {
+        "awaitingSignature": "Awaiting signature",
+        "draft": "Draft",
+        "final": "Final"
+      },
+      "documentType": {
+        "letter": "Letter",
+        "memo": "Memo",
+        "filing": "Filing",
+        "contract": "Contract",
+        "correspondence": "Correspondence",
+        "courtSubmission": "Court submission",
+        "other": "Other"
+      },
+      "invoiceStatus": {
+        "overdue": "Overdue",
+        "due": "Due",
+        "paid": "Paid"
+      },
+      "legalKind": {
+        "judgment": "Judgment",
+        "statute": "Statute",
+        "regulation": "Regulation",
+        "commentary": "Commentary"
+      }
+    },
+    "archived": "Archived"
+  },
+  "bookCall": {
+    "title": "Book a call",
+    "description": "Ask the firm for a consultation about one of your legal matters or projects.",
+    "engagementLabel": "About",
+    "engagementHint": "Only open legal matters and projects are listed.",
+    "engagementPlaceholder": "Choose a matter or project",
+    "errorEngagement": "Choose the matter or project this call is about.",
+    "leadLabel": "You would be speaking to:",
+    "dateLabel": "Preferred day",
+    "timeLabel": "Preferred time",
+    "timeNote": "Times are in the firm's local time ({offset}). A consultation runs {minutes} minutes.",
+    "noSlots": "The firm has nothing left on this day. Try another.",
+    "topicLabel": "What would you like to discuss?",
+    "topicHint": "Optional, but it helps the firm prepare.",
+    "topicPlaceholder": "E.g., the disclosure timeline and what you need from us before the hearing.",
+    "cancel": "Cancel",
+    "submit": "Request this time",
+    "notBooked": "Nothing was booked. {date} at {time} is not held for you — requesting a consultation is not built yet. Send a message instead and the firm will confirm a time."
+  },
+  "timer": {
+    "label": "Billable hours",
+    "start": "Start timer",
+    "pause": "Pause timer",
+    "stop": "Stop timer",
+    "running": "Recording time",
+    "paused": "Paused"
+  },
+  "test": {
+    "title": "Foundation check",
+    "subtitle": "Batch 0 only — chrome, tokens and the UI kit. No product screens yet.",
+    "brandHeading": "Brand marks",
+    "brandTitle": "Wordmark and feather",
+    "brandDescription": "The wordmark follows the interface language — switch languages in the top bar and it swaps between the Latin and Arabic lockups. Neither mark mirrors in RTL.",
+    "buttonsDescription": "Red marks what the user does, navy marks what the agent does. Never the reverse.",
+    "tokensHeading": "Colour tokens",
+    "typeHeading": "Type scale",
+    "buttonsHeading": "Buttons",
+    "badgesHeading": "Badges",
+    "tableHeading": "Table",
+    "tabsHeading": "Tabs",
+    "modalHeading": "Modal",
+    "openModal": "Open modal",
+    "modalTitle": "Confirm write-off",
+    "modalBody": "Writing off 2.4 recorded hours on matter EG-2024-0117 removes them from the next invoice. The time entries stay on the matter record.",
+    "humanAction": "Red is the human's action",
+    "aiAction": "Navy is the AI's action",
+    "tabOverview": "Overview",
+    "tabActivity": "Activity",
+    "tabSources": "Sources",
+    "tabOverviewBody": "Resting surface: white card, 1px gray-200 border, 8px radius, no shadow.",
+    "tabActivityBody": "Elevation level 1 and 2 are reserved for popovers and modals only.",
+    "tabSourcesBody": "Reference numbers are set in JetBrains Mono so digits stay unambiguous."
+  },
+  "table": {
+    "reference": "Reference",
+    "matter": "Legal matter",
+    "status": "Status",
+    "amount": "Amount"
+  },
+  "status": {
+    "filed": "Filed",
+    "awaitingReview": "Awaiting review",
+    "overdue": "Overdue",
+    "agentDrafted": "Drafted by SynQanun"
+  },
+  "staffProjects": {
+    "title": "Projects",
+    "subtitle": "{count, plural, =0 {No projects} one {1 project on the firm's register} other {# projects on the firm's register}}",
+    "segments": {
+      "label": "Filter the register",
+      "all": "All",
+      "mine": "Mine",
+      "waitingOnClient": "Waiting on the client",
+      "soon": "Due within a fortnight",
+      "closed": "Completed"
+    },
+    "filters": {
+      "client": "Client",
+      "venue": "Jurisdiction",
+      "lead": "Lead",
+      "allClients": "Every client",
+      "allVenues": "Every jurisdiction",
+      "allLeads": "Every lead",
+      "clear": "Clear the filters"
+    },
+    "search": {
+      "label": "Search the register",
+      "placeholder": "Search by reference, title, client or jurisdiction…",
+      "noMatches": "No project matches that",
+      "noMatchesBody": "Try a reference, part of a title, or a client name."
+    },
+    "columns": {
+      "self": "Project",
+      "client": "Client",
+      "venue": "Jurisdiction",
+      "status": "Status",
+      "team": "Who is on it",
+      "next": "Next in the record",
+      "updated": "Last moved"
+    },
+    "team": {
+      "lead": "Lead",
+      "none": "No lead recorded"
+    },
+    "closed": "Completed",
+    "waitingOnClient": "Waiting on the client",
+    "soon": "Soon",
+    "noNextDate": "Nothing listed",
+    "empty": {
+      "title": "No project in this view",
+      "body": "Nothing on the register matches what you have selected.",
+      "showAll": "Show the whole register",
+      "noneTitle": "The register is empty",
+      "noneBody": "No project has been opened yet. The first one the firm takes on appears here."
+    },
+    "footer": "{count, plural, =0 {No projects} one {1 project} other {# projects}}",
+    "footerFiltered": "{shown, plural, =0 {No matches} one {1 match} other {# matches}} of {total}",
+    "sortedBy": "most recently moved first",
+    "detail": {
+      "back": "The register",
+      "category": "Kind of work",
+      "registry": "Registration",
+      "noRegistry": "Not yet filed",
+      "instructed": "Instructed",
+      "phase": "Where it stands",
+      "counterpart": "Acting on",
+      "noCounterpart": "No entity named yet",
+      "teamCount": "{count, plural, =0 {Nobody assigned} one {1 person} other {# people}}",
+      "record": "The record",
+      "recordCount": "{count, plural, =0 {Nothing recorded} one {1 entry} other {# entries}}",
+      "noRecord": "Nothing has been recorded on this project yet.",
+      "approvals": "Waiting on a decision",
+      "tasks": "Tasks on this project",
+      "documents": "Shared with the client",
+      "documentsCount": "{count, plural, =0 {Nothing shared} one {1 file} other {# files}}",
+      "noDocuments": "No file on this project has been shared into the client portal.",
+      "invoices": "Fee statements",
+      "invoicesCount": "{count, plural, =0 {None issued} one {1 statement} other {# statements}}",
+      "noInvoices": "Nothing has been billed on this project yet.",
+      "firmDocuments": "Drafts held by the firm",
+      "firmDocumentsCount": "{count, plural, =0 {Nothing in progress} one {1 in progress} other {# in progress}}",
+      "noFirmDocuments": "Nothing is being drafted on this file.",
+      "thisSession": "This session",
+      "requestSignature": "Request a signature",
+      "signaturePrepared": "{count, plural, one {Request prepared for 1 signatory — not sent} other {Request prepared for # signatories — not sent}}"
+    },
+    "bulkSelectAll": "Select every file shown",
+    "leadReassigned": "Lead changed this session"
+  },
+  "billing": {
+    "title": "Billing & quotes",
+    "subtitle": "What the firm has billed, and what it has quoted",
+    "summary": {
+      "outstanding": "Outstanding",
+      "outstandingCount": "{count, plural, =0 {Nothing unpaid} one {1 unpaid statement} other {# unpaid statements}}",
+      "overdue": "Overdue",
+      "overdueCount": "{count, plural, =0 {Nothing past due} one {1 past its due date} other {# past their due date}}",
+      "issued": "Issued recently",
+      "issuedCaption": "In the last {days} days",
+      "quotes": "Quoted, undecided",
+      "quotesCount": "{count, plural, =0 {No quote awaiting a decision} one {1 quote awaiting a decision} other {# quotes awaiting a decision}}"
+    },
+    "views": {
+      "label": "Billing view",
+      "invoices": "Fee statements",
+      "quotes": "Quotes"
+    },
+    "filters": {
+      "all": "All",
+      "overdue": "Overdue",
+      "due": "Due",
+      "paid": "Settled",
+      "everyClient": "Every client"
+    },
+    "quoteStates": {
+      "all": "All",
+      "pending": "Awaiting a decision",
+      "changesRequested": "Changes asked for",
+      "approved": "Approved"
+    },
+    "columns": {
+      "reference": "Statement",
+      "client": "Client",
+      "engagement": "Against",
+      "issued": "Issued",
+      "due": "Due",
+      "amount": "Amount",
+      "status": "Status",
+      "quote": "Quote",
+      "pricedBy": "Priced by",
+      "decidedBy": "With",
+      "state": "State"
+    },
+    "paidOn": "Paid {date}",
+    "overdue": "{count, plural, one {1 day late} other {# days late}}",
+    "ledgerFooter": "{shown, plural, =0 {No statements} one {1 statement} other {# statements}} of {total}",
+    "quotesFooter": "{shown, plural, =0 {No quotes} one {1 quote} other {# quotes}} of {total}",
+    "empty": {
+      "invoices": "No statement here",
+      "invoicesBody": "Nothing in the ledger matches this view.",
+      "quotes": "No quote here",
+      "quotesBody": "No quote is in this state.",
+      "noInvoices": "No fee statement yet",
+      "noInvoicesBody": "The firm has not issued one. A statement appears here once it is raised against a file.",
+      "noQuotes": "No quote yet",
+      "noQuotesBody": "Nothing has been priced and sent for a decision."
+    },
+    "noLedger": {
+      "heading": "There is no time ledger yet",
+      "caption": "Which is why this screen has no hours on it",
+      "body": "Everything above is a fee statement the firm has issued or a quote it has sent. Neither depends on recorded time, and nothing else on this screen can be built until recorded time exists.",
+      "items": {
+        "entries": "No time entries. Nobody has a row saying who did what, on which file, for how long — so there is no work in progress and no billable value to report.",
+        "rates": "No hourly rates. No rank or fee earner carries one, so hours could not be priced even if they were recorded.",
+        "timer": "The billable timer in the corner of this page does not record anything. Stopping it discards the elapsed time rather than writing an entry."
+      },
+      "holds": "What the firm does record today is hours per fee earner per week, which is what the dashboards show."
+    },
+    "notPermitted": {
+      "subtitle": "Above your rank",
+      "title": "The firm's billing is not yours to read",
+      "body": "Fee statements and quotes are kept to partners and senior associates, which is why this screen is not in your sidebar. You are signed in as {rank}. Nothing is wrong with your account."
+    },
+    "drafts": {
+      "new": "New fee statement",
+      "heading": "Drafts",
+      "caption": "Assembled in this session. None of them has been issued, and none is counted above.",
+      "lines": "{count, plural, one {1 line} other {# lines}}",
+      "notIssued": "Not issued"
+    }
+  },
+  "staffApprovals": {
+    "title": "Approvals",
+    "subtitle": "{count, plural, =0 {Nothing waiting on you} one {1 decision waiting on you} other {# decisions waiting on you}}",
+    "states": {
+      "label": "Filter by decision",
+      "pending": "Waiting on you",
+      "changesRequested": "Changes asked for",
+      "approved": "Approved",
+      "all": "All"
+    },
+    "kinds": {
+      "all": "Every kind",
+      "document": "Document",
+      "filing": "Filing",
+      "quote": "Fee quote"
+    },
+    "listLabel": "Your approvals queue",
+    "readingLabel": "The request",
+    "from": "From {name}",
+    "dueOn": "Due {date}",
+    "decidedOn": "Decided {date}",
+    "dueToday": "Due today",
+    "overdue": "{count, plural, one {1 day late} other {# days late}}",
+    "backToQueue": "The queue",
+    "facts": {
+      "client": "Client",
+      "engagement": "Against",
+      "noEngagement": "No engagement yet",
+      "raisedBy": "Raised by",
+      "with": "With"
+    },
+    "trail": {
+      "heading": "What has happened to it",
+      "caption": "From what the record holds — no times, no signatures",
+      "raised": "{name} sent it up",
+      "assigned": "Assigned to {name}",
+      "awaiting": "Waiting on a decision",
+      "approved": "Approved",
+      "changesRequested": "Sent back for changes"
+    },
+    "deciding": {
+      "heading": "Deciding is not wired up yet",
+      "caption": "Which is why there is no Approve button here",
+      "body": "This queue shows you what is waiting, who raised it and how late it is. Recording a decision — approving, sending it back, or refusing it — writes to the record, and writes come in a later batch.",
+      "state": "The state shown on each request is what the demo data already holds, not something decided on this screen."
+    },
+    "empty": {
+      "title": "Nothing here",
+      "body": "No request in your queue is in this state.",
+      "noneTitle": "Nothing is waiting on you",
+      "noneBody": "No colleague has sent you anything to decide. Work sent for your approval arrives here."
+    },
+    "noSelection": {
+      "title": "Pick a request",
+      "body": "Choose something from the queue to see who raised it and what it belongs to."
+    },
+    "gone": {
+      "title": "That request is not in your queue",
+      "body": "It may have been decided, or it may be with somebody else. Pick another from the list."
+    },
+    "notPermitted": {
+      "subtitle": "Above your rank",
+      "title": "Approvals are not yours to decide",
+      "body": "Sign-off is kept to partners and senior associates, which is why this screen is not in your sidebar. This account is on rank {rank}, and nothing is wrong with it."
+    }
+  },
+  "ai": {
+    "notice": {
+      "body": "Demo response, grounded in this firm's own records. Not a live AI call — real analysis is part of the next build phase."
+    },
+    "assistant": {
+      "title": "Mueen",
+      "subtitle": "Ask about a legal matter or a client",
+      "greeting": "Ask about something on the firm’s books. Every answer below is assembled from records this workspace already holds.",
+      "placeholder": "Ask about a legal matter or a client…",
+      "send": "Ask",
+      "you": "You",
+      "suggestions": "Try one of these",
+      "sourcesLabel": "Built from",
+      "unmatched": "I do not have anything on that in this demo. Try asking about the status of a legal matter, what a client owes, or a client update on a matter.",
+      "script": {
+        "status": {
+          "prompt": "What's the status of {ref}?",
+          "keywords": "status|matter"
+        },
+        "invoices": {
+          "prompt": "Summarize outstanding invoices for {client}.",
+          "line1": "{client} has {amount} outstanding across {statements, plural, =0 {no unpaid statements} one {1 unpaid statement} other {# unpaid statements}}.",
+          "overdue": "Of that, {amount} is past its due date.",
+          "noneOverdue": "Nothing on that balance is past its due date.",
+          "keywords": "invoice|invoices|outstanding|owes|balance"
+        },
+        "draft": {
+          "prompt": "Draft a short client update for {ref}.",
+          "line1": "Dear {client},",
+          "line2": "A short update on {title}. The work is currently at: {phase}.",
+          "line3": "The next step in the file is {title}, scheduled for {date}.",
+          "noNext": "No further step is scheduled in the file at present.",
+          "signoff": "Please let us know if you would like to discuss any of the above.",
+          "caveat": "This is a demo draft — a partner would review and personalize before sending.",
+          "keywords": "draft|update|letter"
+        }
+      }
+    },
+    "reports": {
+      "title": "AI reports",
+      "subtitle": "Assembled from the firm’s own counted records",
+      "picker": "Choose a report",
+      "practice": {
+        "name": "Weekly practice summary",
+        "scope": "The firm’s book, this week",
+        "book": "The firm is running {matters, plural, =0 {no open legal matters} one {1 open legal matter} other {# open legal matters}}.",
+        "attention": "{matters, plural, =0 {No legal matters are} one {1 legal matter is} other {# legal matters are}} waiting on the client for something.",
+        "approvals": "{pending, plural, =0 {Nothing is} one {1 request is} other {# requests are}} waiting on a decision across the firm, {overdue, plural, =0 {none of them past due} one {1 of them past due} other {# of them past due}}.",
+        "filings": "{count, plural, one {1 filing is past its due date and still undecided} other {# filings are past their due date and still undecided}}.",
+        "noFilings": "No filing is past its due date.",
+        "busiest": "The client with the most open work is {client}, with {count, plural, one {1 engagement} other {# engagements}}.",
+        "noBusiest": "No client currently has open work on the books.",
+        "hours": "{total} hours are recorded across the last {weeks, plural, one {week} other {# weeks}}, against a target of {target} a week.",
+        "provenance": "Counted from the legal matters, approvals and hours this workspace holds — the same figures the dashboard shows. Nothing here is estimated.",
+        "provenanceNoHours": "Counted from the legal matters and approvals this workspace holds — the same figures the dashboard shows. Nothing here is estimated. Recorded hours are not part of this report, because this rank does not record billable time."
+      },
+      "risk": {
+        "name": "Matter risk overview",
+        "scope": "One file: {ref}",
+        "gone": "That matter is not on the register.",
+        "status": "Where it stands",
+        "lastMoved": "Last moved",
+        "daysAgo": "{count, plural, =0 {Today} one {1 day ago} other {# days ago}}",
+        "unsigned": "Waiting on a signature",
+        "unsignedCount": "{count, plural, one {1 document} other {# documents}}",
+        "nothingUnsigned": "Nothing is awaiting signature",
+        "waiting": "Open on the file",
+        "waitingCount": "{approvals, plural, =0 {No approvals} one {1 approval} other {# approvals}}, {tasks, plural, =0 {no tasks} one {1 task} other {# tasks}}",
+        "nextStep": "Next in the record",
+        "noNext": "Nothing further is listed",
+        "conflicts": "Conflicts check",
+        "provenance": "Read from the engagement record, its documents and its open items. No risk score is given, because nothing here measures one.",
+        "conflictsScope": "Searched against the firm’s own register — the clients it acts for, the parties it is against, transaction counterparties, recorded affiliations and declined work. Run the check on the conflicts screen for a named party; a clean result there means no record names them, not that there is no conflict."
+      },
+      "send": {
+        "heading": "Send to the client",
+        "caption": "Demo: nothing is sent. A partner approves every send first, and the furthest it goes is “Queued: demo”.",
+        "practiceInternal": "This summary is the firm’s own and is not sent to clients. A matter’s client update can be sent from the “Matter risk overview” tab, after a partner approves it.",
+        "channels": {
+          "legend": "Channels",
+          "platform": "On platform",
+          "email": "Email",
+          "whatsapp": "WhatsApp",
+          "hint": "On platform posts to the client’s portal. Email and WhatsApp are not connected in this demo."
+        },
+        "preview": {
+          "heading": "What {client} receives",
+          "to": "To",
+          "subject": "Subject",
+          "subjectLine": "Update on {ref}: {title}",
+          "status": "Where it stands: {status}.",
+          "next": "Next step: {step}, on {date}.",
+          "noNext": "Nothing is scheduled on the file yet.",
+          "waiting": "{count, plural, one {1 document is waiting for your signature in the portal.} other {# documents are waiting for your signature in the portal.}}",
+          "nothingWaiting": "Nothing is waiting on you at the moment.",
+          "signoff": "{lead}, {firm}",
+          "internalLeftOut": "The firm’s internal figures (tasks, approvals and the conflict check) are left out of what the client receives."
+        },
+        "status": {
+          "heading": "Approval and status",
+          "none": "Not requested yet. Choose the channels, read the preview, then ask a partner to approve it.",
+          "awaiting": "Awaiting partner approval",
+          "queued": "Queued: demo",
+          "requested": "Requested by {name} at {time}, this session.",
+          "approved": "Approved by {name} at {time}, this session. Nothing has been sent.",
+          "needsPartner": "A partner has to approve this before it is queued."
+        },
+        "actions": {
+          "request": "Send for partner approval",
+          "requestAgain": "Send again for approval",
+          "approve": "Approve and queue"
+        },
+        "done": {
+          "requested": "Sent for a partner’s approval. Nothing has gone to the client.",
+          "queued": "Approved and queued: demo. Nothing has gone to the client."
+        },
+        "errors": {
+          "noChannel": "Choose at least one channel.",
+          "notPermitted": "Approving a send is a partner’s action.",
+          "notFound": "There is no request on this matter to approve.",
+          "notAwaiting": "This request is not waiting for approval."
+        }
+      }
+    },
+    "canvas": {
+      "title": "Document canvas",
+      "subtitle": "Drafting, with structural suggestions",
+      "picker": "Choose a draft",
+      "draft": "The draft",
+      "placeholderCaption": "Placeholder content — this product stores no document text",
+      "placeholderBody": "Placeholder — no document text is stored in this prototype.",
+      "noBody": "The sections above are empty on purpose. This workspace records a document’s name, size, status and engagement, and never its contents — so nothing here invents clause language for a firm to read as its own.",
+      "sections": {
+        "2": "Section 2 — Definitions",
+        "4": "Section 4 — Governing law",
+        "5": "Section 5 — Interpretation",
+        "6": "Section 6 — Indemnities"
+      },
+      "status": {
+        "draft": "Draft",
+        "awaitingSignature": "Needs signature",
+        "final": "Final"
+      },
+      "suggestionsHeading": "Suggestions",
+      "suggestionsCaption": "Drafting and structure only — never a legal conclusion",
+      "suggestions": {
+        "governingLaw": "This clause doesn’t specify a governing-law jurisdiction. Your other cross-border agreements on file for {client} — {count, plural, one {1 document} other {# documents}} — typically include one; consider adding it here.",
+        "repeatedDefinition": "This paragraph repeats the definition already given in {section}.",
+        "capMismatch": "Flagging for review: this indemnification cap doesn’t match the range used elsewhere in this matter’s documents ({count, plural, =0 {no others on file} one {1 other on file} other {# others on file}})."
+      },
+      "noActions": "Suggestions are read-only here. Accepting one would edit the document, and editing comes in a later batch.",
+      "empty": {
+        "title": "No draft to open",
+        "body": "Nothing in the shared documents is at draft status."
+      },
+      "versions": {
+        "heading": "Version history",
+        "count": "{count, plural, one {1 saved version} other {# saved versions}}",
+        "current": "Current",
+        "noDiff": "Who saved it and when. There is no document body in this prototype, so there is nothing to compare between versions and nothing to restore — this is the record of when the file moved, not of what changed in it."
+      },
+      "ocr": {
+        "subtitle": "Converted from a scan, in this browser",
+        "entry": "Have it only on paper? Upload a scanned PDF or a photo of the page and convert it to editable text.",
+        "import": {
+          "open": "Upload a scan",
+          "title": "Convert a scan to editable text",
+          "description": "A scanned PDF or a photo of a page, read by OCR into text you can edit, check and export to Word.",
+          "privacy": "Your file never leaves your browser. The reader runs on this device, and nothing is uploaded to SynQanun or to anyone else. The first conversion downloads the reader and its Arabic and English language data (about 8 MB) from this site, once.",
+          "limits": "It reads printed Arabic and English. Handwriting, stamps, signatures, faint, low-resolution or skewed scans may read badly. Every word it was unsure of is highlighted for you to check.",
+          "fileLabel": "Scanned document",
+          "fileHint": "PDF, PNG, JPEG or WebP. Up to {pages} pages are read.",
+          "sample": "Try it with the sample scan (a two-page test letter, Arabic and English)",
+          "convert": "Convert to editable (OCR)",
+          "cancel": "Cancel",
+          "stop": "Stop",
+          "progressLabel": "Conversion progress",
+          "stage": {
+            "rendering": "Preparing page {page} of {pages}…",
+            "loadingReader": "Loading the reader (first time only)…",
+            "reading": "Reading page {page} of {pages}: {percent}%"
+          },
+          "errors": {
+            "noFile": "Choose a file first.",
+            "type": "That file is not a PDF or an image. Choose a PDF, PNG, JPEG or WebP.",
+            "failed": "The file could not be read. It may be damaged or password-protected. Nothing was uploaded."
+          }
+        },
+        "loading": "Opening the converted document from this browser…",
+        "missing": {
+          "title": "This conversion is not in this browser",
+          "body": "Converted documents are kept only in the browser that converted them, and only the five most recent. Convert the scan again to open it here."
+        },
+        "badges": {
+          "local": "Kept in this browser",
+          "check": "Machine-read: check it"
+        },
+        "summary": "{pages, plural, one {1 page} other {# pages}} · {words, plural, one {1 word} other {# words}} · {low, plural, =0 {no words to check} one {1 word to check} other {# words to check}} · mean confidence {mean}%",
+        "privacy": "Read in your browser. The file, the page images and the text have not left this device.",
+        "limits": "OCR can misread. Handwriting and poor scans read badly. Check the highlighted words against the original before relying on the text.",
+        "export": "Export to Word (.docx)",
+        "word": {
+          "action": "Open in Microsoft Word",
+          "slot": "Integration slot: Microsoft 365 is not connected",
+          "note": "Opening in Word for the web will need the firm’s Microsoft 365 to be connected. When it is, the file will be uploaded to your OneDrive, and this screen will say so before it does. For now, export the .docx."
+        },
+        "discard": "Remove from this browser",
+        "legend": {
+          "sample": "unsure",
+          "body": "A highlighted, dotted-underlined word was read with under {threshold}% confidence. Hover it for the figure. Editing a line clears its highlights."
+        },
+        "saving": "Saving in this browser…",
+        "saved": "Saved in this browser",
+        "lowWord": "Low confidence: {confidence}%",
+        "page": {
+          "heading": "Page {page} of {pages}",
+          "caption": "{low, plural, =0 {Nothing to check} one {1 word to check} other {# words to check}} · confidence {confidence}%",
+          "imageAlt": "Scanned page {page}, as uploaded",
+          "original": "The original, as scanned",
+          "textHeading": "Editable text of page {page}"
+        }
+      }
+    },
+    "matterStatus": {
+      "line1": "{ref} — {title} — is at \"{status}\", for {client}.",
+      "line2": "It is led by {lead}. Where it stands: {phase}.",
+      "line3": "Next in the record: {title}, on {date}.",
+      "noNext": "Nothing further is listed in the record yet.",
+      "line4": "{documents, plural, =0 {No documents have} one {1 document has} other {# documents have}} been shared with the client, {tasks, plural, =0 {no tasks are} one {1 task is} other {# tasks are}} open on it, and {approvals, plural, =0 {nothing is} one {1 item is} other {# items are}} waiting on a decision.",
+      "line2NoLead": "No lead is recorded on the file. Where it stands: {phase}."
+    },
+    "sources": {
+      "engagement": "Engagement record",
+      "client": "Client record",
+      "ledger": "Fee statements",
+      "calendar": "Calendar",
+      "approvals": "Approvals queue"
+    },
+    "digest": {
+      "title": "Digest",
+      "subtitle": "Today, from the records this workspace already holds",
+      "salutation": {
+        "morning": "Good morning",
+        "afternoon": "Good afternoon",
+        "evening": "Good evening"
+      },
+      "opening": "{salutation}. You have {events, plural, =0 {nothing on your calendar today} one {1 thing on your calendar today} other {# things on your calendar today}}, and {review, plural, =0 {nothing waiting on your review} one {1 item waiting on your review} other {# items waiting on your review}}. Want the details?",
+      "placeholder": "Ask about today, or about a matter…",
+      "send": "Ask",
+      "you": "You",
+      "suggestions": "Try one of these",
+      "sourcesLabel": "Built from",
+      "unmatched": "I do not have anything on that in this demo — try asking about today’s schedule or a specific matter.",
+      "today": {
+        "prompt": "Yes — what’s on today?",
+        "keywords": "yes|today|detail|details|schedule|calendar|diary|agenda",
+        "none": "Nothing is on your calendar today.",
+        "heading": "On today’s calendar: {count, plural, one {1 entry} other {# entries}}.",
+        "entryTimed": "{time} — {title} · {detail}",
+        "entryUntimed": "{title} · {detail}",
+        "reviewNone": "Nothing is waiting on your decision.",
+        "review": "{count, plural, one {1 item is} other {# items are}} waiting on your decision. First up: {first}.",
+        "calendarRef": "Today",
+        "approvalsRef": "Your queue"
+      },
+      "matter": {
+        "prompt": "Any updates on {ref}?",
+        "keywords": "update|updates|matter|status"
+      },
+      "voice": {
+        "demo": "Demo: scripted, no microphone or speech is processed",
+        "modeLabel": "How to follow the Digest",
+        "modeVoice": "Voice",
+        "modeText": "Text chat",
+        "assistant": "Mueen",
+        "mic": "Play the next turn",
+        "stop": "Stop",
+        "restart": "Start over",
+        "states": {
+          "idle": "Ready. Press the microphone to play the next scripted turn.",
+          "listening": "Listening…",
+          "speaking": "Speaking…",
+          "done": "That is the end of the scripted conversation."
+        },
+        "transcript": "Transcript",
+        "caption": "Now"
+      }
+    }
+  },
+  "legalDatabase": {
+    "title": "Legal database",
+    "subtitle": "Reference search — no source connected yet",
+    "search": {
+      "label": "Search the library",
+      "placeholder": "Search statutes, judgments or commentary…",
+      "submit": "Search",
+      "resultTitle": "Nothing was searched",
+      "result": "No legal source is connected to this workspace, so “{query}” was not looked up and no result was produced. The sample entries below are unchanged.",
+      "dismiss": "Clear"
+    },
+    "filters": {
+      "kind": "Type",
+      "allKinds": "Every type",
+      "jurisdiction": "Issuing body",
+      "allJurisdictions": "Every issuing body",
+      "clear": "Clear filters"
+    },
+    "kinds": {
+      "judgment": "Judgment",
+      "statute": "Statute",
+      "regulation": "Regulation",
+      "commentary": "Commentary"
+    },
+    "sample": {
+      "heading": "Sample entries — not legal source material",
+      "body": "These records are placeholders. Their body text is literal Lorem Ipsum so that nothing on this screen can be read, copied or cited as law. Type, issuing body and date are real fields, and the filters above genuinely narrow them; free-text search is not modelled, because there is nothing behind it to search."
+    },
+    "results": {
+      "count": "Showing {shown, plural, =0 {none} one {1} other {#}} of {total, plural, one {1 sample entry} other {# sample entries}}.",
+      "noneTitle": "No sample entry matches those filters",
+      "noneBody": "Clear one of them to see the rest of the sample set."
+    },
+    "entry": {
+      "issued": "Issued",
+      "bodyCaption": "Placeholder text — not a legal source",
+      "sampleBody": "The excerpt above is placeholder text, not law.",
+      "read": "Open the full text"
+    }
+  },
+  "staffSettings": {
+    "title": "Settings",
+    "tabsLabel": "Settings sections",
+    "tabs": {
+      "general": "General & profile",
+      "team": "Team & roster",
+      "access": "Team access",
+      "integrations": "Integrations",
+      "activity": "Activity & audit log"
+    },
+    "notPermitted": {
+      "title": "This section is open to partners",
+      "body": "Your workspace is signed in as {rank}. The rest of Settings is available to you from the tabs above."
+    },
+    "activity": {
+      "scope": {
+        "heading": "What this log covers",
+        "covers": "Approval submissions and decisions. Those are the actions this workspace records an actor, a date and a record for, so those are the actions it can show.",
+        "omits": "It is not a complete audit trail. Document shares and fee statements are dated but do not record who performed them; task assignments name people but carry no date; and sign-ins are not recorded at all, because this prototype has no authentication behind it. Nothing here is inferred — an entry naming somebody who did not demonstrably do it would be worse than no entry."
+      },
+      "filters": {
+        "actor": "Staff member",
+        "allActors": "Everyone",
+        "action": "Action",
+        "allActions": "Every action",
+        "clear": "Clear filters"
+      },
+      "actions": {
+        "approvalSubmitted": "Sent for approval",
+        "approvalApproved": "Approved",
+        "approvalChangesRequested": "Changes requested"
+      },
+      "columns": {
+        "when": "Date",
+        "who": "Staff member",
+        "what": "Action",
+        "record": "Record"
+      },
+      "count": "Showing {shown, plural, =0 {none} one {1} other {#}} of {total, plural, one {1 recorded event} other {# recorded events}}.",
+      "noEngagement": "No engagement yet",
+      "empty": {
+        "title": "No event matches those filters",
+        "body": "Clear one of them to see the rest of the log."
+      }
+    },
+    "team": {
+      "intro": "Everyone with an account at the firm, their rank, and the open work they are on. Reading this is open to all staff; adding someone is a partner’s action.",
+      "provisioning": {
+        "heading": "How staff get access",
+        "body": "Adding someone creates their account and issues a temporary password. There is no invitation to accept and nothing expires — they sign in at the firm gateway with that password and change it whenever they choose. A person stays at “Temporary password issued” until they have replaced it."
+      },
+      "filters": {
+        "status": "Status",
+        "allStatuses": "Every status",
+        "rank": "Rank",
+        "allRanks": "Every rank",
+        "clear": "Clear filters"
+      },
+      "status": {
+        "active": "Active",
+        "temporaryPasswordIssued": "Temporary password issued",
+        "deactivated": "Deactivated"
+      },
+      "columns": {
+        "member": "Member",
+        "rank": "Rank",
+        "work": "Open work",
+        "status": "Status",
+        "joined": "Joined"
+      },
+      "you": "(you)",
+      "openEngagements": "{count, plural, =0 {Nothing open} one {1 open engagement} other {# open engagements}}",
+      "addedThisSession": "Added in this session",
+      "count": "Showing {shown, plural, =0 {none} one {1} other {#}} of {total, plural, one {1 person} other {# people}}.",
+      "empty": {
+        "title": "Nobody matches those filters",
+        "body": "Clear one of them to see the rest of the roster."
+      },
+      "add": {
+        "open": "Add team member",
+        "title": "Add team member",
+        "description": "Creates their account on the roster and sets their rank.",
+        "name": "Full name",
+        "namePlaceholder": "As it should appear to colleagues",
+        "email": "Firm email address",
+        "emailHint": "Must be a firm address at mrpartners.eg.",
+        "emailPlaceholder": "name@mrpartners.eg",
+        "rank": "Rank",
+        "beforeYouAdd": "This creates the record only. No password is generated and no email is sent — you will need to pass their credentials on yourself.",
+        "cancel": "Cancel",
+        "submit": "Add to roster",
+        "errors": {
+          "notPermitted": "Adding someone to the roster is a partner’s action.",
+          "nameRequired": "Enter the person’s name.",
+          "emailRequired": "Enter a firm email address.",
+          "emailInvalid": "That does not look like an email address.",
+          "emailDomain": "Use a firm address ending in @mrpartners.eg.",
+          "emailTaken": "Somebody on the roster already uses that address.",
+          "rankInvalid": "Choose a rank."
+        },
+        "done": {
+          "title": "Added to the roster",
+          "added": "{name} is on the roster now, at “Temporary password issued”.",
+          "notSentTitle": "No password was created and nothing was sent",
+          "notSent": "This prototype does not generate credentials or send mail. In the finished product they would receive a temporary password; here you would have to arrange that yourself.",
+          "session": "The row also lasts only as long as this demo is running — it will not survive a restart.",
+          "close": "Done"
+        },
+        "rankPlaceholder": "Choose a rank"
+      }
+    },
+    "general": {
+      "readOnly": {
+        "heading": "Nothing on this screen saves yet",
+        "body": "The firm’s identity is tenant configuration rather than firm data, so it is not edited from inside the workspace. Your rank is set by a partner on Team & roster, because it decides what you can see. Changing the address you sign in with needs authentication that this prototype does not have. Rather than show buttons that would do nothing, the screen shows what is configured and where each value comes from."
+      },
+      "status": {
+        "active": "Active",
+        "temporaryPasswordIssued": "Temporary password issued",
+        "deactivated": "Deactivated"
+      },
+      "account": {
+        "heading": "Your account",
+        "caption": "How you appear to colleagues and on the records you touch.",
+        "name": "Name",
+        "email": "Email address",
+        "rank": "Rank",
+        "rankSetBy": "Set by a partner on Team & roster.",
+        "status": "Account status",
+        "joined": "Joined",
+        "missing": "Your account is not on the roster."
+      },
+      "firm": {
+        "heading": "This workspace",
+        "caption": "What the product is configured as for this firm.",
+        "name": "Firm name",
+        "domain": "Domain",
+        "domainNote": "Staff email addresses and the client portal address are both built from this.",
+        "timeZone": "Firm time zone",
+        "timeZoneNote": "Every date and time in the product is the firm’s local time, not the reader’s. Read from the zone each time it is shown, so it stays right across the summer change.",
+        "language": "Interface language",
+        "languageValue": "English and Arabic, switched per reader.",
+        "languageNote": "The toggle is in the top bar on every screen, where it stays reachable — it is deliberately not buried in settings.",
+        "branding": "Client branding",
+        "noLogo": "No client logo is configured.",
+        "hasLogo": "A client logo is configured.",
+        "noAccent": "No accent colour is set, so the product renders in its own palette.",
+        "hasAccent": "An accent colour is set."
+      }
+    },
+    "integrations": {
+      "notice": {
+        "heading": "What “connected” means here",
+        "body": "These are the connections the demo starts with, set in fixture data. No provider has actually been authorised, no token is held, and nothing is syncing — a row marked connected is describing the state of the demonstration, not a live link.",
+        "noControls": "There is no Connect or Disconnect on this screen. The real authorisation flows belong to the dev team’s phase, because each provider requires business verification on their side before it can be built at all — so a button here would sit inert for two whole phases, and a Disconnect would claim to withdraw access that was never granted."
+      },
+      "count": "{connected, plural, =0 {No categories are} one {1 category is} other {# categories are}} connected, out of {total}.",
+      "connected": "Connected",
+      "notConnected": "Not connected",
+      "providerOn": "on",
+      "providerOff": "off",
+      "account": "Firm account:",
+      "categories": {
+        "mail": {
+          "name": "Email and calendar",
+          "detail": "Where the firm’s mail and court diary would sync from. The calendar follows the mail provider rather than being chosen separately."
+        },
+        "meetings": {
+          "name": "Meetings",
+          "detail": "Video links attached to hearings, client calls and internal meetings. A firm may use more than one."
+        },
+        "signature": {
+          "name": "Electronic signature",
+          "detail": "Where documents would be sent for signature and chased."
+        },
+        "payments": {
+          "name": "Payments",
+          "detail": "Where clients would settle a fee statement."
+        },
+        "government": {
+          "name": "Government e-services",
+          "detail": "Najiz for filings and hearing dates, Wathq for verifying a client’s commercial registration. Both are Saudi Ministry systems a firm files through directly."
+        }
+      }
+    },
+    "access": {
+      "notice": {
+        "heading": "Team access is demo state",
+        "body": "Changes here last for this session and are not sent anywhere: no account is locked and nobody is signed out. Every change is recorded in the audit below, with who made it and when."
+      },
+      "audit": {
+        "heading": "Access audit",
+        "caption": "{count, plural, =0 {No changes this session} one {1 change this session} other {# changes this session}}",
+        "empty": "No one’s access has been changed in this session.",
+        "thisSession": "this session"
+      },
+      "log": {
+        "removed": "Access removed: {subject}, by {actor}",
+        "granted": "Access given: {subject}, by {actor}"
+      },
+      "grant": {
+        "heading": "Give access",
+        "caption": "To a colleague on the roster who cannot sign in.",
+        "label": "Colleague",
+        "choose": "Choose…",
+        "action": "Give access",
+        "none": "Everyone on the roster has access."
+      },
+      "members": {
+        "heading": "Who has access",
+        "caption": "{count, plural, =0 {Nobody} one {1 person can sign in} other {# people can sign in}}",
+        "you": "You",
+        "changed": "Access given back this session"
+      },
+      "remove": {
+        "action": "Remove access",
+        "label": "Remove access for {name}",
+        "confirmTitle": "Remove access for {name}?",
+        "confirmBody": "{name} will no longer be able to sign in to the workspace. Their files, time and history stay as they are.",
+        "audited": "This is recorded in the access audit. In this demo nothing is locked, and the change lasts for this session only.",
+        "cancel": "Keep access",
+        "confirm": "Remove access"
+      },
+      "done": {
+        "removed": "Access removed for {name}. Recorded in the audit.",
+        "granted": "Access given to {name}. Recorded in the audit."
+      },
+      "errors": {
+        "notPermitted": "Changing access is a partner’s action.",
+        "notFound": "That person is not on the roster.",
+        "self": "You cannot remove your own access.",
+        "unchanged": "Nothing changed: their access was already that way.",
+        "chooseMember": "Choose a colleague first."
+      }
+    }
+  },
+  "conflicts": {
+    "title": "Conflict check",
+    "subtitle": "Search what this firm already knows about a party",
+    "scope": {
+      "heading": "What this searches",
+      "covers": "Everyone the firm acts for, every party it is against on a contentious matter, every counterparty on a transaction, the affiliations it has recorded, and the work it has declined.",
+      "limits": "It matches names as they are written in the firm’s own records, in either language. It does not know trading names, transliteration variants or corporate groups it has not been told about — so a clean result means no record here names that party, which is not the same as there being no conflict."
+    },
+    "search": {
+      "label": "Party name",
+      "placeholder": "Company or person to check…",
+      "submit": "Check",
+      "scope": "Matched against {count, plural, one {1 party} other {# parties}} on the register."
+    },
+    "tooShort": "Type at least two characters.",
+    "found": "{count, plural, one {1 record names} other {# records name}} “{query}”.",
+    "none": {
+      "title": "No record in this firm names “{query}”",
+      "body": "Nothing on the register matches. That is not a clearance — the firm’s register is only what the firm has written down, and it does not cover trading names, group companies it has not recorded, or anything it has never been told."
+    },
+    "noVerdict": "These are records, not a decision. Whether any of them prevents the firm from acting depends on what was learned, what was consented to and what the retainer says — none of which is on this screen.",
+    "kinds": {
+      "client": "The firm acts for them",
+      "adverse": "The firm is against them",
+      "counterparty": "Transaction counterparty",
+      "related": "Recorded affiliation",
+      "declined": "Work the firm declined"
+    },
+    "openRecord": "Open the record",
+    "noRecord": "No file — the work was never taken on"
+  },
+  "newDocument": {
+    "open": "New document",
+    "title": "Start a document",
+    "description": "Records what the firm is writing. It does not create a file and the client is not told.",
+    "typeLabel": "What kind of document is this?",
+    "types": {
+      "letter": {
+        "label": "Letter",
+        "hint": "Addressed to a named party, over the firm’s name."
+      },
+      "memo": {
+        "label": "Memo",
+        "hint": "Written for the file or for colleagues, not for sending."
+      },
+      "filing": {
+        "label": "Filing",
+        "hint": "Lodged with a registry or a regulator."
+      },
+      "contract": {
+        "label": "Contract",
+        "hint": "An instrument the parties will execute."
+      },
+      "correspondence": {
+        "label": "Correspondence",
+        "hint": "An exchange logged to the file — email, note of a call."
+      },
+      "courtSubmission": {
+        "label": "Court submission",
+        "hint": "A pleading or application for a court or tribunal."
+      },
+      "other": {
+        "label": "Other",
+        "hint": "None of the above. Better than a wrong label."
+      }
+    },
+    "titleLabel": "Title",
+    "titleHint": "Whatever the document will be called. Either language.",
+    "titlePlaceholder": "e.g. Skeleton argument — second draft",
+    "onFile": "On file",
+    "beforeYouCreate": "This records that a document is being written. No file is produced, nothing is shared with the client, and the record lasts as long as this session.",
+    "cancel": "Cancel",
+    "submit": "Create",
+    "errors": {
+      "titleRequired": "Give the document a title.",
+      "typeInvalid": "Choose what kind of document this is.",
+      "engagementInvalid": "That file could not be found.",
+      "notPermitted": "You cannot create a document here."
+    },
+    "done": {
+      "title": "Document started",
+      "scopeTitle": "What this did and did not do",
+      "notShared": "Nothing was shared with the client. The portal is unchanged, and sharing is a separate act that is not built.",
+      "noFile": "No file was produced. There is no document body anywhere in this prototype — this is a record that one is being written.",
+      "session": "The record lasts as long as this session and is not saved.",
+      "close": "Close",
+      "lead": "Added to this file:"
+    }
+  },
+  "logTime": {
+    "open": "Log time",
+    "title": "Record time",
+    "description": "Hours on a file. Nothing here prices the work or bills anyone.",
+    "fileLabel": "File",
+    "filePlaceholder": "Choose a legal matter",
+    "dateLabel": "Date worked",
+    "dateHint": "The firm’s calendar, not yours.",
+    "durationLabel": "How long",
+    "durationHint": "Hours and minutes, as worked. Nothing is rounded up.",
+    "hoursLabel": "Hours",
+    "hoursSuffix": "h",
+    "minutesLabel": "Minutes",
+    "minutesSuffix": "m",
+    "duration": "{hours}h {minutes}m",
+    "descriptionLabel": "What was done",
+    "descriptionHint": "The line a client would read on a statement.",
+    "descriptionPlaceholder": "e.g. Reviewed the opposing submissions and settled the reply",
+    "billableLabel": "Can this be charged to the client?",
+    "billableYes": "Chargeable",
+    "billableYesHint": "Goes on the client’s next statement.",
+    "billableNo": "Not chargeable",
+    "billableNoHint": "Recorded against the file, written off.",
+    "beforeYouLog": "This records hours, not money. There is no rate card in this prototype, so nothing here produces an amount — pricing happens when an invoice is drafted.",
+    "cancel": "Cancel",
+    "submit": "Record",
+    "errors": {
+      "engagementInvalid": "Choose the file this time was worked on.",
+      "dateRequired": "Choose the date the work was done.",
+      "dateFuture": "That date is in the future on the firm’s calendar. Time not yet worked cannot be recorded.",
+      "dateTooOld": "That is outside the four weeks this screen covers.",
+      "durationRequired": "Enter how long the work took.",
+      "descriptionRequired": "Say what was done.",
+      "billableRequired": "Say whether this can be charged to the client.",
+      "notPermitted": "Your rank does not record billable time."
+    },
+    "done": {
+      "title": "Time recorded",
+      "lead": "Added to the ledger",
+      "scopeTitle": "What this did and did not do",
+      "moved": "Your recorded hours have moved by this much. The chart behind this dialog is already showing it.",
+      "noMoney": "No amount was produced. There is no rate card in this prototype, so the entry is hours until an invoice prices it.",
+      "session": "The entry lasts as long as this session and is not saved.",
+      "another": "Record another",
+      "close": "Close"
+    },
+    "noFiles": {
+      "title": "You are not on a file yet",
+      "body": "An hour is recorded against a legal matter, and none is assigned to you. Time can be logged once you are on one."
+    }
+  },
+  "invoiceBuilder": {
+    "title": "Raise a fee statement",
+    "subtitle": "Assemble a draft from recorded time. Nothing is issued here.",
+    "back": "Back to billing",
+    "fileLabel": "File",
+    "fileHint": "Its unbilled, chargeable time is drawn in below.",
+    "filePlaceholder": "Choose a legal matter",
+    "descriptionLabel": "What the statement covers",
+    "descriptionHint": "The line at the head of the statement.",
+    "descriptionPlaceholder": "e.g. Fees and disbursements, September",
+    "lines": {
+      "heading": "Lines",
+      "caption": "Drawn from recorded time. Amounts are entered by you.",
+      "add": "Add a line",
+      "description": "Description",
+      "descriptionPlaceholder": "What is being billed",
+      "amount": "Amount ({currency})",
+      "recorded": "{hours}h {minutes}m recorded",
+      "noTime": "Not from recorded time",
+      "remove": "Remove this line",
+      "total": "Total",
+      "unpriced": "{count, plural, one {1 line has no amount yet} other {# lines have no amount yet}}",
+      "emptyTitle": "Nothing to draw in.",
+      "emptyTime": "There is no unbilled chargeable time on this file. Record some, and it appears here.",
+      "emptyExpenses": "There are no expenses to draw from either: this prototype has no disbursement ledger, so a court fee or a courier has to be added as a line by hand."
+    },
+    "beforeYouSave": "Saving records the statement inside the firm. It is not sent, the client cannot see it, and the time on it is marked billed so it cannot be charged twice.",
+    "save": "Save draft",
+    "send": "Send to client",
+    "notSent": "Nothing was sent. No statement was issued, no mail left the building, and the client’s Invoices list is unchanged — issuing a fee statement is not built in this prototype.",
+    "errors": {
+      "engagementInvalid": "Choose the file these fees were incurred on.",
+      "descriptionRequired": "Say what the statement covers.",
+      "noLines": "A statement needs at least one line.",
+      "lineDescriptionRequired": "Every line needs a description.",
+      "lineAmountRequired": "Every line needs an amount before the draft can be saved.",
+      "entryAlreadyBilled": "Some of this time has already been drawn into another draft.",
+      "notPermitted": "Your rank cannot raise a fee statement."
+    },
+    "saved": {
+      "title": "Draft saved",
+      "lines": "{count, plural, one {1 line} other {# lines}}",
+      "scopeTitle": "What this did and did not do",
+      "notIssued": "Nothing was issued and nothing was sent. The client’s Invoices list is unchanged, and it stays that way until a real send exists.",
+      "timeConsumed": "The time on this draft is now marked billed, so it cannot be drawn into a second statement.",
+      "session": "Data persisted permanently in the PostgreSQL database.",
+      "toLedger": "Back to billing",
+      "another": "Start another"
+    },
+    "notPermitted": {
+      "title": "Raising fee statements is above your rank",
+      "body": "A {rank} does not raise fee statements at this firm. The partner or senior associate on the file does."
+    }
+  },
+  "signatureRequest": {
+    "title": "Prepare a signature request",
+    "subtitle": "Decide who is asked, and for what. Nothing is sent from here.",
+    "back": "Back to the file",
+    "scope": {
+      "heading": "What this does",
+      "body": "It records who the firm intends to ask to sign, and what each of them is asked for. The document’s status does not change and the client is not told.",
+      "noProvider": "No signature provider is connected to this workspace, so there is nothing that could send a request or collect a signature. That integration is a later track."
+    },
+    "documentLabel": "Document",
+    "documentHint": "Only documents already shared with a client can be signed.",
+    "documentPlaceholder": "Choose a document",
+    "signers": {
+      "heading": "Who is asked",
+      "caption": "People at the client with portal access. Tick what each is asked to provide.",
+      "emptyTitle": "Nobody at this client can sign in.",
+      "emptyBody": "A signature request goes to someone who can open the portal the document lives in, so there is nobody to ask yet. Invite a contact from the client’s record first."
+    },
+    "fields": {
+      "signature": "Signature",
+      "initials": "Initials",
+      "dateSigned": "Date"
+    },
+    "noteLabel": "Covering note",
+    "noteHint": "Optional. It would go with the request.",
+    "notePlaceholder": "Anything the signatory should know.",
+    "beforeYouPrepare": "Preparing records the firm’s intention inside the workspace. The document is not put in front of anyone, and nothing reaches the client.",
+    "save": "Prepare request",
+    "send": "Send for signature",
+    "notSent": "Nothing was sent. No request left the building, no signature was collected, and the document is unchanged in the client’s portal — there is no signature provider connected to this workspace.",
+    "errors": {
+      "documentInvalid": "Choose a document that has been shared with a client.",
+      "noSigners": "Choose at least one person to sign.",
+      "signerInvalid": "That person is not on this client’s portal roster.",
+      "fieldsRequired": "Say what each signatory is asked to provide.",
+      "notPermitted": "Your rank does not prepare signature requests."
+    },
+    "done": {
+      "title": "Request prepared",
+      "signers": "{count, plural, one {1 signatory} other {# signatories}}",
+      "scopeTitle": "What this did and did not do",
+      "notSent": "Nothing was sent and no signature was collected. There is no signature provider connected.",
+      "clientUnchanged": "The client’s portal is unchanged. The document still reads exactly as it did, and nobody has been asked to sign anything.",
+      "session": "The record lasts as long as this session and is not saved.",
+      "another": "Prepare another"
+    },
+    "notPermitted": {
+      "title": "Signature requests are above your rank",
+      "body": "A {rank} does not decide who signs a client’s documents at this firm. The lawyer running the file does."
+    },
+    "noDocuments": {
+      "title": "Nothing has been shared on this file",
+      "body": "A signature is requested on a document the client can already see. Share one from the file first."
+    }
+  },
+  "lawReader": {
+    "subtitle": "Full text",
+    "back": "Back to the legal database",
+    "notice": {
+      "heading": "This is sample text, not law",
+      "body": "No legal corpus is connected to this workspace. The sections below are placeholder text — Lorem Ipsum — so that nothing on this screen can be mistaken for an instrument or copied into a filing.",
+      "noProvenance": "Nothing here has been authenticated, translated or certified by anyone, and there is no in-force date, amendment history or page reference, because there is no document behind it."
+    },
+    "position": "Entry {position} of {total} in the sample set",
+    "sectionsCaption": "Numbered sections, as an instrument would have. The text in them is placeholder.",
+    "copyReference": "Copy reference",
+    "copied": "Copied.",
+    "copyFailed": "Could not copy — your browser refused clipboard access.",
+    "navLabel": "Other entries",
+    "previous": "Previous entry",
+    "next": "Next entry"
+  },
+  "registerBulk": {
+    "count": "{count, plural, one {1 file selected} other {# files selected}}",
+    "exportCsv": "Export as CSV",
+    "clear": "Clear",
+    "csv": {
+      "reference": "Reference",
+      "title": "Title",
+      "type": "Matter type",
+      "client": "Client",
+      "venue": "Forum",
+      "status": "Status",
+      "lead": "Lead",
+      "updated": "Last updated",
+      "next": "Next date"
+    },
+    "reassign": {
+      "open": "Change the lead",
+      "title": "Change who leads these files",
+      "description": "{count, plural, one {One file will be reassigned.} other {# files will be reassigned.}}",
+      "affected": "Files this will move",
+      "leadLabel": "New lead",
+      "leadPlaceholder": "Choose who takes responsibility",
+      "leadHint": "Partners and senior associates. Working on a file and being responsible for it are different things.",
+      "before": "This records the firm’s decision. Nobody is notified — the person taking these files on finds out because somebody tells them.",
+      "cancel": "Cancel",
+      "submit": "Change the lead",
+      "errors": {
+        "noEngagements": "Select at least one file.",
+        "engagementInvalid": "One of those files could not be found. Nothing was changed.",
+        "leadInvalid": "That person cannot be put in charge of a file.",
+        "notPermitted": "Your rank does not reassign files."
+      },
+      "done": {
+        "title": "Lead changed",
+        "changed": "{count, plural, one {1 file has a new lead.} other {# files have a new lead.}}",
+        "scopeTitle": "What this did and did not do",
+        "notTold": "Nobody was notified. No message was sent and no task moved — the person now responsible for these files has not been told by this product.",
+        "session": "The change lasts as long as this session and is not saved.",
+        "close": "Close"
+      }
+    }
+  },
+  "meetingTranscript": {
+    "subtitle": "Meeting minutes",
+    "back": "Back to the calendar",
+    "notice": {
+      "heading": "Sample minutes. Not a recording, and not a real transcript.",
+      "body": "Nothing recorded this meeting. The exchange below is written sample content held in this demo’s fixtures — it is not what anybody said in the room, and the people named did not say it.",
+      "noRecording": "There is no meeting recorder and no transcription in this product. No audio exists, so there is nothing to play back, nothing to check the text against and no accuracy to report.",
+      "extract": "This is an extract. It covers the opening of a meeting that ran {minutes, plural, one {one minute} other {# minutes}}; the rest of it was never written."
+    },
+    "meeting": {
+      "heading": "The meeting",
+      "when": "When",
+      "where": "Where",
+      "length": "{count, plural, one {1 minute} other {# minutes}}",
+      "counts": "{turns, plural, one {1 entry} other {# entries}}, {speakers, plural, one {1 speaker} other {# speakers}}",
+      "contents": "Contents"
+    },
+    "attendees": {
+      "heading": "In the room",
+      "note": "Taken from the meeting’s own attendee list, not from who appears below. Somebody can be in a meeting without saying anything.",
+      "spoke": "In the minutes",
+      "silent": "Not in the minutes",
+      "you": "You"
+    },
+    "turns": {
+      "heading": "What was said",
+      "elapsed": "Time from the start",
+      "extractEnds": "The last entry is {at} into the meeting. Nothing past that point was ever written."
+    },
+    "footer": {
+      "heading": "What this screen does not do",
+      "noExport": "There is nowhere to send this. No export to the matter file, no download and no copy to the client — the minutes are not a document in this product and the file has no place to put them.",
+      "noAssignment": "Nothing here was turned into a task, a decision or a deadline. No action items were extracted and nobody was assigned anything, so nothing on any colleague’s list came from this page.",
+      "noSummary": "There is no summary. Reading the exchange is the only way to know what it says, which is the honest position when nothing has read it."
+    }
+  },
+  "demoViewer": {
+    "trigger": "Demo control",
+    "heading": "Demo control — not a sign-in",
+    "body": "This prototype has no authentication. Choosing a rank changes which of the demo firm’s people the workspace renders as, so you can review what each one sees. Permissions are real: a rank that may not open a screen is still refused it.",
+    "bodyClient": "This prototype has no authentication. The client portal has one account and one client organisation, so there is nothing to switch between here.",
+    "toClient": "View the client portal",
+    "toClientNote": "The other side of the product — what this firm’s client sees.",
+    "toStaff": "Back to the firm workspace",
+    "toStaffNote": "The firm’s own side, where the five ranks apply."
+  },
+  "demoEntrance": {
+    "heading": "Demo entrance",
+    "body": "There is no sign-in behind the gateways below — this prototype has no authentication, and the buttons on them deliberately do nothing. Use these doors instead.",
+    "staff": "Firm workspace",
+    "staffNote": "The staff side. Switch between the five ranks from the demo control in the top bar.",
+    "client": "Client portal",
+    "clientNote": "What this firm’s client sees of their own legal matters, documents and invoices.",
+    "gateways": "The sign-in screens themselves are at <firm></firm> and <client></client>."
+  },
+  "demoLogin": {
+    "heading": "This demo is password-protected",
+    "subheading": "Enter the shared password you were given.",
+    "passwordLabel": "Demo password",
+    "submit": "Unlock the demo",
+    "descriptor": "AI-native legal operating system",
+    "errors": {
+      "wrong": "That password is not right. Check it against the one you were sent.",
+      "notConfigured": "This deployment has no demo password configured, so nothing can be unlocked. Set DEMO_ACCESS_PASSWORD (or DEMO_PASSWORD) on the deployment, scoped to Production, then redeploy WITHOUT the build cache."
+    },
+    "notice": {
+      "heading": "A prototype, not a live client portal",
+      "body": "Everything behind this door is a working prototype with invented data — the firm, its clients, their legal matters and their invoices are all fictional. There is no real sign-in inside, and no real client information. The password is only here to keep it off the open web."
+    }
+  },
+  "meetings": {
+    "teams": {
+      "join": "Join in Teams",
+      "demo": "Teams connection: demo",
+      "label": "Join “{title}” in Teams",
+      "note": "Teams is not connected in this demo, so this meeting has no link to open. Once the firm connects Teams, the meeting link appears here."
+    }
+  },
+  "mueen": {
+    "openLabel": "Open Mueen, the AI assistant",
+    "closeLabel": "Close Mueen",
+    "name": "Mueen",
+    "isAI": "Mueen is an AI assistant",
+    "stage": {
+      "idle": "Mueen, waiting",
+      "speaking": "Mueen, speaking the recorded greeting",
+      "abstract": "Mueen, answering without a recording"
+    },
+    "greeting": {
+      "play": "Play greeting",
+      "replay": "Play it again",
+      "tapForSound": "Tap to play with sound",
+      "blocked": "Your browser would not start the sound on its own. Press the button to play the greeting with sound.",
+      "mute": "Mute",
+      "unmute": "Unmute",
+      "captionLabel": "What Mueen says",
+      "prerecorded": "Demo: pre-recorded response",
+      "foreignTape": "The greeting was recorded in Arabic; no English take exists yet. Pressing play gives you the Arabic voice, with the English wording below it.",
+      "noTranscript": "No written transcript has been supplied for this recording yet, so it plays without a caption."
+    },
+    "written": {
+      "ask": "What can you do?",
+      "line": "I can go through what is on today, the decisions waiting on you, and where a file stands. Every answer is counted from this firm’s own records, not generated.",
+      "notSpoken": "Demo: a written answer. Nothing is spoken — the greeting is the only recording."
+    },
+    "openDigest": "Open the Digest",
+    "digestNote": "Questions are answered there, from this firm’s own records."
+  }
+}

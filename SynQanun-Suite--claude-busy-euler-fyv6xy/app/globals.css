@@ -1,0 +1,784 @@
+@import 'tailwindcss';
+
+/* ============================================================================
+   SynQanun Suite — design tokens
+   ----------------------------------------------------------------------------
+   Direct transcription of design.md §2 (color), §3 (typography), §5 (layout),
+   §6 (elevation), §8 (breakpoints).
+
+   Brand source of truth is brand-guidelines.md §3–§4. design.md inherits from
+   it; this file inherits from design.md. To change a value: edit
+   brand-guidelines.md first, then design.md, then here. Never here alone.
+
+   Tailwind v4 is configured CSS-first: this `@theme` block IS the theme
+   config — there is no tailwind.config.ts. lib/design-tokens.ts mirrors these
+   same values for TypeScript consumers (charts, canvas, inline SVG) that
+   cannot read a Tailwind class.
+   ========================================================================== */
+
+/* A variant that keys on the DOCUMENT being themed, not the element.
+   Tailwind's built-in `data-themed:` matches the element's own attribute; the
+   attribute is on <html>, set by app/[locale]/layout.tsx beside the palette.
+   Used where a component must differ between accent and themed mode rather
+   than simply resolving a token differently — see Button's secondary variant. */
+@custom-variant themed (&:where([data-themed] *));
+
+@theme {
+  /* --------------------------------------------------------------------------
+     COLOR
+     `--color-*: initial` clears Tailwind's stock palette entirely, so the only
+     colors available as utilities are the ones design.md defines. This is
+     deliberate: it makes `bg-blue-500` or `text-slate-700` a build-visible
+     mistake rather than a silent design-system drift.
+     -------------------------------------------------------------------------- */
+  --color-*: initial;
+
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-white: #ffffff;
+
+  /* Brand — design.md §2 "Brand" / brand-guidelines.md §3.1 */
+  --color-syn-red: #eb1c24; /* Primary actions, active nav state, hot end of brand gradient */
+  --color-syn-garnet: #3d0709; /* Hover/pressed state of red, gradient terminus, dark accents */
+  --color-syn-ink: #000000; /* Logo reproduction ONLY — never a UI text or surface color */
+
+  /* Neutrals — design.md §2 "Neutrals" / brand-guidelines.md §3.2
+     Note there is no `black`: design.md §2 states UI black is gray-900,
+     never pure #000. Omitting the token enforces that rule. */
+  --color-gray-50: #f7f7f8; /* App canvas background */
+  --color-gray-100: #eeeef0; /* Cards, panels, table row alternation */
+  --color-gray-200: #dfdfe3; /* Borders, dividers, input outlines (default state) */
+  --color-gray-300: #c7c7cd; /* Disabled borders */
+  --color-gray-400: #a3a3ac; /* Disabled text, decorative icons. Not placeholder text (2.5:1) — that is gray-500 */
+  --color-gray-500: #6b6b76; /* Secondary/muted text, timestamps, metadata. Was #7a7a85 (4.24:1 on white, 3.66 on gray-100); now AA on every surface — brand-guidelines §3.5 */
+  --color-gray-600: #56565f; /* Default body text */
+  --color-gray-700: #3a3a42; /* Headings, emphasized body text */
+  --color-gray-800: #24242a; /* Dark-mode surface (defined, not yet used — see FUTURE below) */
+  --color-gray-900: #131316; /* Dark-mode canvas / primary UI "black" */
+
+  /* Accent & semantic — design.md §2 "Accent & semantic" / brand-guidelines.md §3.3–3.4 */
+  --color-legal-navy: #1e3a5f; /* Links, info banners, ALL AI-agent surfaces */
+  --color-legal-navy-pressed: #16293f; /* Hover/pressed on a legal-navy fill (the AI button) */
+  --color-success: #1e7a4c; /* Completed steps, confirmations */
+  --color-warning: #b4740e; /* Deadlines approaching, drafts pending review */
+  /* The same amber at 75%, for warning TEXT on its own tint. #b4740e on
+     warning/10 measures 3.44:1 on white and 3.0:1 on a gray-100 row, under
+     the 4.5 small text needs; this holds 4.8:1 or better on every surface a
+     badge sits on. Borders, fills and icons keep `warning`. */
+  --color-warning-text: #87570a;
+  --color-error: #b23a32; /* Validation errors, failed/destructive actions — always icon + label */
+  --color-error-pressed: #8f2e28; /* Hover/pressed on the destructive-confirm fill */
+  --color-info: #1e3a5f; /* Neutral system messages (= legal-navy, brand-guidelines.md §3.4) */
+
+  /* Themed-tenant utilities — so `bg-canvas`, `bg-action`, `border-ornament`
+     and `text-on-dark` exist as Tailwind classes rather than every screen
+     writing `[background:var(--syn-canvas)]`. The variables they point at
+     carry the SynQanun fallbacks, so these are safe in an unthemed tenant. */
+  --color-canvas: var(--syn-canvas);
+  --color-action: var(--syn-action);
+  --color-action-pressed: var(--syn-action-pressed);
+  --color-ink: var(--syn-ink);
+  --color-on-dark: var(--syn-on-dark);
+  --color-ornament: var(--syn-ornament);
+
+  /* Sidebar surfaces. Five tokens rather than one because a charcoal rail and
+     a white one need different values for every layer, and a component cannot
+     ask which it is in. Each falls back to what the sidebar looked like before
+     theming, so an accent-mode tenant is pixel-identical. */
+  --color-sidebar: var(--syn-sidebar-bg, #ffffff);
+  --color-sidebar-edge: var(--syn-sidebar-edge, var(--color-gray-200));
+  --color-sidebar-raised: var(--syn-sidebar-raised, var(--color-gray-100));
+  --color-sidebar-strong: var(--syn-sidebar-strong, var(--color-gray-700));
+  --color-sidebar-muted: var(--syn-sidebar-muted, var(--color-gray-500));
+  /* The active-item edge. Gold on charcoal measures 3.22:1 — enough for a
+     non-text indicator (WCAG 1.4.11), which is all this is. The LABEL beside
+     it takes --color-sidebar-strong, which is white at 9.42:1. */
+  --color-sidebar-active: var(--syn-sidebar-active, var(--color-syn-red));
+
+  /* --------------------------------------------------------------------------
+     TYPOGRAPHY — design.md §3 / brand-guidelines.md §4
+     Families are wired to next/font variables in app/[locale]/layout.tsx.
+     -------------------------------------------------------------------------- */
+  --font-display: var(--font-cairo), system-ui, sans-serif; /* Cairo — display, bilingual */
+  --font-sans: var(--font-inter), var(--font-plex-arabic), system-ui, sans-serif; /* Latin UI body */
+  --font-arabic: var(--font-plex-arabic), var(--font-inter), system-ui, sans-serif; /* Arabic UI body */
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace; /* References/IDs/citations */
+
+  /* Latin scale — design.md §3 table, "Size / Line-height (EN)" column */
+  --text-display: 28px; /* Display / page title — Cairo 800 */
+  --text-display--line-height: 36px;
+  --text-display--font-weight: 800;
+
+  --text-heading: 20px; /* Section heading — Cairo 700 */
+  --text-heading--line-height: 28px;
+  --text-heading--font-weight: 700;
+
+  --text-title: 16px; /* Card/subsection title — Inter / IBM Plex Sans Arabic 600 */
+  --text-title--line-height: 24px;
+  --text-title--font-weight: 600;
+
+  --text-body: 14px; /* Body — default for prose, table cells, form labels */
+  --text-body--line-height: 22px;
+  --text-body--font-weight: 400;
+
+  --text-body-emphasis: 14px; /* Body, emphasized — the one value in a row that matters */
+  --text-body-emphasis--line-height: 22px;
+  --text-body-emphasis--font-weight: 500;
+
+  --text-caption: 12px; /* Caption / metadata — timestamps, byline, helper text (gray-500) */
+  --text-caption--line-height: 18px;
+  --text-caption--font-weight: 400;
+
+  /* Hero figure — the dashboard's headline counters (dataviz "hero number":
+     >= 48px, same family as everything else, tabular figures where they line up). */
+  --text-hero: 56px;
+  --text-hero--line-height: 1;
+  --text-hero--font-weight: 300;
+
+  --text-reference: 13px; /* Reference / mono — clause numbers, doc IDs, invoice numbers, citations */
+  --text-reference--line-height: 20px;
+  --text-reference--font-weight: 400;
+
+  /* Arabic scale — design.md §3: "Arabic line-height runs ~10% taller than the
+     Latin equivalent at the same size — Plex Sans Arabic needs the room; don't
+     reuse the exact Latin line-height token for Arabic text blocks."
+     Same sizes, line-heights ×1.1 rounded to the 4px base unit where it lands
+     cleanly. Applied automatically to body copy via the html[lang='ar'] base
+     rule below; these tokens exist for explicit per-element use. */
+  --text-display-ar: 28px;
+  --text-display-ar--line-height: 40px;
+  --text-display-ar--font-weight: 800;
+
+  --text-heading-ar: 20px;
+  --text-heading-ar--line-height: 31px;
+  --text-heading-ar--font-weight: 700;
+
+  --text-title-ar: 16px;
+  --text-title-ar--line-height: 26px;
+  --text-title-ar--font-weight: 600;
+
+  --text-body-ar: 14px;
+  --text-body-ar--line-height: 24px;
+  --text-body-ar--font-weight: 400;
+
+  --text-body-emphasis-ar: 14px;
+  --text-body-emphasis-ar--line-height: 24px;
+  --text-body-emphasis-ar--font-weight: 500;
+
+  --text-caption-ar: 12px;
+  --text-caption-ar--line-height: 20px;
+  --text-caption-ar--font-weight: 400;
+
+  --text-reference-ar: 13px;
+  --text-reference-ar--line-height: 22px;
+  --text-reference-ar--font-weight: 400;
+
+  /* --------------------------------------------------------------------------
+     SPACING — design.md §5: "Base unit: 4px. Spacing scale: 4 / 8 / 12 / 16 /
+     24 / 32 / 48 / 64." Tailwind v4 derives the whole scale from --spacing, so
+     `p-1`=4px, `p-2`=8px, `p-3`=12px, `p-4`=16px, `p-6`=24px, `p-8`=32px,
+     `p-12`=48px, `p-16`=64px — design.md's eight steps exactly.
+     -------------------------------------------------------------------------- */
+  --spacing: 4px;
+
+  /* --------------------------------------------------------------------------
+     RADIUS — design.md §4: 8px corners on buttons and cards.
+     -------------------------------------------------------------------------- */
+  --radius-*: initial;
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-card: 8px; /* Cards & panels — design.md §4 "Cards & panels" */
+  --radius-btn: 8px; /* Buttons — design.md §4 "Buttons / Primary" */
+  --radius-pill: 9999px; /* Status pills, TimerPill */
+  --radius-full: 9999px;
+
+  /* --------------------------------------------------------------------------
+     ELEVATION — design.md §6. Three levels only; resist adding more.
+     No colored shadows, no glows (they read as "gamified").
+     -------------------------------------------------------------------------- */
+  --shadow-*: initial;
+  --shadow-resting: none; /* Level 0 — cards, panels, table rows (border only) */
+  --shadow-raised: 0 1px 3px rgba(19, 19, 22, 0.08); /* Level 1 — dropdowns, popovers, tooltips */
+  --shadow-overlay: 0 8px 24px rgba(19, 19, 22, 0.16); /* Level 2 — modals, floating AI chat panel */
+
+  /* --------------------------------------------------------------------------
+     BREAKPOINTS — design.md §8.
+     Desktop ≥1280px · Tablet 768–1279px · Mobile <768px.
+     -------------------------------------------------------------------------- */
+  --breakpoint-*: initial;
+  --breakpoint-tablet: 768px;
+  --breakpoint-desktop: 1280px;
+
+  /* --------------------------------------------------------------------------
+     LAYOUT — design.md §5: 12-column grid, 24px gutters on desktop, content
+     max-width 1440px centered, sidebar fixed outside that measure.
+     -------------------------------------------------------------------------- */
+  --container-content: 1440px;
+}
+
+/* ============================================================================
+   NON-UTILITY TOKENS
+   Values that are referenced in CSS/inline styles rather than as Tailwind
+   utilities. Kept out of `@theme` so they don't generate unused classes.
+   ========================================================================== */
+:root {
+  /* The brand gradient — brand-guidelines.md §3.1.
+     Used ONLY for the logo and the feather motif's animated states.
+     Never as a decorative background wash. */
+  --syn-brand-gradient: linear-gradient(180deg, #eb1c24 0%, #3d0709 100%);
+
+  /* AI-agent chat panel surface — design.md §4: legal-navy at ~6% opacity as a
+     background wash, not solid. */
+  --syn-ai-surface: rgba(30, 58, 95, 0.06);
+
+  /* Fixed chrome measurements — components/chrome/*. Exposed as variables so
+     page layouts can offset content without hardcoding the same numbers. */
+  --syn-sidebar-width: 256px; /* Full-label sidebar */
+  --syn-sidebar-width-collapsed: 64px; /* Icon rail — design.md §8 tablet behaviour */
+  --syn-tab-bar-height: 56px; /* Bottom tab bar — design.md §8 mobile behaviour */
+  /* The assistant's floating launcher, bottom-end corner of every staff
+     screen. Exposed because two other fixed elements have to clear it: the
+     panel it opens rides above it, and <TimerPill> is stacked on top of both.
+     Mirrored as LAUNCHER_PX in components/mueen/MueenLauncher.tsx, which sizes
+     the button itself. */
+  --syn-launcher-size: 56px;
+  --syn-topbar-height: 64px;
+  --syn-table-row-height: 44px; /* design.md §4 "Tables" + §8 touch target minimum */
+
+  /* ==========================================================================
+     THEMED-TENANT TOKENS — design.md §10.2, brand-guidelines.md §7.4
+     --------------------------------------------------------------------------
+     EVERY ONE FALLS BACK TO THE SYNQANUN VALUE, which is what makes this safe
+     to reference unconditionally. A tenant in accent mode emits nothing, the
+     fallbacks apply, and the product looks exactly as it did — so a component
+     written against `--syn-canvas` is correct in both modes and no screen needs
+     to ask which mode it is in.
+
+     fixtures/firm.ts emits the `--syn-tenant-*` half; this maps it onto the
+     names the product actually uses. The indirection is the seam: a tenant
+     supplies colours, the design system decides what they are allowed to
+     colour.
+
+     WHAT IS ABSENT FROM THIS BLOCK IS THE RULE. There is no tenant override
+     for legal-navy, for the semantic tokens, for the feather's gradient or for
+     type. Those are fixed in every tenant (brand-guidelines.md §7.2), and the
+     way that rule is enforced is that no variable exists to break it.
+     ====================================================================== */
+
+  /* App canvas. gray-50 unthemed; the tenant's own paper when themed. */
+  --syn-canvas: var(--syn-tenant-canvas, var(--color-gray-50));
+
+  /* The filled-button colour. syn-red unthemed — and REPLACED when themed,
+     which is the one SynQanun-fixed rule themed mode is allowed to bend.
+     See design.md §10.2 for why that is granted rather than assumed. */
+  --syn-action: var(--syn-tenant-action, var(--color-syn-red));
+  --syn-action-pressed: var(--syn-tenant-action-pressed, var(--color-syn-garnet));
+
+  /* Dark chrome — the themed sidebar, dark KPI tiles. gray-900 unthemed. */
+  --syn-ink: var(--syn-tenant-ink, var(--color-gray-900));
+  --syn-on-dark: var(--syn-tenant-on-dark, #ffffff);
+
+  /* ORNAMENT IS NOT A TEXT COLOUR AND THERE IS NO TOKEN THAT MAKES IT ONE.
+     Meezan's gold measures 2.76:1 on its own cream — below 4.5 for text and
+     below even the 3.0 that WCAG 1.4.11 asks of a meaningful UI component. It
+     is for hairlines, rules and decoration. An icon that carries meaning takes
+     --syn-action (4.58:1 on cream) or --syn-ink (8.89:1). */
+  --syn-ornament: var(--syn-tenant-ornament, var(--color-gray-200));
+
+  /* Bento tiles, dashboard only — design.md §10.2. Work screens stay dense. */
+  --syn-tile-radius: var(--syn-tenant-tile-radius, 12px);
+}
+
+/* ============================================================================
+   FUTURE — DARK MODE  (design.md marks dark mode as a later phase; do not build)
+   ----------------------------------------------------------------------------
+   The neutral scale already reserves the two dark surfaces it needs:
+     gray-900 (#131316) → dark canvas   ·   gray-800 (#24242A) → dark surface
+   When dark mode is picked up, the work is:
+
+     1. Register the variant (Tailwind v4 has no `darkMode` config key):
+          @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+     2. Re-map semantic surface/text roles here — NOT the raw palette. The hex
+        values above are brand constants and do not change between themes; what
+        changes is which gray is "canvas" and which is "body text":
+          [data-theme='dark'] {
+            --syn-canvas: var(--color-gray-900);
+            --syn-surface: var(--color-gray-800);
+            --syn-text-body: var(--color-gray-300);
+            --syn-border: var(--color-gray-700);
+          }
+        (That implies a semantic-role layer gets introduced at the same time;
+        light mode currently uses the palette tokens directly.)
+     3. Swap the brand assets: brand-guidelines.md §2.4 forbids the live red
+        gradient on dark backgrounds — a flattened single-color wordmark is
+        required, and {{CLIENT_LOGO_DARK}} (design.md §10) replaces
+        {{CLIENT_LOGO_LIGHT}} in the sidebar and login slots.
+     4. Re-check contrast: syn-red on gray-900 must still pass WCAG AA
+        (brand-guidelines.md §3.5).
+
+   Nothing below this comment implements any of it. Light mode only, on purpose.
+   ========================================================================== */
+
+@layer base {
+  html {
+    /* design.md §12: Western (0–9) digits in BOTH languages for dates,
+       currency and IDs — standard in Egyptian/GCC legal and financial
+       documents. Never Arabic-Indic numerals, even on full-Arabic screens.
+       Lining figures only here; `tabular-nums` is applied per-element (the
+       timer, numeric table cells) rather than globally, so prose keeps its
+       proportional spacing. */
+    font-variant-numeric: lining-nums;
+  }
+
+  body {
+    background-color: var(--color-gray-50); /* App canvas — design.md §2 */
+    color: var(--color-gray-600); /* Default body text — design.md §2 */
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Arabic body copy: swap to IBM Plex Sans Arabic and take the ~10% taller
+     line-height design.md §3 requires. Scoped to [lang='ar'] rather than
+     [dir='rtl'] because it is a script concern, not a direction concern. */
+  html[lang='ar'] body {
+    font-family: var(--font-arabic);
+    line-height: var(--text-body-ar--line-height);
+  }
+
+  /* Headings default to Cairo in both scripts — brand-guidelines.md §4: one
+     family drawn natively for Arabic and Latin, so headlines belong to the
+     same brand as the logo in either script. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    color: var(--color-gray-700);
+  }
+
+  /* Visible keyboard focus on every interactive element. */
+  :focus-visible {
+    outline: 2px solid var(--color-legal-navy);
+    outline-offset: 2px;
+  }
+}
+
+/* The feather's "agent is thinking" pulse — brand-guidelines.md §5 and
+   design.md §7: a slow pulse under ~1.5s, reading as "alive", not as "loading
+   spinner cosplay". Applied by <FeatherMark thinking /> only. Declared outside
+   @layer so the keyframes are never subject to layer ordering. */
+@keyframes syn-feather-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.94);
+  }
+}
+
+/* ============================================================================
+   ONE UNLAYERED RULE, AND WHY IT HAS TO BE
+
+   <TableRow> sets the 44px row height design.md §4 requires with Tailwind's
+   `h-11` utility. In card mode that height has to go, or every row clips its
+   own content and the cards overlap — which is exactly what happened the first
+   time this was built.
+
+   The override cannot live in the @layer components block below. Tailwind v4
+   orders its layers theme → base → components → utilities, and a later layer
+   beats an earlier one no matter how specific the earlier selector is, so
+   `.h-11` wins over any `@layer components` rule that targets the same row.
+   Unlayered CSS outranks every layer, which is the only thing that reaches it.
+
+   Deliberately just this one declaration. Unlayered rules beat ALL utilities,
+   so the rest of the card layout stays layered below — that keeps a screen able
+   to override it with a normal utility class, including the `max-tablet:hidden`
+   this page uses to drop its chevron column.
+   ========================================================================== */
+@media (width < 768px) {
+  table[data-stacked] tbody > tr {
+    height: auto;
+  }
+}
+
+@layer components {
+  /* Zebra striping for long tables — design.md §4 marks it optional, so it is
+     opt-in via <Table striped>. Written as a descendant rule rather than a
+     per-row utility so the single prop on <Table> reaches every <TableRow>. */
+  table[data-striped] tbody tr:nth-child(even) {
+    background-color: var(--color-gray-100);
+  }
+
+  /* --------------------------------------------------------------------------
+     TABLE → CARDS BELOW 768px — design.md §8: "tables convert to stacked cards
+     (row → card, columns → labeled rows)".
+
+     Opt-out via <Table stackOnMobile={false}>; on by default because §8 states
+     it as the behaviour, not as an option.
+
+     Each cell prints its own column name from `data-label`, set by
+     <TableCell label>. A cell with no label spans the card as its heading.
+     Nothing here is written in terms of left or right, so the cards mirror in
+     Arabic from `dir` alone.
+
+     Note the accessibility trade: re-`display`ing table elements drops the
+     table semantics from the accessibility tree. That is the intended outcome
+     at this size — the content genuinely is a list of cards, and each value
+     carries its own visible label, so no row/column relationship is left for a
+     screen reader to have to reconstruct. The header row is removed rather than
+     hidden off-screen for the same reason: announcing six column names before a
+     card that repeats all six would be worse, not better.
+     -------------------------------------------------------------------------- */
+  @media (width < 768px) {
+    table[data-stacked],
+    table[data-stacked] tbody,
+    table[data-stacked] tr,
+    table[data-stacked] td {
+      display: block;
+      width: 100%;
+    }
+
+    table[data-stacked] thead {
+      display: none;
+    }
+
+    table[data-stacked] tbody > tr {
+      margin-block-end: 12px;
+      border: 1px solid var(--color-gray-200);
+      border-radius: var(--radius-card);
+      background-color: #ffffff;
+      padding: 4px 0;
+    }
+
+    /* Zebra striping is meaningless once rows are separate cards. */
+    table[data-stacked][data-striped] tbody tr:nth-child(even) {
+      background-color: #ffffff;
+    }
+
+    table[data-stacked] tbody > tr:last-child {
+      margin-block-end: 0;
+    }
+
+    table[data-stacked] td {
+      /* The `text-end` a numeric cell carries would strand a value on the far
+         side of a narrow card, away from its own label. */
+      text-align: start;
+      padding-block: 6px;
+    }
+
+    /* The label sits ABOVE its value, not beside it.
+
+       Beside was tried first, as a flex row with the label and the value at
+       opposite ends. It overflowed: a flex item will not shrink below its
+       content's minimum width, so a cell holding anything long — a forum name,
+       two stacked spans — pushed the card wider than the screen and left the
+       table scrolling sideways, which is the exact thing converting to cards
+       was meant to stop. It also only ever worked for single-child cells, and
+       "Type and forum" has two.
+
+       Stacked block labels cannot overflow whatever a cell happens to contain,
+       and hold for any number of children. The cards are taller for it; on a
+       phone that is the cheaper direction to spend. */
+    table[data-stacked] td[data-label]::before {
+      content: attr(data-label);
+      display: block;
+      margin-block-end: 2px;
+      color: var(--color-gray-500);
+      font-size: var(--text-caption);
+      line-height: var(--text-caption--line-height);
+      font-weight: 400;
+    }
+  }
+
+  .syn-feather-thinking {
+    animation: syn-feather-pulse 1.4s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .syn-feather-thinking {
+      animation: none;
+    }
+  }
+}
+
+/* ============================================================================
+   TENANT SPLASH AND LOADER — design.md §10.2, "Splash and loading"
+   ----------------------------------------------------------------------------
+   Themed tenants only (components/auth/TenantSplash.tsx,
+   components/brand/TenantLoader.tsx). Accent mode never renders these classes.
+
+   Every keyframe animates opacity, transform or stroke-dashoffset, nothing
+   else; the overlay's exit adds `visibility` at its very end so it stops
+   taking clicks even with JavaScript off. No gradient, no glow, no shadow.
+
+   The splash timeline is CSS, not JavaScript, so it starts at first paint,
+   before hydration. JS only skips it, remembers it, and unmounts it.
+
+     0.00–0.30  gold core scales in at the centre of the screen
+     0.20–1.05  hairline rays draw outward from it, nodes pop at their tips,
+                then all of it fades
+     0.35–1.10  the mark's outline draws in
+     1.00–1.30  the mark fills
+     1.25–1.90  the lockup slides to centre while the wordmark is uncovered
+     1.70–2.10  "Powered by SynQanun" fades in
+     2.50–2.90  the overlay fades out, revealing the chooser
+   ========================================================================== */
+@keyframes syn-splash-exit {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@keyframes syn-splash-exit-now {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@keyframes syn-splash-stage {
+  0%,
+  50% {
+    transform: translateX(calc(var(--syn-mark-offset) * -100%)) scale(1.08);
+  }
+  76%,
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+@keyframes syn-splash-core {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  28%,
+  65% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+@keyframes syn-splash-ray {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+  }
+  55% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+@keyframes syn-splash-node {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  40%,
+  70% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+@keyframes syn-splash-outline {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+  }
+  65%,
+  87% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+@keyframes syn-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes syn-splash-curtain {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+@keyframes syn-loader-outline {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+  }
+  40%,
+  80% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+@keyframes syn-loader-fill {
+  0%,
+  30% {
+    opacity: 0;
+  }
+  50%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Hiding the splash must beat the overlay's own `flex` utility, and no layered
+   rule can (see the unlayered table rule above for why). So these two are
+   unlayered. Already seen this session, or reduced motion — the attribute is
+   set before first paint by the inline script in app/[locale]/(auth)/page.tsx;
+   the media query covers the same case without JavaScript. design.md §10.2:
+   reduced motion gets no splash and no forced delay — the chooser below it
+   already leads with the static lockup. */
+html[data-splash-skip] .syn-splash {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .syn-splash {
+    display: none;
+  }
+}
+
+@layer components {
+  .syn-splash {
+    animation: syn-splash-exit 0.4s ease-in 2.5s forwards;
+  }
+  .syn-splash[data-leaving] {
+    animation: syn-splash-exit-now 0.3s ease-in forwards;
+  }
+  .syn-splash-stage {
+    animation: syn-splash-stage 2.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+  .syn-splash-core,
+  .syn-splash-node {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .syn-splash-core {
+    animation: syn-splash-core 1.05s ease-out both;
+  }
+  .syn-splash-ray {
+    stroke-dasharray: 1 2;
+    animation: syn-splash-ray 0.85s ease-out var(--syn-delay, 0.2s) both;
+  }
+  .syn-splash-node {
+    animation: syn-splash-node 0.6s ease-out var(--syn-delay, 0.55s) both;
+  }
+  .syn-splash-outline {
+    stroke-dasharray: 1 2;
+    animation: syn-splash-outline 1.15s ease-in-out 0.35s both;
+  }
+  .syn-splash-fill {
+    animation: syn-fade-in 0.3s ease-out 1s both;
+  }
+  .syn-splash-lockup {
+    animation: syn-fade-in 0.12s linear 1.25s both;
+  }
+  .syn-splash-curtain {
+    animation: syn-splash-curtain 0.6s cubic-bezier(0.4, 0, 0.2, 1) 1.3s both;
+  }
+  .syn-splash-credit {
+    animation: syn-fade-in 0.4s ease-out 1.7s both;
+  }
+
+  .syn-loader-outline {
+    stroke-dasharray: 1 2;
+    animation: syn-loader-outline 1.8s ease-in-out infinite;
+  }
+  .syn-loader-fill {
+    animation: syn-loader-fill 1.8s ease-in-out infinite;
+  }
+
+  /* Reduced motion: the loader shows the finished mark, still. */
+  @media (prefers-reduced-motion: reduce) {
+    .syn-loader-outline,
+    .syn-loader-fill {
+      animation: none;
+    }
+  }
+}
+
+/* ============================================================================
+   DIGEST VOICE VIEW — the orb and the waveform (demo-only, nothing is heard)
+   ----------------------------------------------------------------------------
+   Flat concentric rings in legal-navy; the AI's colour, never the tenant's.
+   Transform and opacity only, no glow, no gradient. Idle is still. Listening
+   pulses slowly, speaking faster; each ring starts a step after the last, so
+   the rings travel outward in turn. Reduced motion: all of it still.
+   ========================================================================== */
+@keyframes syn-orb-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.15;
+  }
+  100% {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+}
+@keyframes syn-wave {
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@layer components {
+  .syn-orb[data-state='listening'] .syn-orb-pulse {
+    animation: syn-orb-pulse 2.4s ease-out var(--syn-delay, 0s) infinite both;
+  }
+  .syn-orb[data-state='speaking'] .syn-orb-pulse {
+    animation: syn-orb-pulse 1.4s ease-out var(--syn-delay, 0s) infinite both;
+  }
+  .syn-wave-bar {
+    transform-origin: center;
+    animation: syn-wave 0.9s ease-in-out var(--syn-delay, 0s) infinite both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .syn-orb .syn-orb-pulse {
+      animation: none !important;
+      opacity: 0;
+    }
+    .syn-wave-bar {
+      animation: none;
+      transform: scaleY(0.6);
+    }
+  }
+}
