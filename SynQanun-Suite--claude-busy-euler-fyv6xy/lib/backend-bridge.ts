@@ -555,4 +555,99 @@ export const backendBridge = {
       }
     },
   },
+
+  // --- Documents (Word .docx & Excel .xlsx) ---
+  documents: {
+    async generateWord(data: {
+      matter_reference: string;
+      template_type?: string;
+      title?: string;
+      court_name?: string;
+      circuit?: string;
+      case_number?: string;
+      client_role?: string;
+      opposing_party?: string;
+      facts?: string;
+      defenses?: string;
+      requests?: string;
+      is_firm_only?: boolean;
+    }) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/documents/generate-word`, {
+          method: 'POST',
+          headers: await getHeaders(),
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          return { ok: false, error: err.detail || 'Word generation failed' };
+        }
+        const doc = await res.json();
+        return { ok: true, data: doc };
+      } catch (err: any) {
+        return { ok: false, error: err.message || 'Connection error' };
+      }
+    },
+
+    async exportExcel(data: {
+      export_type: 'client_statement' | 'invoices_ledger' | 'timesheet';
+      matter_reference?: string;
+      client_id?: string;
+      is_firm_only?: boolean;
+    }) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/documents/export-excel`, {
+          method: 'POST',
+          headers: await getHeaders(),
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          return { ok: false, error: err.detail || 'Excel export failed' };
+        }
+        const doc = await res.json();
+        return { ok: true, data: doc };
+      } catch (err: any) {
+        return { ok: false, error: err.message || 'Connection error' };
+      }
+    },
+
+    async list(params?: { engagement_ref?: string; client_id?: string; kind?: string }) {
+      try {
+        const query = new URLSearchParams();
+        if (params?.engagement_ref) query.append('engagement_ref', params.engagement_ref);
+        if (params?.client_id) query.append('client_id', params.client_id);
+        if (params?.kind) query.append('kind', params.kind);
+        const res = await fetch(`${BACKEND_URL}/staff/documents?${query.toString()}`, {
+          headers: await getHeaders(),
+          cache: 'no-store',
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.items || [];
+      } catch {
+        return [];
+      }
+    },
+
+    async listClient(params?: { engagement_ref?: string }) {
+      try {
+        const query = new URLSearchParams();
+        if (params?.engagement_ref) query.append('engagement_ref', params.engagement_ref);
+        const res = await fetch(`${BACKEND_URL}/client/documents?${query.toString()}`, {
+          headers: await getClientHeaders(),
+          cache: 'no-store',
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.items || [];
+      } catch {
+        return [];
+      }
+    },
+
+    getDownloadUrl(docId: string) {
+      return `http://127.0.0.1:8000/api/documents/${docId}/download`;
+    },
+  },
 };

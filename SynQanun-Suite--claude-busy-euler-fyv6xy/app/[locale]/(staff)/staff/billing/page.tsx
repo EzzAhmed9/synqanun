@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils';
 import { StaffTopBar } from '../../StaffChrome';
 import { CardHead } from '../cards';
 import { RouteNotPermitted } from '../RouteNotPermitted';
+import { ExportExcelModal } from '../register/ExportExcelModal';
 
 /**
  * Billing & Quotes — BUILD_PLAN.md §3, Batch 4, the last item.
@@ -236,12 +237,8 @@ function Billing({
       <StaffTopBar title={t('title')} subtitle={t('subtitle')} />
 
       <main className="mx-auto flex w-full max-w-content flex-1 flex-col gap-5 px-6 py-6">
-        <div className="flex justify-end">
-          {/*
-            The only write on this screen. Secondary rather than the page's one
-            red action, because the ledger below is what somebody came here to
-            read — design.md §4.
-          */}
+        <div className="flex justify-end items-center gap-3">
+          <ExportExcelModal />
           <Link
             href="/staff/billing/new"
             className={buttonClasses({ variant: 'secondary', size: 'sm' })}

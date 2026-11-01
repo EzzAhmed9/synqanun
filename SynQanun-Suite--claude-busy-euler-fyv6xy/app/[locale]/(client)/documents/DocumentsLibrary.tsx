@@ -439,24 +439,15 @@ export function DocumentsLibrary({
                       </TableCell>
 
                       <TableCell className="py-3 text-end">
-                        {/* MOCK: no file is served in Track A. The real version
-                            streams from the document store behind an access
-                            check and records the download in the engagement's
-                            audit trail. */}
-                        <button
-                          type="button"
+                        <a
+                          href={`http://127.0.0.1:8000/api/documents/${row.id}/download`}
+                          download
                           aria-label={t('download', { name: row.name })}
-                          className="inline-flex h-9 items-center justify-center gap-2 rounded-sm px-2 text-caption text-gray-500 hover:bg-gray-100 hover:text-gray-700 tablet:w-9 tablet:px-0 tablet:text-gray-500"
+                          className="inline-flex h-9 items-center justify-center gap-2 rounded-sm px-2 text-caption text-gray-500 hover:bg-gray-100 hover:text-action tablet:w-9 tablet:px-0 tablet:text-gray-500 transition-colors"
                         >
                           <Download aria-hidden size={16} strokeWidth={1.8} />
-                          {/* The icon carries this column on its own in the
-                              table, where the header names it and the whole row
-                              is one line. In card mode below 768px there is no
-                              header row left, so a lone unlabelled arrow at the
-                              bottom of a card would be the only control on the
-                              screen with nothing saying what it does. */}
                           <span className="tablet:hidden">{t('panel.download')}</span>
-                        </button>
+                        </a>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -595,13 +586,14 @@ function DocumentPanel({ row }: { row: DocumentRowData }) {
       </div>
 
       <div className="mt-4 flex flex-col gap-2">
-        {/* MOCK: same as the row's download button — no file is served today. */}
-        <Button variant="secondary" fullWidth icon={<Download aria-hidden size={15} />}>
+        <a
+          href={`http://127.0.0.1:8000/api/documents/${row.id}/download`}
+          download
+          className="inline-flex w-full items-center justify-center gap-2 rounded-sm border border-gray-300 bg-white py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-action transition-colors"
+        >
+          <Download aria-hidden size={15} />
           {tp('download')}
-        </Button>
-        {/* MOCK: the Messages screen lands later in Batch 2. The real shortcut
-            opens a composer already referencing this document, which is why it
-            is a button rather than a link to the inbox. */}
+        </a>
         <Button variant="secondary" fullWidth icon={<MessageSquare aria-hidden size={15} />}>
           {tp('ask')}
         </Button>

@@ -2,6 +2,8 @@ import * as React from 'react';
 import {
   ArrowLeft,
   CalendarClock,
+  Download,
+  FileSpreadsheet,
   FileText,
   PencilRuler,
   PenLine,
@@ -22,6 +24,8 @@ import { TeamsJoinSlot } from '@/components/meetings/TeamsJoinSlot';
 import { CardHead } from '../cards';
 import { LogTimeModal } from '../time/LogTimeModal';
 import { NewDocumentModal } from './NewDocumentModal';
+import { GenerateLegalDocModal } from './GenerateLegalDocModal';
+import { ExportExcelModal } from './ExportExcelModal';
 import { ApprovalsCard, TasksCard } from '../work-cards';
 
 /**
@@ -381,7 +385,20 @@ export function EngagementView({
                   weeksShown={time.weeksShown}
                 />
               ) : null}
-              {/* Ungated, deliberately — see create-document-action.ts. */}
+              {/* Module 5: Word & Excel Generation & Exports */}
+              <GenerateLegalDocModal
+                engagementRef={engagement.reference}
+                engagementTitle={engagement.title[locale]}
+                clientName={record.client?.name?.[locale]}
+                opposingParty={record.counterpart?.[locale]}
+                venue={engagement.venue?.[locale]}
+                caseNumber={engagement.registryNumber || undefined}
+              />
+              <ExportExcelModal
+                engagementRef={engagement.reference}
+                clientId={record.client?.id}
+                clientName={record.client?.name?.[locale]}
+              />
               <NewDocumentModal
                 engagementRef={engagement.reference}
                 engagementTitle={engagement.title[locale]}
@@ -398,9 +415,8 @@ export function EngagementView({
                   className="flex flex-wrap items-center justify-between gap-3 p-4"
                 >
                   <span className="min-w-0 flex-1">
-                    {/* A title belongs to the document, not to the reader —
-                        isolated rather than forced, since it may be Arabic. */}
-                    <span className="block text-body text-gray-700 [unicode-bidi:isolate]">
+                    {/* A title belongs to the document, not to the reader */}
+                    <span className="block text-body font-medium text-gray-800 [unicode-bidi:isolate]">
                       <bdi>{document.title}</bdi>
                     </span>
                     <span className="mt-0.5 block text-caption text-gray-500 [unicode-bidi:isolate]">
@@ -409,46 +425,61 @@ export function EngagementView({
                       {formatRelativeDays(document.createdOn, locale)}
                     </span>
                   </span>
-                  {/*
-                    Labelled where it was created, per §5.1's requirement that
-                    a session-scoped record says so on screen.
-                  */}
-                  {document.addedThisSession ? (
-                    <Badge tone="neutral" icon={null}>
-                      {t('detail.thisSession')}
-                    </Badge>
-                  ) : null}
+                  <span className="flex items-center gap-2">
+                    {/* Direct download button for stored files */}
+                    <a
+                      href={document.downloadUrl || `http://127.0.0.1:8000/api/documents/${document.id}/download`}
+                      download
+                      title="تحميل الملف"
+                      className="inline-flex h-8 items-center gap-1.5 rounded border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-action transition-colors"
+                    >
+                      <Download size={14} />
+                      <span>تحميل</span>
+                    </a>
+                    {document.addedThisSession ? (
+                      <Badge tone="neutral" icon={null}>
+                        {t('detail.thisSession')}
+                      </Badge>
+                    ) : null}
+                  </span>
                 </li>
               ))}
             </ul>
           )}
         </Card>
 
-        {/* What the client has been sent --------------------------------- */}
+        {/* What the client has been sent (Shared Documents) ----------------- */}
         <Card padding="none" className="overflow-hidden">
           <header className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-200 p-5">
             <CardHead
               icon={FileText}
               heading={t('detail.documents')}
-              // "Shared", not "documents" — this is the portal library, not a
-              // DMS. fixtures/documents.ts says so in its header.
               caption={t('detail.documentsCount', { count: documents.length })}
             />
-            {/*
-              Only where there is something to ask about. Gated by rank in the
-              route it leads to; the link itself is drawn for everyone who can
-              see the card, because a link is not a permission and the refusal
-              names the rank properly.
-            */}
-            {documents.length > 0 ? (
-              <Link
-                href="/staff/signatures/new"
-                className={buttonClasses({ variant: 'secondary', size: 'sm' })}
-              >
-                <PenLine aria-hidden size={15} className="me-1.5" />
-                {t('detail.requestSignature')}
-              </Link>
-            ) : null}
+            <span className="flex flex-wrap items-center gap-2">
+              <GenerateLegalDocModal
+                engagementRef={engagement.reference}
+                engagementTitle={engagement.title[locale]}
+                clientName={record.client?.name?.[locale]}
+                opposingParty={record.counterpart?.[locale]}
+                venue={engagement.venue?.[locale]}
+                caseNumber={engagement.registryNumber || undefined}
+              />
+              <ExportExcelModal
+                engagementRef={engagement.reference}
+                clientId={record.client?.id}
+                clientName={record.client?.name?.[locale]}
+              />
+              {documents.length > 0 ? (
+                <Link
+                  href="/staff/signatures/new"
+                  className={buttonClasses({ variant: 'secondary', size: 'sm' })}
+                >
+                  <PenLine aria-hidden size={15} className="me-1.5" />
+                  {t('detail.requestSignature')}
+                </Link>
+              ) : null}
+            </span>
           </header>
           {documents.length === 0 ? (
             <p className="p-5 text-body text-gray-500">{t('detail.noDocuments')}</p>
@@ -460,10 +491,19 @@ export function EngagementView({
                   className="flex flex-wrap items-center justify-between gap-3 p-4"
                 >
                   <span className="min-w-0 flex-1">
-                    {/* A filename belongs to the file, not to the reader —
-                        isolated rather than forced, since it may be Arabic. */}
-                    <span className="block text-body text-gray-700 [unicode-bidi:isolate]">
-                      <bdi>{document.name}</bdi>
+                    <span className="flex items-center gap-2">
+                      <span className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] font-bold ${
+                        document.kind === 'docx'
+                          ? 'bg-blue-100 text-blue-800'
+                          : document.kind === 'xlsx'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {document.kind.toUpperCase()}
+                      </span>
+                      <span className="block text-body font-medium text-gray-800 [unicode-bidi:isolate]">
+                        <bdi>{document.name}</bdi>
+                      </span>
                     </span>
                     <span className="mt-0.5 block text-caption text-gray-500 [unicode-bidi:isolate]">
                       {formatFileSize(document.sizeBytes, locale)}
@@ -471,17 +511,19 @@ export function EngagementView({
                       {formatRelativeDays(document.sharedOn, locale)}
                     </span>
                   </span>
-                  <span className="flex flex-col items-end gap-1">
+                  <span className="flex items-center gap-2">
+                    <a
+                      href={document.downloadUrl || `http://127.0.0.1:8000/api/documents/${document.id}/download`}
+                      download
+                      title="تحميل الملف"
+                      className="inline-flex h-8 items-center gap-1.5 rounded border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-action transition-colors"
+                    >
+                      <Download size={14} />
+                      <span>تحميل</span>
+                    </a>
                     <Badge tone={DOCUMENT_STATUS_TONE[document.status]} icon={null}>
                       {tDocStatus(document.status)}
                     </Badge>
-                    {/*
-                      NOT a second status badge. A request prepared here has not
-                      been sent and the client's portal does not know it exists
-                      — fixtures/signatures.ts — so this says "prepared" in
-                      plain text rather than dressing it as a state the document
-                      is in.
-                    */}
                     {preparedFor.has(document.id) ? (
                       <span className="text-caption text-gray-500">
                         {t('detail.signaturePrepared', {

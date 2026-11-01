@@ -517,16 +517,15 @@ function DocumentsPanel({
                 ) : null}
               </div>
 
-              {/* MOCK: no file is served in Track A. The real version streams
-                  from the document store behind an access check, and records
-                  the download in the engagement's audit trail. */}
-              <button
-                type="button"
+              {/* Real file streaming from PostgreSQL document store */}
+              <a
+                href={document.downloadUrl || `http://127.0.0.1:8000/api/documents/${document.id}/download`}
+                download
                 aria-label={t('download', { name: document.name })}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-gray-500 hover:bg-gray-100 hover:text-action transition-colors"
               >
                 <Download aria-hidden size={16} strokeWidth={1.8} />
-              </button>
+              </a>
             </li>
           ))}
         </ul>

@@ -11,6 +11,7 @@ from app.models.user import User
 from app.models.client import Client
 from app.models.matter import Matter, MatterTeamMember, MatterHearing, MatterTimelineEvent
 from app.models.invoice import Invoice, Quote
+from app.models.document import Document
 from app.schemas.matter import MatterCreate
 
 router = APIRouter(prefix="/staff/matters", tags=["Staff Matters"])
@@ -452,6 +453,46 @@ def get_matter_by_reference(
             "dueToday": False
         })
 
+    # Documents for this matter from PostgreSQL
+    docs_db = db.query(Document).filter(
+        func.lower(Document.engagement_ref) == matter.reference.lower()
+    ).order_by(Document.created_at.desc()).all()
+
+    matter_shared_docs = []
+    matter_firm_docs = []
+    for d in docs_db:
+        shared_days_ago = (today - d.created_at.replace(tzinfo=None)).days if d.created_at else 0
+        doc_entry = {
+            "id": d.id,
+            "name": d.name,
+            "kind": d.kind,
+            "sizeBytes": d.size_bytes,
+            "sharedDaysAgo": max(0, shared_days_ago),
+            "sharedOn": d.created_at.strftime("%Y-%m-%d") if d.created_at else today.strftime("%Y-%m-%d"),
+            "status": d.status,
+            "engagementRef": matter.reference,
+            "firmId": d.firm_id,
+            "downloadUrl": f"/api/documents/{d.id}/download",
+            "versions": []
+        }
+        if not d.is_firm_only:
+            matter_shared_docs.append(doc_entry)
+
+        firm_type = d.document_type if d.document_type in [
+            "letter", "memo", "filing", "contract", "correspondence", "courtSubmission", "other"
+        ] else "courtSubmission"
+        matter_firm_docs.append({
+            "id": d.id,
+            "title": d.title,
+            "type": firm_type,
+            "engagementRef": matter.reference,
+            "createdDaysAgo": max(0, shared_days_ago),
+            "createdOn": d.created_at.strftime("%Y-%m-%d") if d.created_at else today.strftime("%Y-%m-%d"),
+            "firmId": d.firm_id,
+            "addedThisSession": False,
+            "downloadUrl": f"/api/documents/{d.id}/download"
+        })
+
     counterpart = None
     if matter.opposing_party_en or matter.opposing_party_ar:
         counterpart = {"en": matter.opposing_party_en or "", "ar": matter.opposing_party_ar or ""}
@@ -474,8 +515,8 @@ def get_matter_by_reference(
             "standing": client.standing if client else "active"
         },
         "timeline": timeline_events,
-        "documents": [],
-        "firmDocuments": [],
+        "documents": matter_shared_docs,
+        "firmDocuments": matter_firm_docs,
         "signatureRequests": [],
         "invoices": matter_invoices,
         "approvals": matter_approvals,
@@ -844,10 +885,33 @@ def get_client_matter_by_reference(
             "lineItems": []
         })
 
+    # Shared documents for this matter from PostgreSQL
+    client_docs_db = db.query(Document).filter(
+        func.lower(Document.engagement_ref) == matter.reference.lower(),
+        Document.is_firm_only == False
+    ).order_by(Document.created_at.desc()).all()
+
+    client_shared_docs = []
+    for d in client_docs_db:
+        shared_days_ago = (today - d.created_at.replace(tzinfo=None)).days if d.created_at else 0
+        client_shared_docs.append({
+            "id": d.id,
+            "name": d.name,
+            "kind": d.kind,
+            "sizeBytes": d.size_bytes,
+            "sharedDaysAgo": max(0, shared_days_ago),
+            "sharedOn": d.created_at.strftime("%Y-%m-%d") if d.created_at else today.strftime("%Y-%m-%d"),
+            "status": d.status,
+            "engagementRef": matter.reference,
+            "firmId": d.firm_id,
+            "downloadUrl": f"/api/documents/{d.id}/download",
+            "versions": []
+        })
+
     return {
         "matter": matter_record,
         "openedOn": opened_date,
         "timeline": timeline_events,
-        "documents": [],
+        "documents": client_shared_docs,
         "invoices": matter_invoices
     }

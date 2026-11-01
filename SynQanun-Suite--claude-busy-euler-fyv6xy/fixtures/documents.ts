@@ -28,7 +28,7 @@ import { demoFirm } from './firm';
  * The firm is not restated; `firmId` points at fixtures/firm.ts.
  */
 
-export type DocumentKind = 'pdf' | 'docx';
+export type DocumentKind = 'pdf' | 'docx' | 'xlsx';
 
 /**
  * Where a shared file stands, from the CLIENT's point of view.
@@ -143,6 +143,7 @@ export interface SharedDocument {
    */
   versions: DocumentVersion[];
   firmId: string;
+  downloadUrl?: string;
 }
 
 // MOCK: replace with GET /api/documents?shared=true — scoped server-side to
@@ -354,6 +355,7 @@ export interface FirmDocument {
   /** Days before the tenant's today that it was started. 0 means today. */
   createdDaysAgo: number;
   firmId: string;
+  downloadUrl?: string;
 }
 
 /**

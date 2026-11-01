@@ -7799,7 +7799,35 @@ export const documents = {
   }: { filter?: DocumentFilter; page?: number; pageSize?: number } = {}): Promise<DocumentListResult> {
     await latency();
 
-    const all = clientDocuments();
+    let backendDocs: any[] = [];
+    try {
+      backendDocs = await backendBridge.documents.listClient();
+    } catch {
+      backendDocs = [];
+    }
+
+    const today = tenantToday();
+    const dbDocs: SharedDocumentRecord[] = (backendDocs || []).map((d: any) => {
+      const eng = engagementIndex().get(d.engagement_ref);
+      return {
+        id: d.id,
+        name: d.name,
+        kind: d.kind,
+        sizeBytes: d.size_bytes,
+        sharedDaysAgo: 0,
+        sharedOn: d.created_at ? d.created_at.split(' ')[0] : today,
+        engagementRef: d.engagement_ref || 'MAT-2201',
+        status: (d.status || 'final') as DocumentStatus,
+        versions: [],
+        firmId: 'firm-001',
+        needsSignature: d.status === 'awaitingSignature',
+        engagementKind: (eng?.kind || 'matter') as any,
+        engagementTitle: eng?.title || { en: d.title, ar: d.title },
+        downloadUrl: `http://127.0.0.1:8000${d.download_url}`,
+      };
+    });
+
+    const all = [...dbDocs, ...clientDocuments()];
     const rows = filter === 'all' ? all : all.filter((document) => document.status === filter);
 
     return {
