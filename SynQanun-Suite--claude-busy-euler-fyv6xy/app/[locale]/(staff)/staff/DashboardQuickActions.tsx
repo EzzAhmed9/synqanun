@@ -15,16 +15,28 @@ import {
   Clock,
   Briefcase,
   Loader2,
+  ExternalLink,
+  RefreshCw,
+  Upload,
+  ArrowRight,
+  Save,
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { Button, Input, Modal } from '@/components/ui';
+import { useLocale, useTranslations } from 'next-intl';
+import { Button, buttonClasses, Input, Modal } from '@/components/ui';
 import { FeatherMark } from '@/components/brand/FeatherMark';
-import { useRouter } from '@/lib/i18n/navigation';
-import { generateWordAction, exportExcelAction } from './register/generate-document-actions';
+import { useRouter, Link } from '@/lib/i18n/navigation';
+import {
+  generateWordAction,
+  exportExcelAction,
+  openWordOnlineAction,
+  syncFromWordOnlineAction,
+  uploadUpdatedDocxAction,
+} from './register/generate-document-actions';
 import { getActiveMattersForTimer, type ActiveMatterOption } from './time/get-matters-action';
 
 export function DashboardQuickActions() {
   const t = useTranslations('staffDashboard.actions');
+  const locale = useLocale();
   const router = useRouter();
 
   // Modals state
@@ -36,17 +48,31 @@ export function DashboardQuickActions() {
   // Transitions
   const [pendingDraft, startDraftTransition] = React.useTransition();
   const [pendingReport, startReportTransition] = React.useTransition();
+  const [isOpeningWordOnline, setIsOpeningWordOnline] = React.useState(false);
+  const [isSyncing, setIsSyncing] = React.useState(false);
+  const [isUploadingUpdated, setIsUploadingUpdated] = React.useState(false);
+
+  // Errors & Success
   const [draftError, setDraftError] = React.useState<string | null>(null);
   const [reportError, setReportError] = React.useState<string | null>(null);
   const [draftSuccess, setDraftSuccess] = React.useState<any | null>(null);
   const [reportSuccess, setReportSuccess] = React.useState<any | null>(null);
+  const [syncSuccessMsg, setSyncSuccessMsg] = React.useState<string | null>(null);
+
+  // Active Word Online Session inside Draft Modal
+  const [wordOnlineSession, setWordOnlineSession] = React.useState<{
+    docId: string;
+    docName: string;
+    webUrl: string;
+    matterRef: string;
+  } | null>(null);
 
   // Draft form state
   const [selectedMatter, setSelectedMatter] = React.useState('MAT-2201');
   const [templateType, setTemplateType] = React.useState<'pleading' | 'contract' | 'memo'>('pleading');
   const [draftTitle, setDraftTitle] = React.useState('مذكرة دفاع في دعوى النزاع التجاري لعقد التوزيع');
   const [court, setCourt] = React.useState('محكمة استئناف القاهرة - الدائرة التجارية');
-  const [clientRole, setClientRole] = React.useState('المستأنف ضده / المدعي');
+  const [clientRole, setClientRole] = React.useState('المستأنف ضده / المدعى عليه');
   const [opposing, setOpposing] = React.useState('شركة الشرق الأوسط للتجارة');
   const [shareDraft, setShareDraft] = React.useState(true);
 
@@ -87,21 +113,116 @@ export function DashboardQuickActions() {
     }
   }, [selectedMatter, templateType, matters]);
 
-  const handleDraftSubmit = (e: React.FormEvent) => {
+  // Helper to persist Word doc in PostgreSQL & Disk
+  const generateAndSaveDocument = async () => {
+    return await generateWordAction({
+      matter_reference: selectedMatter,
+      template_type: templateType,
+      title: draftTitle,
+      court_name: court,
+      client_role: clientRole,
+      opposing_party: opposing,
+      is_firm_only: !shareDraft,
+    });
+  };
+
+  // 1. Action: Open in Official Microsoft Word Online Tab
+  const handleOpenWordOnlineFromModal = async () => {
+    setDraftError(null);
+    setSyncSuccessMsg(null);
+    setIsOpeningWordOnline(true);
+
+    try {
+      const saveRes = await generateAndSaveDocument();
+      if (!saveRes.ok || !saveRes.data) {
+        throw new Error(saveRes.error || 'تعذر إنشاء المستند في النظام.');
+      }
+
+      const docId = saveRes.data.id;
+      const docName = saveRes.data.name;
+
+      const onlineRes = await openWordOnlineAction(docId);
+      if (onlineRes.ok && onlineRes.data && onlineRes.data.webUrl) {
+        // Open official Word Online in a new tab!
+        window.open(onlineRes.data.webUrl, '_blank', 'noopener,noreferrer');
+
+        // Transition modal to active editing / sync view
+        setWordOnlineSession({
+          docId,
+          docName,
+          webUrl: onlineRes.data.webUrl,
+          matterRef: selectedMatter,
+        });
+      } else {
+        throw new Error(onlineRes.error || 'تعذر الحصول على رابط Word Online.');
+      }
+    } catch (err: any) {
+      setDraftError(err.message || 'حدث خطأ أثناء فتح Word Online.');
+    } finally {
+      setIsOpeningWordOnline(false);
+    }
+  };
+
+  // 2. Action: Sync changes from Word Online
+  const handleSyncFromWordOnline = async () => {
+    if (!wordOnlineSession?.docId) return;
+    setIsSyncing(true);
+    setDraftError(null);
+    setSyncSuccessMsg(null);
+
+    try {
+      const res = await syncFromWordOnlineAction(wordOnlineSession.docId);
+      if (res.ok && res.data) {
+        setSyncSuccessMsg('تمت مزامنة كافة التعديلات من Microsoft Word وحفظها في الموقع بنجاح!');
+        router.refresh();
+      } else {
+        setDraftError(
+          res.error ||
+            'المستند مفتوح بالوضع المباشر أو لم تنته المزامنة بعد. يمكنك أيضاً رفع النسخة المحدثة عبر زر "رفع النسخة المعدلة".'
+        );
+      }
+    } catch (err: any) {
+      setDraftError(err.message || 'فشلت المزامنة التلقائية.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // 3. Action: Manual Upload of edited .docx
+  const handleUploadUpdatedDocx = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !wordOnlineSession?.docId) return;
+
+    setIsUploadingUpdated(true);
+    setDraftError(null);
+    setSyncSuccessMsg(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await uploadUpdatedDocxAction(wordOnlineSession.docId, formData);
+      if (res.ok && res.data) {
+        setSyncSuccessMsg('تم رفع وحفظ النسخة المحدثة في الموقع وقاعدة بيانات القضية بنجاح!');
+        router.refresh();
+      } else {
+        setDraftError(res.error || 'تعذر رفع الملف المحدث.');
+      }
+    } catch (err: any) {
+      setDraftError(err.message || 'حدث خطأ أثناء رفع المستند.');
+    } finally {
+      setIsUploadingUpdated(false);
+      e.target.value = '';
+    }
+  };
+
+  // 4. Action: Save to site & Download local .docx
+  const handleDirectDownloadSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setDraftError(null);
 
     startDraftTransition(async () => {
-      const res = await generateWordAction({
-        matter_reference: selectedMatter,
-        template_type: templateType,
-        title: draftTitle,
-        court_name: court,
-        client_role: clientRole,
-        opposing_party: opposing,
-        is_firm_only: !shareDraft,
-      });
-
+      const res = await generateAndSaveDocument();
       if (res.ok && res.data) {
         setDraftSuccess(res.data);
         const downloadUrl = `http://127.0.0.1:8000${res.data.download_url}`;
@@ -113,11 +234,12 @@ export function DashboardQuickActions() {
         document.body.removeChild(a);
         router.refresh();
       } else {
-        setDraftError(res.error || 'حدث خطأ أثناء صياغة المستند');
+        setDraftError(res.error || 'حدث خطأ أثناء صياغة المستند.');
       }
     });
   };
 
+  // 5. Excel Report Submit
   const handleReportSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setReportError(null);
@@ -140,13 +262,14 @@ export function DashboardQuickActions() {
         document.body.removeChild(a);
         router.refresh();
       } else {
-        setReportError(res.error || 'حدث خطأ أثناء تصدير التقرير');
+        setReportError(res.error || 'حدث خطأ أثناء تصدير التقرير.');
       }
     });
   };
 
   return (
     <>
+      {/* Unified Executive Navigation Bar (ONLY 2 Buttons) */}
       <nav aria-label={t('label')} className="flex flex-wrap items-center gap-2">
         <Button
           variant="primary"
@@ -154,6 +277,8 @@ export function DashboardQuickActions() {
           onClick={() => {
             setDraftSuccess(null);
             setDraftError(null);
+            setSyncSuccessMsg(null);
+            setWordOnlineSession(null);
             setDraftOpen(true);
           }}
         >
@@ -174,18 +299,117 @@ export function DashboardQuickActions() {
         </Button>
       </nav>
 
-      {/* 1. Modal: صياغة مستند Word (.docx) */}
+      {/* 1. Unified Modal: صياغة مستند Word */}
       <Modal
         open={draftOpen}
         onClose={() => setDraftOpen(false)}
-        title={draftSuccess ? 'تم توليد وحفظ المستند بنجاح' : 'صياغة وتوليد مستند Word رسمي (.docx)'}
+        title={
+          wordOnlineSession
+            ? 'المستند قيد التحرير في Microsoft Word Online'
+            : draftSuccess
+            ? 'تم حفظ وتنزيل المستند بنجاح'
+            : 'صياغة مستند Word جديد'
+        }
         description={
-          draftSuccess
-            ? 'تم حفظ المستند في قاعدة البيانات وسيرفر المكتب وبدأ تنزيله على جهازك.'
-            : 'اختر المسألة القانونية ونوع النموذج وسيتم توليده بتنسيق عربي رسمي (RTL) وحفظه فوراً.'
+          wordOnlineSession
+            ? 'المستند مفتوح في تاب Word الرسمي. بعد الانتهاء، اضغط على زر الحفظ أدناه لحفظ كافة التعديلات في الموقع.'
+            : draftSuccess
+            ? 'تم حفظ المستند في قاعدة البيانات وسيظهر فوراً في تبويب المستندات داخل ملف القضية.'
+            : 'اختر القضية ونوع الصياغة للبدء في كتابة وتعديل المذكرة عبر Microsoft Word أو المحرر المباشر.'
         }
       >
-        {draftSuccess ? (
+        {/* State A: Word Online is currently active */}
+        {wordOnlineSession ? (
+          <div className="flex flex-col gap-4 p-6 pt-0">
+            <div className="rounded-xl border border-blue-400 bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#0078D4] text-white">
+                  <FileText size={22} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <p className="font-bold text-sm text-gray-900">
+                      تم فتح Microsoft Word Online في التبويب الجديد 🌐
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    الملف: <span className="font-mono font-bold text-blue-900">{wordOnlineSession.docName}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {syncSuccessMsg && (
+              <div className="flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-sm font-bold text-emerald-800">
+                <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                <span>{syncSuccessMsg}</span>
+              </div>
+            )}
+
+            {draftError && (
+              <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-xs font-semibold text-red-700">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>{draftError}</span>
+              </div>
+            )}
+
+            {/* How save works: 2 Direct Save Options */}
+            <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-4 space-y-3">
+              <p className="text-xs font-bold text-gray-700">كيف يتم الحفظ في الموقع بعد الانتهاء من التعديل؟</p>
+              
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSyncFromWordOnline}
+                  disabled={isSyncing}
+                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-800 transition-colors shadow-xs"
+                >
+                  {isSyncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                  💾 حفظ ومزامنة التعديلات في الموقع
+                </button>
+
+                <label className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg border border-blue-400 bg-white px-4 py-2.5 text-xs font-bold text-blue-900 hover:bg-blue-50 transition-colors cursor-pointer shadow-xs">
+                  {isUploadingUpdated ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} className="text-[#0078D4]" />}
+                  📁 رفع النسخة المعدلة وحفظها فوراً
+                  <input
+                    type="file"
+                    accept=".docx"
+                    className="hidden"
+                    onChange={handleUploadUpdatedDocx}
+                    disabled={isUploadingUpdated}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <a
+                href={wordOnlineSession.webUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0078D4] hover:underline"
+              >
+                العودة إلى تاب Word Online
+                <ExternalLink size={13} />
+              </a>
+
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/staff/matters/${wordOnlineSession.matterRef}`}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  عرض في صفحة القضية
+                  <ArrowRight size={13} className="rotate-180" />
+                </Link>
+                <Button variant="secondary" onClick={() => setDraftOpen(false)}>
+                  إغلاق النافذة
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : draftSuccess ? (
+          /* State B: Document generated & downloaded */
           <div className="flex flex-col gap-4 p-6 pt-0">
             <div className="flex items-center gap-3 rounded-md bg-emerald-50 p-4 text-emerald-800">
               <CheckCircle2 size={24} className="shrink-0 text-emerald-600" />
@@ -197,7 +421,7 @@ export function DashboardQuickActions() {
               </div>
             </div>
             <p className="text-sm text-gray-600">
-              تم بدء تحميل الملف آلياً. يظهر المستند أيضاً في صفحة القضية وبوابة الموكل.
+              تم حفظ المستند في قاعدة البيانات وتنزيله في المتصفح. يمكنك فتحه والعمل عليه في أي وقت.
             </p>
             <div className="flex justify-end gap-3 pt-2">
               <a
@@ -214,7 +438,8 @@ export function DashboardQuickActions() {
             </div>
           </div>
         ) : (
-          <form onSubmit={handleDraftSubmit} className="flex flex-col gap-4 p-6 pt-0">
+          /* State C: Form to configure & choose launch mode */
+          <form onSubmit={handleDirectDownloadSubmit} className="flex flex-col gap-4 p-6 pt-0">
             {draftError && (
               <div className="flex items-center gap-2 rounded-md bg-red-50 p-3 text-sm text-red-700">
                 <AlertCircle size={18} className="shrink-0" />
@@ -230,66 +455,66 @@ export function DashboardQuickActions() {
                 onChange={(e) => setSelectedMatter(e.target.value)}
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm focus:border-action focus:outline-none"
               >
-                {matters.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.value} — {m.label.ar}
-                  </option>
-                ))}
+                {matters.length > 0 ? (
+                  matters.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.value} — {m.label.ar}
+                    </option>
+                  ))
+                ) : (
+                  <option value="MAT-2201">MAT-2201 — نزاع عقد التوريد التجاري</option>
+                )}
               </select>
             </div>
 
-            {/* Template selector */}
+            {/* Template type */}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-2">نوع النموذج القانوني:</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">نوع المستند المطلوب:</label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setTemplateType('pleading')}
-                  className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border p-2.5 text-center transition-all ${
+                  className={`flex flex-col items-center gap-1 rounded-md border p-2.5 text-xs font-semibold transition-all ${
                     templateType === 'pleading'
-                      ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
-                      : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      ? 'border-action bg-action/5 text-action shadow-xs'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <Scale size={18} className={templateType === 'pleading' ? 'text-blue-600' : 'text-gray-500'} />
-                  <span className="text-xs font-bold">مذكرة دفاع ودفوع</span>
-                  <span className="text-[10px] text-gray-500">للمحاكم واللجان</span>
+                  <Scale size={18} />
+                  <span>مذكرة دفاع</span>
                 </button>
-
                 <button
                   type="button"
                   onClick={() => setTemplateType('contract')}
-                  className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border p-2.5 text-center transition-all ${
+                  className={`flex flex-col items-center gap-1 rounded-md border p-2.5 text-xs font-semibold transition-all ${
                     templateType === 'contract'
-                      ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
-                      : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      ? 'border-action bg-action/5 text-action shadow-xs'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <FileSignature size={18} className={templateType === 'contract' ? 'text-blue-600' : 'text-gray-500'} />
-                  <span className="text-xs font-bold">عقد تقديم خدمات</span>
-                  <span className="text-[10px] text-gray-500">اتفاقية تمثيل وأتعاب</span>
+                  <FileSignature size={18} />
+                  <span>عقد أتعاب</span>
                 </button>
-
                 <button
                   type="button"
                   onClick={() => setTemplateType('memo')}
-                  className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border p-2.5 text-center transition-all ${
+                  className={`flex flex-col items-center gap-1 rounded-md border p-2.5 text-xs font-semibold transition-all ${
                     templateType === 'memo'
-                      ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
-                      : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      ? 'border-action bg-action/5 text-action shadow-xs'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <FileCheck size={18} className={templateType === 'memo' ? 'text-blue-600' : 'text-gray-500'} />
-                  <span className="text-xs font-bold">تكليف وتفويض</span>
-                  <span className="text-[10px] text-gray-500">خطاب رسمي</span>
+                  <FileCheck size={18} />
+                  <span>تكليف رسمي</span>
                 </button>
               </div>
             </div>
 
             {/* Document Title */}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">عنوان المستند:</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">عنوان المذكرة أو المستند:</label>
               <Input
+                type="text"
                 value={draftTitle}
                 onChange={(e) => setDraftTitle(e.target.value)}
                 required
@@ -297,62 +522,77 @@ export function DashboardQuickActions() {
               />
             </div>
 
-            {templateType === 'pleading' && (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">المحكمة المختصة:</label>
-                  <Input value={court} onChange={(e) => setCourt(e.target.value)} className="w-full text-xs" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">صفة الموكل:</label>
-                  <Input value={clientRole} onChange={(e) => setClientRole(e.target.value)} className="w-full text-xs" />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">الطرف الخصم:</label>
-                  <Input value={opposing} onChange={(e) => setOpposing(e.target.value)} className="w-full text-xs" />
-                </div>
-              </div>
-            )}
-
-            {/* Sharing toggle */}
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-              <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-800">
-                <input
-                  type="checkbox"
-                  checked={shareDraft}
-                  onChange={(e) => setShareDraft(e.target.checked)}
-                  className="rounded border-gray-300 text-action focus:ring-action"
-                />
-                مشاركة المستند فوراً في بوابة الموكل (Client Portal)
+            {/* Client Share Toggle */}
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id="shareDraft"
+                checked={shareDraft}
+                onChange={(e) => setShareDraft(e.target.checked)}
+                className="rounded border-gray-300 text-action focus:ring-action"
+              >
+              </input>
+              <label htmlFor="shareDraft" className="text-xs text-gray-700 cursor-pointer">
+                مشاركة المستند تلقائياً في بوابة الموكل (Client Portal)
               </label>
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
-              <Button variant="secondary" type="button" onClick={() => setDraftOpen(false)} disabled={pendingDraft}>
-                إلغاء
-              </Button>
-              <Button
-                variant="primary"
-                type="submit"
-                disabled={pendingDraft || !draftTitle.trim()}
-                icon={pendingDraft ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            {/* ACTIONS: 1-Click Launch in Word Online or Local */}
+            <div className="mt-2 flex flex-col gap-2 pt-3 border-t border-gray-200">
+              {/* PRIMARY ACTION: Open Official Word Online */}
+              <button
+                type="button"
+                onClick={handleOpenWordOnlineFromModal}
+                disabled={isOpeningWordOnline}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#0078D4] px-4 py-3 text-sm font-bold text-white hover:bg-blue-700 transition-colors shadow-sm"
               >
-                {pendingDraft ? 'جاري الصياغة والحفظ...' : 'توليد وحفظ ملف Word (.docx)'}
-              </Button>
+                {isOpeningWordOnline ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>جاري التجهيز والفتح في Word Online...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileText size={18} />
+                    <span>فتح وبدء الصياغة في Microsoft Word Online (الرسمي) 🌐</span>
+                  </>
+                )}
+              </button>
+
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <a
+                  href={`/${locale}/staff/documents/draft?matter=${selectedMatter}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-gray-600 hover:text-action hover:underline inline-flex items-center gap-1"
+                >
+                  صياغة في محرر الموقع الكامل (A4)
+                  <ExternalLink size={12} />
+                </a>
+
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  disabled={pendingDraft}
+                  className="text-xs font-medium"
+                >
+                  {pendingDraft ? 'جاري الحفظ...' : 'حفظ وتنزيل (.docx) محلياً'}
+                </Button>
+              </div>
             </div>
           </form>
         )}
       </Modal>
 
-      {/* 2. Modal: اطلب تقريرًا / تصدير Excel (.xlsx) */}
+      {/* 2. Modal: تقرير إكسل Excel (.xlsx) */}
       <Modal
         open={reportOpen}
         onClose={() => setReportOpen(false)}
-        title={reportSuccess ? 'تم استخراج وتصدير التقرير بنجاح' : 'اطلب تقريرًا — تصدير جدول Excel (.xlsx)'}
+        title={reportSuccess ? 'تم تصدير وحفظ تقرير Excel بنجاح' : 'تصدير كشف حساب وتقارير Excel (.xlsx)'}
         description={
           reportSuccess
-            ? 'تم حفظ ملف Excel في النظام وتنزيله على جهازك.'
-            : 'اختر نوع التقرير والمسألة القانونية لتصدير جدول بيانات رسمي بتنسيق RTL.'
+            ? 'تم حفظ الملف في قاعدة البيانات وبدء تنزيله بتنسيق رسمي يدعم اليمين لليسار (RTL).'
+            : 'اختر نوع التقرير المالي والقضية المطلوبة لتوليد جدول Excel فوري وحفظه بالنظام.'
         }
       >
         {reportSuccess ? (
@@ -366,9 +606,6 @@ export function DashboardQuickActions() {
                 </p>
               </div>
             </div>
-            <p className="text-sm text-gray-600">
-              تم بدء تحميل جدول البيانات. يمكن إعادة تنزيله في أي وقت من سجل المستندات.
-            </p>
             <div className="flex justify-end gap-3 pt-2">
               <a
                 href={`http://127.0.0.1:8000${reportSuccess.download_url}`}
@@ -397,111 +634,87 @@ export function DashboardQuickActions() {
               <select
                 value={reportMatter}
                 onChange={(e) => setReportMatter(e.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm focus:border-emerald-600 focus:outline-none"
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm focus:border-action focus:outline-none"
               >
-                {matters.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.value} — {m.label.ar}
-                  </option>
-                ))}
+                {matters.length > 0 ? (
+                  matters.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.value} — {m.label.ar}
+                    </option>
+                  ))
+                ) : (
+                  <option value="MAT-2201">MAT-2201 — نزاع عقد التوريد التجاري</option>
+                )}
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-2">نوع التقرير المالي / الإداري:</label>
-              <div className="flex flex-col gap-2">
-                <label
+              <label className="block text-xs font-semibold text-gray-700 mb-1">نوع كشف الحساب المطلوب:</label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
                   onClick={() => setExportType('client_statement')}
-                  className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all ${
+                  className={`flex flex-col items-center gap-1 rounded-md border p-2.5 text-xs font-semibold transition-all ${
                     exportType === 'client_statement'
-                      ? 'border-emerald-600 bg-emerald-50/50 text-emerald-950 ring-2 ring-emerald-600/20'
-                      : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      ? 'border-emerald-600 bg-emerald-50 text-emerald-800 shadow-xs'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <input
-                    type="radio"
-                    name="exportType"
-                    checked={exportType === 'client_statement'}
-                    onChange={() => setExportType('client_statement')}
-                    className="mt-1 text-emerald-600 focus:ring-emerald-600"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 font-bold text-sm">
-                      <Briefcase size={16} className="text-emerald-700" />
-                      كشف حساب مالي للموكل (Statement of Account)
-                    </div>
-                    <p className="mt-0.5 text-xs text-gray-500">
-                      جدول بالمطالبات، المبالغ المسددة، والرصيد النهائي المستحق.
-                    </p>
-                  </div>
-                </label>
-
-                <label
+                  <Receipt size={18} />
+                  <span>كشف حساب موكل</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setExportType('invoices_ledger')}
-                  className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all ${
+                  className={`flex flex-col items-center gap-1 rounded-md border p-2.5 text-xs font-semibold transition-all ${
                     exportType === 'invoices_ledger'
-                      ? 'border-emerald-600 bg-emerald-50/50 text-emerald-950 ring-2 ring-emerald-600/20'
-                      : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      ? 'border-emerald-600 bg-emerald-50 text-emerald-800 shadow-xs'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <input
-                    type="radio"
-                    name="exportType"
-                    checked={exportType === 'invoices_ledger'}
-                    onChange={() => setExportType('invoices_ledger')}
-                    className="mt-1 text-emerald-600 focus:ring-emerald-600"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 font-bold text-sm">
-                      <Receipt size={16} className="text-emerald-700" />
-                      سجل فواتير ومطالبات القضية (Invoices Ledger)
-                    </div>
-                    <p className="mt-0.5 text-xs text-gray-500">
-                      أرقام الفواتير، تواريخ الاستحقاق، ضريبة القيمة المضافة، وحالة السداد.
-                    </p>
-                  </div>
-                </label>
-
-                <label
+                  <FileSpreadsheet size={18} />
+                  <span>سجل الفواتير</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setExportType('timesheet')}
-                  className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all ${
+                  className={`flex flex-col items-center gap-1 rounded-md border p-2.5 text-xs font-semibold transition-all ${
                     exportType === 'timesheet'
-                      ? 'border-emerald-600 bg-emerald-50/50 text-emerald-950 ring-2 ring-emerald-600/20'
-                      : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      ? 'border-emerald-600 bg-emerald-50 text-emerald-800 shadow-xs'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <input
-                    type="radio"
-                    name="exportType"
-                    checked={exportType === 'timesheet'}
-                    onChange={() => setExportType('timesheet')}
-                    className="mt-1 text-emerald-600 focus:ring-emerald-600"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 font-bold text-sm">
-                      <Clock size={16} className="text-emerald-700" />
-                      تقرير ساعات العمل والمطالبات (Timesheet & Work Claims)
-                    </div>
-                    <p className="mt-0.5 text-xs text-gray-500">
-                      حصر كامل لساعات المحامين المسجلة بالمؤقت، معدل الساعة، والإجمالي.
-                    </p>
-                  </div>
-                </label>
+                  <Clock size={18} />
+                  <span>ساعات العمل</span>
+                </button>
               </div>
             </div>
 
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id="shareReport"
+                checked={shareReport}
+                onChange={(e) => setShareReport(e.target.checked)}
+                className="rounded border-gray-300 text-action focus:ring-action"
+              />
+              <label htmlFor="shareReport" className="text-xs text-gray-700 cursor-pointer">
+                مشاركة التقرير مع العميل في بوابته
+              </label>
+            </div>
+
             <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
-              <Button variant="secondary" type="button" onClick={() => setReportOpen(false)} disabled={pendingReport}>
+              <Button type="button" variant="secondary" onClick={() => setReportOpen(false)}>
                 إلغاء
               </Button>
               <Button
-                variant="primary"
                 type="submit"
+                variant="primary"
                 disabled={pendingReport}
-                icon={pendingReport ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white"
+                className="bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs"
+                icon={pendingReport ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
               >
-                {pendingReport ? 'جاري التصدير والحفظ...' : 'تصدير وحفظ ملف Excel (.xlsx)'}
+                {pendingReport ? 'جاري التصدير...' : 'تصدير وحفظ Excel (.xlsx)'}
               </Button>
             </div>
           </form>

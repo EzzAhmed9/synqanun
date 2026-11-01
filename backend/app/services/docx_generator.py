@@ -312,6 +312,84 @@ def generate_contract_doc(
     add_ar_run(p_l2, f"\nالاسم: {lead_name}\nالصفة: عن {firm.name_ar}\nالتوقيع: ............................", size_pt=10)
 
 
+def generate_custom_legal_doc(
+    doc: Document,
+    matter,
+    client,
+    firm,
+    lead_counsel,
+    params: dict
+):
+    """Generate custom legal document with user-drafted body."""
+    table = doc.add_table(rows=1, cols=2)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    set_table_rtl(table)
+
+    cell_right = table.cell(0, 0)
+    cell_left = table.cell(0, 1)
+
+    court_name = params.get("court_name") or (matter.forum_ar if matter else "محكمة استئناف القاهرة")
+    case_number = params.get("case_number") or (matter.court_file_number if matter else "") or (f"{matter.reference}/2026" if matter else "")
+
+    p1 = cell_right.paragraphs[0]
+    set_p_rtl(p1, WD_ALIGN_PARAGRAPH.RIGHT)
+    add_ar_run(p1, f"{firm.name_ar}\n", size_pt=12, bold=True, color=COLOR_NAVY)
+    add_ar_run(p1, "للمحاماة والاستشارات القانونية والتحكيم\n", size_pt=10, color=COLOR_GOLD)
+    add_ar_run(p1, f"ملف النزاع: {matter.reference if matter else ''} | القضية: {case_number}", size_pt=9, color=COLOR_GRAY)
+
+    p2 = cell_left.paragraphs[0]
+    set_p_rtl(p2, WD_ALIGN_PARAGRAPH.LEFT)
+    add_ar_run(p2, f"التاريخ: {datetime.now().strftime('%Y/%m/%d')}\n", size_pt=9, color=COLOR_GRAY)
+    add_ar_run(p2, f"الجهة: {court_name}\n", size_pt=9, bold=True)
+    if client:
+        add_ar_run(p2, f"الموكل: {client.name_ar}", size_pt=9, color=COLOR_NAVY)
+
+    add_divider_line(doc, "1B2A4A")
+
+    # Document Title
+    p_title = doc.add_paragraph()
+    set_p_rtl(p_title, WD_ALIGN_PARAGRAPH.CENTER)
+    p_title.paragraph_format.space_before = Pt(14)
+    p_title.paragraph_format.space_after = Pt(14)
+    custom_title = params.get("title") or (f"مستند قانوني - {matter.reference}" if matter else "مستند قانوني")
+    add_ar_run(p_title, custom_title, size_pt=16, bold=True, color=COLOR_NAVY)
+
+    # Body paragraphs
+    body_text = params.get("body") or ""
+    lines = body_text.split("\n")
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        p_line = doc.add_paragraph()
+        p_line.paragraph_format.line_spacing = 1.3
+        is_heading = (
+            stripped.startswith("أولاً") or stripped.startswith("ثانياً") or
+            stripped.startswith("ثالثاً") or stripped.startswith("رابعاً") or
+            stripped.startswith("خامساً") or stripped.startswith("بناءً عليه") or
+            stripped.startswith("الدفع") or stripped.startswith("الوقائع") or
+            stripped.startswith("الطلبات") or stripped.startswith("البند") or
+            stripped.endswith(":")
+        )
+        if is_heading:
+            set_p_rtl(p_line, WD_ALIGN_PARAGRAPH.RIGHT)
+            p_line.paragraph_format.space_before = Pt(10)
+            add_ar_run(p_line, stripped, size_pt=13, bold=True, color=COLOR_NAVY)
+        else:
+            set_p_rtl(p_line, WD_ALIGN_PARAGRAPH.JUSTIFY)
+            add_ar_run(p_line, stripped, size_pt=11, bold=False, color=COLOR_BLACK)
+
+    # Signatures
+    lead_name = lead_counsel.name_ar if lead_counsel else "المحامي الوكيل"
+    p_sig = doc.add_paragraph()
+    set_p_rtl(p_sig, WD_ALIGN_PARAGRAPH.LEFT)
+    p_sig.paragraph_format.space_before = Pt(30)
+    add_ar_run(p_sig, "وكـيـل الـمـوكـل\n", size_pt=12, bold=True, color=COLOR_NAVY)
+    add_ar_run(p_sig, f"الأستاذ / {lead_name}\n", size_pt=11, bold=True)
+    add_ar_run(p_sig, f"عن {firm.name_ar}\n", size_pt=10, color=COLOR_GRAY)
+    add_ar_run(p_sig, "التوقيع: .......................................", size_pt=10, color=COLOR_GRAY)
+
+
 def generate_legal_docx(
     matter,
     client,
@@ -326,7 +404,7 @@ def generate_legal_docx(
     """
     doc = Document()
     
-    # Configure A4 page with 1 inch margins
+    # Configure A4 page with 0.8 inch margins
     sections = doc.sections
     for section in sections:
         section.top_margin = Inches(0.8)
@@ -334,18 +412,21 @@ def generate_legal_docx(
         section.left_margin = Inches(0.8)
         section.right_margin = Inches(0.8)
 
-    clean_ref = matter.reference.replace("-", "_")
+    clean_ref = matter.reference.replace("-", "_") if matter else "DOC"
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    if template_type in ["pleading", "courtSubmission"]:
+    # If explicit user body was provided in editor, use custom doc generator
+    if params.get("body") and str(params.get("body")).strip():
+        generate_custom_legal_doc(doc, matter, client, firm, lead_counsel, params)
+        filename = f"مستند_محرر_{clean_ref}_{timestamp}.docx"
+    elif template_type in ["pleading", "courtSubmission"]:
         generate_pleading_memo(doc, matter, client, firm, lead_counsel, params)
         filename = f"مذكرة_دفاع_{clean_ref}_{timestamp}.docx"
     elif template_type in ["contract", "agreement"]:
         generate_contract_doc(doc, matter, client, firm, lead_counsel, params)
         filename = f"عقد_اتفاق_{clean_ref}_{timestamp}.docx"
     else:
-        # Default memo
-        generate_pleading_memo(doc, matter, client, firm, lead_counsel, params)
+        generate_custom_legal_doc(doc, matter, client, firm, lead_counsel, params)
         filename = f"مستند_قانوني_{clean_ref}_{timestamp}.docx"
 
     bio = BytesIO()

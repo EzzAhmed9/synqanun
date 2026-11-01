@@ -224,14 +224,15 @@ export function EngagementView({
             ) : engagement.active && canReopen ? (
               <CloseMatterButton reference={engagement.reference} />
             ) : null}
-            <GenerateLegalDocModal
-              engagementRef={engagement.reference}
-              engagementTitle={engagement.title[locale]}
-              clientName={record.client?.name?.[locale]}
-              opposingParty={record.counterpart?.[locale]}
-              venue={engagement.venue?.[locale]}
-              caseNumber={engagement.registryNumber || undefined}
-            />
+            <a
+              href={`/${locale}/staff/documents/draft?matter=${engagement.reference}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-800 shadow-xs hover:bg-blue-100 transition-colors"
+            >
+              <FileText size={15} className="text-blue-600" />
+              صياغة مستند Word في تبويب جديد (.docx)
+            </a>
             <ExportExcelModal
               engagementRef={engagement.reference}
               clientId={record.client?.id}
@@ -468,14 +469,15 @@ export function EngagementView({
               caption={t('detail.documentsCount', { count: documents.length })}
             />
             <span className="flex flex-wrap items-center gap-2">
-              <GenerateLegalDocModal
-                engagementRef={engagement.reference}
-                engagementTitle={engagement.title[locale]}
-                clientName={record.client?.name?.[locale]}
-                opposingParty={record.counterpart?.[locale]}
-                venue={engagement.venue?.[locale]}
-                caseNumber={engagement.registryNumber || undefined}
-              />
+              <a
+                href={`/${locale}/staff/documents/draft?matter=${engagement.reference}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-md border border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-800 shadow-xs hover:bg-blue-100 transition-colors"
+              >
+                <FileText size={15} className="text-blue-600" />
+                صياغة مستند Word في تبويب جديد (.docx)
+              </a>
               <ExportExcelModal
                 engagementRef={engagement.reference}
                 clientId={record.client?.id}
@@ -523,6 +525,18 @@ export function EngagementView({
                     </span>
                   </span>
                   <span className="flex items-center gap-2">
+                    {document.kind === 'docx' && (
+                      <a
+                        href={`/${locale}/staff/documents/draft?matter=${engagement.reference}&auto_open=word`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="فتح في Word Online الرسمي"
+                        className="inline-flex h-8 items-center gap-1.5 rounded border border-[#0078D4] bg-blue-50/70 px-2.5 text-xs font-bold text-[#0078D4] shadow-xs hover:bg-blue-100 transition-colors"
+                      >
+                        <FileText size={13} className="text-[#0078D4]" />
+                        <span>Word Online</span>
+                      </a>
+                    )}
                     <a
                       href={document.downloadUrl || `http://127.0.0.1:8000/api/documents/${document.id}/download`}
                       download

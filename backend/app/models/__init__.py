@@ -6,6 +6,7 @@ from app.models.matter import Matter, MatterTeamMember, MatterHearing, MatterTim
 from app.models.invoice import Invoice, InvoiceLineItem, TimeEntry, Quote
 from app.models.legal_db import LegalDatabaseEntry
 from app.models.document import Document
+from app.models.integration import Integration
 
 __all__ = [
     "Base",
@@ -23,4 +24,5 @@ __all__ = [
     "Quote",
     "LegalDatabaseEntry",
     "Document",
+    "Integration",
 ]

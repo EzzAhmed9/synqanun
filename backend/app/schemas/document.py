@@ -14,6 +14,7 @@ class WordGenerationRequest(BaseModel):
     facts: Optional[str] = None
     defenses: Optional[str] = None
     requests: Optional[str] = None
+    body: Optional[str] = None
     contract_clauses: Optional[List[Dict[str, str]]] = None
     is_firm_only: bool = False
 

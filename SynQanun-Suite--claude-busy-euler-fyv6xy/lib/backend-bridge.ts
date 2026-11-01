@@ -570,6 +570,7 @@ export const backendBridge = {
       facts?: string;
       defenses?: string;
       requests?: string;
+      body?: string;
       is_firm_only?: boolean;
     }) {
       try {
@@ -648,6 +649,119 @@ export const backendBridge = {
 
     getDownloadUrl(docId: string) {
       return `http://127.0.0.1:8000/api/documents/${docId}/download`;
+    },
+  },
+
+  // --- Microsoft 365 & Word Online Integrations ---
+  integrations: {
+    async getMicrosoftStatus() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/integrations/microsoft/status`, {
+          headers: await getHeaders(),
+          cache: 'no-store',
+        });
+        if (!res.ok) return { is_connected: false, has_configured_client_id: false };
+        return await res.json();
+      } catch {
+        return { is_connected: false, has_configured_client_id: false };
+      }
+    },
+
+    async getMicrosoftAuthUrl(redirectUri: string) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/integrations/microsoft/auth-url?redirect_uri=${encodeURIComponent(redirectUri)}`, {
+          headers: await getHeaders(),
+          cache: 'no-store',
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          return { ok: false, error: err.detail || 'Failed to get auth url' };
+        }
+        return { ok: true, data: await res.json() };
+      } catch (err: any) {
+        return { ok: false, error: err.message || 'Network error' };
+      }
+    },
+
+    async exchangeMicrosoftToken(code: string, redirectUri: string) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/integrations/microsoft/exchange-token`, {
+          method: 'POST',
+          headers: await getHeaders(),
+          body: JSON.stringify({ code, redirect_uri: redirectUri }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          return { ok: false, error: err.detail || 'Token exchange failed' };
+        }
+        return { ok: true, data: await res.json() };
+      } catch (err: any) {
+        return { ok: false, error: err.message || 'Network error' };
+      }
+    },
+
+    async disconnectMicrosoft() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/integrations/microsoft/disconnect`, {
+          method: 'POST',
+          headers: await getHeaders(),
+        });
+        return await res.json();
+      } catch {
+        return null;
+      }
+    },
+
+    async openWordOnline(documentId: string) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/integrations/documents/${documentId}/open-word-online`, {
+          method: 'POST',
+          headers: await getHeaders(),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          return { ok: false, error: err.detail || 'Failed to open Word Online' };
+        }
+        return { ok: true, data: await res.json() };
+      } catch (err: any) {
+        return { ok: false, error: err.message || 'Network error' };
+      }
+    },
+
+    async syncFromWordOnline(documentId: string) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/integrations/documents/${documentId}/sync-from-word-online`, {
+          method: 'POST',
+          headers: await getHeaders(),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          return { ok: false, error: err.detail || 'Failed to sync from Word Online' };
+        }
+        return { ok: true, data: await res.json() };
+      } catch (err: any) {
+        return { ok: false, error: err.message || 'Network error' };
+      }
+    },
+
+    async uploadUpdatedDocx(documentId: string, formData: FormData) {
+      try {
+        const staffId = await viewerStaffId().catch(() => 'stf-001');
+        const res = await fetch(`${BACKEND_URL}/staff/integrations/documents/${documentId}/upload-updated-docx`, {
+          method: 'POST',
+          headers: {
+            'X-Viewer-Staff-Id': staffId,
+          },
+          body: formData,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          return { ok: false, error: err.detail || 'Failed to upload document' };
+        }
+        return { ok: true, data: await res.json() };
+      } catch (err: any) {
+        return { ok: false, error: err.message || 'Network error' };
+      }
     },
   },
 };

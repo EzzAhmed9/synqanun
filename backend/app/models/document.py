@@ -27,6 +27,11 @@ class Document(Base):
     # True: firm internal only; False: shared with client portal
     is_firm_only = Column(Boolean, nullable=False, default=False, index=True)
     
+    # Microsoft OneDrive / Word Online integration
+    onedrive_item_id = Column(String, nullable=True, index=True)
+    onedrive_web_url = Column(Text, nullable=True)
+    onedrive_synced_at = Column(DateTime, nullable=True)
+    
     created_by_id = Column(String, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
