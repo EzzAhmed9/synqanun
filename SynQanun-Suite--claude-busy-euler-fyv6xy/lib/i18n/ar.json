@@ -1220,7 +1220,8 @@
     "standing": {
       "retainer": "عقد مستمر",
       "active": "نشط",
-      "prospect": "محتمل"
+      "prospect": "محتمل",
+      "goodStanding": "نشط"
     },
     "sources": {
       "portal": "بوابة العملاء",
@@ -1568,7 +1569,8 @@
       "standing": {
         "retainer": "عقد سنوي",
         "active": "نشط",
-        "prospect": "عميل محتمل"
+        "prospect": "عميل محتمل",
+        "goodStanding": "نشط"
       }
     },
     "billing": {

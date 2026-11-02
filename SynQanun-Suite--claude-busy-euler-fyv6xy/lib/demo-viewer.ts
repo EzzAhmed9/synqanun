@@ -59,7 +59,7 @@ export async function viewerStaffId(): Promise<string> {
   try {
     const jar = await cookies();
     const raw = jar.get(DEMO_VIEWER_COOKIE)?.value;
-    if (raw && demoStaff.some((member) => member.id === raw)) return raw;
+    if (raw) return raw;
   } catch {
     // Read outside a request scope. Nothing to resolve; take the default.
   }

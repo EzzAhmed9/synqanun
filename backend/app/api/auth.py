@@ -142,6 +142,8 @@ def complete_password_reset(payload: PasswordResetComplete, db: Session = Depend
         )
         
     user.hashed_password = get_password_hash(payload.password)
+    if user.status == "temporaryPasswordIssued":
+        user.status = "active"
     db.commit()
     db.refresh(user)
     

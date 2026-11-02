@@ -9,20 +9,18 @@ import {
   CheckCircle2,
   AlertCircle,
   Scale,
-  FileSignature,
-  FileCheck,
   Receipt,
   Clock,
-  Briefcase,
   Loader2,
   ExternalLink,
   RefreshCw,
   Upload,
   ArrowRight,
-  Save,
+  Cloud,
+  Key,
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Button, buttonClasses, Input, Modal } from '@/components/ui';
+import { Button, Input, Modal } from '@/components/ui';
 import { FeatherMark } from '@/components/brand/FeatherMark';
 import { useRouter, Link } from '@/lib/i18n/navigation';
 import {
@@ -31,6 +29,8 @@ import {
   openWordOnlineAction,
   syncFromWordOnlineAction,
   uploadUpdatedDocxAction,
+  getMicrosoftStatusAction,
+  saveMicrosoftClientIdAction,
 } from './register/generate-document-actions';
 import { getActiveMattersForTimer, type ActiveMatterOption } from './time/get-matters-action';
 
@@ -45,12 +45,23 @@ export function DashboardQuickActions() {
   const [matters, setMatters] = React.useState<ActiveMatterOption[]>([]);
   const [loadingMatters, setLoadingMatters] = React.useState(false);
 
-  // Transitions
+  // Transitions & Loaders
   const [pendingDraft, startDraftTransition] = React.useTransition();
   const [pendingReport, startReportTransition] = React.useTransition();
   const [isOpeningWordOnline, setIsOpeningWordOnline] = React.useState(false);
   const [isSyncing, setIsSyncing] = React.useState(false);
   const [isUploadingUpdated, setIsUploadingUpdated] = React.useState(false);
+  const [isConnectingMs, setIsConnectingMs] = React.useState(false);
+
+  // Microsoft 365 status & client ID input
+  const [msStatus, setMsStatus] = React.useState<{
+    is_connected: boolean;
+    account_email?: string | null;
+    client_id?: string | null;
+    has_configured_client_id?: boolean;
+  }>({ is_connected: false });
+  const [clientIdInput, setClientIdInput] = React.useState('');
+  const [showConfigBox, setShowConfigBox] = React.useState(false);
 
   // Errors & Success
   const [draftError, setDraftError] = React.useState<string | null>(null);
@@ -66,14 +77,12 @@ export function DashboardQuickActions() {
     webUrl: string;
     matterRef: string;
   } | null>(null);
+  const [syncedPreview, setSyncedPreview] = React.useState<string | null>(null);
+  const [downloadUrl, setDownloadUrl] = React.useState<string | null>(null);
 
-  // Draft form state
+  // Draft form state - Clean & Simple
   const [selectedMatter, setSelectedMatter] = React.useState('MAT-2201');
-  const [templateType, setTemplateType] = React.useState<'pleading' | 'contract' | 'memo'>('pleading');
-  const [draftTitle, setDraftTitle] = React.useState('مذكرة دفاع في دعوى النزاع التجاري لعقد التوزيع');
-  const [court, setCourt] = React.useState('محكمة استئناف القاهرة - الدائرة التجارية');
-  const [clientRole, setClientRole] = React.useState('المستأنف ضده / المدعى عليه');
-  const [opposing, setOpposing] = React.useState('شركة الشرق الأوسط للتجارة');
+  const [draftTitle, setDraftTitle] = React.useState('مذكرة دفاع في نزاع القضية');
   const [shareDraft, setShareDraft] = React.useState(true);
 
   // Report form state
@@ -81,7 +90,7 @@ export function DashboardQuickActions() {
   const [exportType, setExportType] = React.useState<'client_statement' | 'invoices_ledger' | 'timesheet'>('client_statement');
   const [shareReport, setShareReport] = React.useState(true);
 
-  // Load matters on mount
+  // Load matters and MS status on mount
   React.useEffect(() => {
     let mounted = true;
     setLoadingMatters(true);
@@ -95,33 +104,68 @@ export function DashboardQuickActions() {
         setLoadingMatters(false);
       }
     });
+
+    getMicrosoftStatusAction().then((st) => {
+      if (mounted && st) {
+        setMsStatus(st);
+        if (st.client_id) setClientIdInput(st.client_id);
+      }
+    });
+
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('ms_connected') === 'true') {
+        setSyncSuccessMsg('تم ربط حسابك في Microsoft 365 بنجاح! يمكنك الآن صياغة المستندات والحفظ السحابي التلقائي.');
+        setDraftOpen(true);
+      }
+      const msErr = urlParams.get('ms_error');
+      if (msErr) {
+        setDraftError(`تنبيه الربط مع Microsoft: ${decodeURIComponent(msErr)}`);
+        setDraftOpen(true);
+      }
+    }
+
     return () => {
       mounted = false;
     };
   }, []);
 
-  // Update title when matter or template changes
+  // Update title when matter changes
   React.useEffect(() => {
     const current = matters.find((m) => m.value === selectedMatter);
     const mTitle = current?.label.ar || selectedMatter;
-    if (templateType === 'pleading') {
-      setDraftTitle(`مذكرة دفاع في ${mTitle}`);
-    } else if (templateType === 'contract') {
-      setDraftTitle(`عقد خدمات وأتعاب قانونية - ${selectedMatter}`);
-    } else {
-      setDraftTitle(`تكليف قانوني رسمي وتفويض - ${selectedMatter}`);
+    setDraftTitle(`مذكرة دفاع في ${mTitle}`);
+  }, [selectedMatter, matters]);
+
+  // Connect Microsoft 365 Account
+  const handleConnectMicrosoft = async () => {
+    if (!clientIdInput.trim()) {
+      setDraftError('يرجى إدخال Client ID أولاً');
+      return;
     }
-  }, [selectedMatter, templateType, matters]);
+    setIsConnectingMs(true);
+    setDraftError(null);
+    try {
+      const res = await saveMicrosoftClientIdAction(clientIdInput.trim());
+      if (res.ok) {
+        // Redirect to Microsoft OAuth login directly
+        window.location.href = 'http://localhost:8000/api/staff/integrations/microsoft/login';
+      } else {
+        setDraftError(res.error || 'فشل حفظ Client ID');
+        setIsConnectingMs(false);
+      }
+    } catch (err: any) {
+      setDraftError(err.message || 'حدث خطأ أثناء الاتصال');
+      setIsConnectingMs(false);
+    }
+  };
 
   // Helper to persist Word doc in PostgreSQL & Disk
   const generateAndSaveDocument = async () => {
     return await generateWordAction({
       matter_reference: selectedMatter,
-      template_type: templateType,
+      template_type: 'pleading',
       title: draftTitle,
-      court_name: court,
-      client_role: clientRole,
-      opposing_party: opposing,
       is_firm_only: !shareDraft,
     });
   };
@@ -163,32 +207,55 @@ export function DashboardQuickActions() {
     }
   };
 
-  // 2. Action: Sync changes from Word Online
-  const handleSyncFromWordOnline = async () => {
+  // 2. Action: Sync changes from Word Online (Zero Download!)
+  const handleSyncFromWordOnline = async (isBackground = false) => {
     if (!wordOnlineSession?.docId) return;
     setIsSyncing(true);
-    setDraftError(null);
-    setSyncSuccessMsg(null);
+    if (!isBackground) {
+      setDraftError(null);
+      setSyncSuccessMsg(null);
+    }
 
     try {
       const res = await syncFromWordOnlineAction(wordOnlineSession.docId);
       if (res.ok && res.data) {
-        setSyncSuccessMsg('تمت مزامنة كافة التعديلات من Microsoft Word وحفظها في الموقع بنجاح!');
+        setSyncSuccessMsg('تمت مزامنة وحفظ كافة التعديلات من Word في الموقع بنجاح دون أي تنزيل!');
+        if (res.data.preview_text) {
+          setSyncedPreview(res.data.preview_text);
+        }
+        if (res.data.download_url) {
+          setDownloadUrl(res.data.download_url);
+        }
         router.refresh();
       } else {
-        setDraftError(
-          res.error ||
-            'المستند مفتوح بالوضع المباشر أو لم تنته المزامنة بعد. يمكنك أيضاً رفع النسخة المحدثة عبر زر "رفع النسخة المعدلة".'
-        );
+        if (!isBackground) {
+          setDraftError(res.error || 'فشلت المزامنة من Word Online.');
+        }
       }
     } catch (err: any) {
-      setDraftError(err.message || 'فشلت المزامنة التلقائية.');
+      if (!isBackground) {
+        setDraftError(err.message || 'فشلت المزامنة التلقائية.');
+      }
     } finally {
       setIsSyncing(false);
     }
   };
 
-  // 3. Action: Manual Upload of edited .docx
+  // Auto-sync when returning to the dashboard from the Word Online tab
+  React.useEffect(() => {
+    if (!wordOnlineSession?.docId) return;
+
+    const onWindowFocus = () => {
+      handleSyncFromWordOnline(true);
+    };
+
+    window.addEventListener('focus', onWindowFocus);
+    return () => {
+      window.removeEventListener('focus', onWindowFocus);
+    };
+  }, [wordOnlineSession?.docId]);
+
+  // 3. Action: Manual Upload fallback
   const handleUploadUpdatedDocx = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !wordOnlineSession?.docId) return;
@@ -216,30 +283,7 @@ export function DashboardQuickActions() {
     }
   };
 
-  // 4. Action: Save to site & Download local .docx
-  const handleDirectDownloadSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setDraftError(null);
-
-    startDraftTransition(async () => {
-      const res = await generateAndSaveDocument();
-      if (res.ok && res.data) {
-        setDraftSuccess(res.data);
-        const downloadUrl = `http://127.0.0.1:8000${res.data.download_url}`;
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = res.data.name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        router.refresh();
-      } else {
-        setDraftError(res.error || 'حدث خطأ أثناء صياغة المستند.');
-      }
-    });
-  };
-
-  // 5. Excel Report Submit
+  // 4. Excel Report Submit
   const handleReportSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setReportError(null);
@@ -269,7 +313,7 @@ export function DashboardQuickActions() {
 
   return (
     <>
-      {/* Unified Executive Navigation Bar (ONLY 2 Buttons) */}
+      {/* 1. Executive Navigation Bar: ONLY 2 Buttons */}
       <nav aria-label={t('label')} className="flex flex-wrap items-center gap-2">
         <Button
           variant="primary"
@@ -288,7 +332,7 @@ export function DashboardQuickActions() {
         <Button
           variant="secondary"
           className="border-legal-navy/25 bg-legal-navy/5 text-legal-navy hover:bg-legal-navy/10"
-          icon={<FeatherMark aria-hidden size={15} />}
+          icon={<FeatherMark aria-hidden height={16} />}
           onClick={() => {
             setReportSuccess(null);
             setReportError(null);
@@ -299,26 +343,22 @@ export function DashboardQuickActions() {
         </Button>
       </nav>
 
-      {/* 1. Unified Modal: صياغة مستند Word */}
+      {/* 2. Modal: صياغة مستند Word - Clean, Minimalist, No Clutter */}
       <Modal
         open={draftOpen}
         onClose={() => setDraftOpen(false)}
         title={
           wordOnlineSession
-            ? 'المستند قيد التحرير في Microsoft Word Online'
-            : draftSuccess
-            ? 'تم حفظ وتنزيل المستند بنجاح'
-            : 'صياغة مستند Word جديد'
+            ? 'المستند مفتوح للتحرير في Microsoft Word'
+            : 'صياغة مستند جديد في Word'
         }
         description={
           wordOnlineSession
-            ? 'المستند مفتوح في تاب Word الرسمي. بعد الانتهاء، اضغط على زر الحفظ أدناه لحفظ كافة التعديلات في الموقع.'
-            : draftSuccess
-            ? 'تم حفظ المستند في قاعدة البيانات وسيظهر فوراً في تبويب المستندات داخل ملف القضية.'
-            : 'اختر القضية ونوع الصياغة للبدء في كتابة وتعديل المذكرة عبر Microsoft Word أو المحرر المباشر.'
+            ? 'اكتب ما تشاء في نافذة Word الرسمية، وعند الانتهاء اضغط حفظ ومزامنة ليتم حفظ كل شيء في الموقع.'
+            : 'اختر القضية واضغط لفتح Word مباشرة والبدء في الكتابة.'
         }
       >
-        {/* State A: Word Online is currently active */}
+        {/* State A: Word is currently open */}
         {wordOnlineSession ? (
           <div className="flex flex-col gap-4 p-6 pt-0">
             <div className="rounded-xl border border-blue-400 bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
@@ -330,7 +370,7 @@ export function DashboardQuickActions() {
                   <div className="flex items-center gap-2">
                     <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
                     <p className="font-bold text-sm text-gray-900">
-                      تم فتح Microsoft Word Online في التبويب الجديد 🌐
+                      تم فتح Microsoft Word في التبويب الجديد 🌐
                     </p>
                   </div>
                   <p className="text-xs text-gray-600 mt-0.5">
@@ -354,24 +394,52 @@ export function DashboardQuickActions() {
               </div>
             )}
 
-            {/* How save works: 2 Direct Save Options */}
-            <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-4 space-y-3">
-              <p className="text-xs font-bold text-gray-700">كيف يتم الحفظ في الموقع بعد الانتهاء من التعديل؟</p>
+            {/* Direct Save Button */}
+            <div className="rounded-lg border border-gray-200 bg-gray-50/70 p-4 text-center space-y-3">
+              <p className="text-xs font-bold text-gray-700">
+                بعد الانتهاء من الكتابة في Word، اضغط هنا لحفظ التعديلات في الموقع:
+              </p>
               
-              <div className="flex flex-col sm:flex-row items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleSyncFromWordOnline}
-                  disabled={isSyncing}
-                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-800 transition-colors shadow-xs"
-                >
-                  {isSyncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-                  💾 حفظ ومزامنة التعديلات في الموقع
-                </button>
+              <button
+                type="button"
+                onClick={() => handleSyncFromWordOnline(false)}
+                disabled={isSyncing}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-800 transition-colors shadow-sm cursor-pointer"
+              >
+                {isSyncing ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
+                💾 حفظ ومزامنة التعديلات في الموقع (بدون تنزيل)
+              </button>
 
-                <label className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg border border-blue-400 bg-white px-4 py-2.5 text-xs font-bold text-blue-900 hover:bg-blue-50 transition-colors cursor-pointer shadow-xs">
-                  {isUploadingUpdated ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} className="text-[#0078D4]" />}
-                  📁 رفع النسخة المعدلة وحفظها فوراً
+              {syncedPreview && (
+                <div className="rounded-lg border border-emerald-300 bg-white p-3 text-right space-y-1.5 shadow-xs">
+                  <div className="flex items-center justify-between text-xs font-bold text-emerald-900">
+                    <span className="flex items-center gap-1">
+                      <CheckCircle2 size={14} className="text-emerald-600" />
+                      آخر نص تم حفظه من Word:
+                    </span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">محفوظ بنجاح ✅</span>
+                  </div>
+                  <div className="rounded bg-emerald-50/60 p-2 font-sans font-medium text-gray-900 text-xs whitespace-pre-wrap border border-emerald-100">
+                    {syncedPreview}
+                  </div>
+                  {downloadUrl && (
+                    <div className="pt-1 text-center">
+                      <a
+                        href={downloadUrl}
+                        download
+                        className="text-xs font-bold text-blue-700 hover:text-blue-900 underline inline-flex items-center gap-1"
+                      >
+                        📥 تحميل ملف .docx للتأكد بالعين المجردة
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="pt-2 text-center">
+                <label className="text-xs text-blue-700 hover:underline cursor-pointer inline-flex items-center gap-1">
+                  <Upload size={13} />
+                  أو رفع نسخة معدلة يدوياً إن وُجدت
                   <input
                     type="file"
                     accept=".docx"
@@ -390,7 +458,7 @@ export function DashboardQuickActions() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0078D4] hover:underline"
               >
-                العودة إلى تاب Word Online
+                التبديل إلى نافذة Word
                 <ExternalLink size={13} />
               </a>
 
@@ -403,43 +471,14 @@ export function DashboardQuickActions() {
                   <ArrowRight size={13} className="rotate-180" />
                 </Link>
                 <Button variant="secondary" onClick={() => setDraftOpen(false)}>
-                  إغلاق النافذة
+                  إغلاق
                 </Button>
               </div>
             </div>
           </div>
-        ) : draftSuccess ? (
-          /* State B: Document generated & downloaded */
-          <div className="flex flex-col gap-4 p-6 pt-0">
-            <div className="flex items-center gap-3 rounded-md bg-emerald-50 p-4 text-emerald-800">
-              <CheckCircle2 size={24} className="shrink-0 text-emerald-600" />
-              <div>
-                <p className="font-semibold">{draftSuccess.name}</p>
-                <p className="text-xs text-emerald-700">
-                  الحجم: {draftSuccess.size_label} • القضية: {selectedMatter}
-                </p>
-              </div>
-            </div>
-            <p className="text-sm text-gray-600">
-              تم حفظ المستند في قاعدة البيانات وتنزيله في المتصفح. يمكنك فتحه والعمل عليه في أي وقت.
-            </p>
-            <div className="flex justify-end gap-3 pt-2">
-              <a
-                href={`http://127.0.0.1:8000${draftSuccess.download_url}`}
-                download={draftSuccess.name}
-                className="inline-flex items-center gap-2 rounded-md bg-action px-4 py-2 text-sm font-semibold text-white hover:bg-action-hover"
-              >
-                <Download size={16} />
-                تنزيل الملف مرة أخرى
-              </a>
-              <Button variant="secondary" onClick={() => setDraftOpen(false)}>
-                إغلاق
-              </Button>
-            </div>
-          </div>
         ) : (
-          /* State C: Form to configure & choose launch mode */
-          <form onSubmit={handleDirectDownloadSubmit} className="flex flex-col gap-4 p-6 pt-0">
+          /* State B: Clean, Minimalist Form to Pick Matter & Launch Word */
+          <div className="flex flex-col gap-4 p-6 pt-0">
             {draftError && (
               <div className="flex items-center gap-2 rounded-md bg-red-50 p-3 text-sm text-red-700">
                 <AlertCircle size={18} className="shrink-0" />
@@ -449,11 +488,11 @@ export function DashboardQuickActions() {
 
             {/* Matter selector */}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">المسألة القانونية / القضية:</label>
+              <label className="block text-xs font-bold text-gray-700 mb-1">المسألة القانونية / القضية:</label>
               <select
                 value={selectedMatter}
                 onChange={(e) => setSelectedMatter(e.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm focus:border-action focus:outline-none"
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 shadow-sm focus:border-action focus:outline-none"
               >
                 {matters.length > 0 ? (
                   matters.map((m) => (
@@ -467,124 +506,86 @@ export function DashboardQuickActions() {
               </select>
             </div>
 
-            {/* Template type */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">نوع المستند المطلوب:</label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setTemplateType('pleading')}
-                  className={`flex flex-col items-center gap-1 rounded-md border p-2.5 text-xs font-semibold transition-all ${
-                    templateType === 'pleading'
-                      ? 'border-action bg-action/5 text-action shadow-xs'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <Scale size={18} />
-                  <span>مذكرة دفاع</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTemplateType('contract')}
-                  className={`flex flex-col items-center gap-1 rounded-md border p-2.5 text-xs font-semibold transition-all ${
-                    templateType === 'contract'
-                      ? 'border-action bg-action/5 text-action shadow-xs'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <FileSignature size={18} />
-                  <span>عقد أتعاب</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTemplateType('memo')}
-                  className={`flex flex-col items-center gap-1 rounded-md border p-2.5 text-xs font-semibold transition-all ${
-                    templateType === 'memo'
-                      ? 'border-action bg-action/5 text-action shadow-xs'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <FileCheck size={18} />
-                  <span>تكليف رسمي</span>
-                </button>
-              </div>
-            </div>
-
             {/* Document Title */}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">عنوان المذكرة أو المستند:</label>
+              <label className="block text-xs font-bold text-gray-700 mb-1">عنوان المذكرة / المستند:</label>
               <Input
                 type="text"
                 value={draftTitle}
                 onChange={(e) => setDraftTitle(e.target.value)}
                 required
-                className="w-full text-sm"
+                className="w-full text-sm font-medium"
               />
             </div>
 
+            {/* Microsoft 365 Cloud Sync Status & Quick Connect */}
+            <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3.5 text-xs space-y-2">
+              {msStatus.is_connected ? (
+                <div className="flex items-center justify-between text-emerald-800 font-bold">
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-600 animate-pulse" />
+                    <span>متصل بـ Microsoft 365 ({msStatus.account_email})</span>
+                  </div>
+                  <span className="text-emerald-700 font-semibold">الحفظ السحابي التلقائي مفعّل ✅</span>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Cloud size={16} className="text-[#0078D4]" />
+                    <span className="font-bold text-blue-900">
+                      للحفظ السحابي التلقائي من Word (بدون Download a copy):
+                    </span>
+                  </div>
+                  <a
+                    href="http://localhost:8000/api/staff/integrations/microsoft/login?return_to=/ar/staff"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#0078D4] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-blue-700 transition-colors shadow-xs"
+                  >
+                    🔗 ربط حسابك في Microsoft بنقرة واحدة
+                  </a>
+                </div>
+              )}
+            </div>
+
             {/* Client Share Toggle */}
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 id="shareDraft"
                 checked={shareDraft}
                 onChange={(e) => setShareDraft(e.target.checked)}
                 className="rounded border-gray-300 text-action focus:ring-action"
-              >
-              </input>
+              />
               <label htmlFor="shareDraft" className="text-xs text-gray-700 cursor-pointer">
-                مشاركة المستند تلقائياً في بوابة الموكل (Client Portal)
+                مشاركة المستند مع الموكل في بوابته (Client Portal)
               </label>
             </div>
 
-            {/* ACTIONS: 1-Click Launch in Word Online or Local */}
-            <div className="mt-2 flex flex-col gap-2 pt-3 border-t border-gray-200">
-              {/* PRIMARY ACTION: Open Official Word Online */}
+            {/* BIG PRIMARY BUTTON: Launch Word */}
+            <div className="mt-2 pt-2 border-t border-gray-200">
               <button
                 type="button"
                 onClick={handleOpenWordOnlineFromModal}
                 disabled={isOpeningWordOnline}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#0078D4] px-4 py-3 text-sm font-bold text-white hover:bg-blue-700 transition-colors shadow-sm"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#0078D4] px-4 py-3.5 text-sm font-bold text-white hover:bg-blue-700 transition-colors shadow-sm"
               >
                 {isOpeningWordOnline ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    <span>جاري التجهيز والفتح في Word Online...</span>
+                    <span>جاري فتح Word...</span>
                   </>
                 ) : (
                   <>
                     <FileText size={18} />
-                    <span>فتح وبدء الصياغة في Microsoft Word Online (الرسمي) 🌐</span>
+                    <span>فتح في Microsoft Word</span>
                   </>
                 )}
               </button>
-
-              <div className="flex items-center justify-between gap-2 pt-1">
-                <a
-                  href={`/${locale}/staff/documents/draft?matter=${selectedMatter}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-semibold text-gray-600 hover:text-action hover:underline inline-flex items-center gap-1"
-                >
-                  صياغة في محرر الموقع الكامل (A4)
-                  <ExternalLink size={12} />
-                </a>
-
-                <Button
-                  type="submit"
-                  variant="secondary"
-                  disabled={pendingDraft}
-                  className="text-xs font-medium"
-                >
-                  {pendingDraft ? 'جاري الحفظ...' : 'حفظ وتنزيل (.docx) محلياً'}
-                </Button>
-              </div>
             </div>
-          </form>
+          </div>
         )}
       </Modal>
 
-      {/* 2. Modal: تقرير إكسل Excel (.xlsx) */}
+      {/* 3. Modal: تقرير إكسل Excel (.xlsx) */}
       <Modal
         open={reportOpen}
         onClose={() => setReportOpen(false)}

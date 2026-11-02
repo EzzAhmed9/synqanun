@@ -462,6 +462,17 @@ def get_matter_by_reference(
     matter_firm_docs = []
     for d in docs_db:
         shared_days_ago = (today - d.created_at.replace(tzinfo=None)).days if d.created_at else 0
+        time_display = ""
+        if d.created_at:
+            h = d.created_at.hour
+            m = d.created_at.minute
+            s = d.created_at.second
+            period = "م" if h >= 12 else "ص"
+            h_12 = h if (h == 12 or h == 0) else (h % 12)
+            if h_12 == 0:
+                h_12 = 12
+            time_display = f"{h_12:02d}:{m:02d}:{s:02d} {period}"
+
         doc_entry = {
             "id": d.id,
             "name": d.name,
@@ -469,6 +480,9 @@ def get_matter_by_reference(
             "sizeBytes": d.size_bytes,
             "sharedDaysAgo": max(0, shared_days_ago),
             "sharedOn": d.created_at.strftime("%Y-%m-%d") if d.created_at else today.strftime("%Y-%m-%d"),
+            "createdAt": d.created_at.isoformat() if d.created_at else None,
+            "updatedAt": d.updated_at.isoformat() if d.updated_at else None,
+            "timeFormatted": time_display,
             "status": d.status,
             "engagementRef": matter.reference,
             "firmId": d.firm_id,
@@ -667,6 +681,137 @@ def reassign_lead(
         "changed": len(payload.references),
         "leadName": {"en": new_lead.name_en, "ar": new_lead.name_ar}
     }
+
+
+class AddMatterTeamMemberPayload(BaseModel):
+    staff_id: str
+    role_ar: Optional[str] = "محامٍ مشارك"
+    role_en: Optional[str] = "Associate"
+
+
+@router.post("/{reference}/team", response_model=dict, status_code=status.HTTP_201_CREATED)
+def add_matter_team_member(
+    reference: str,
+    payload: AddMatterTeamMemberPayload,
+    current_user: User = Depends(require_staff),
+    db: Session = Depends(get_db)
+):
+    """
+    Assign a lawyer / team member to a specific matter and record it in the timeline.
+    """
+    matter = db.query(Matter).filter(
+        func.lower(Matter.reference) == reference.lower(),
+        Matter.firm_id == current_user.firm_id
+    ).first()
+    if not matter:
+        raise HTTPException(status_code=404, detail="Matter not found")
+
+    staff = db.query(User).filter(
+        User.id == payload.staff_id,
+        User.firm_id == current_user.firm_id,
+        User.status != "deactivated"
+    ).first()
+    if not staff:
+        raise HTTPException(status_code=400, detail="Staff member not found or deactivated")
+
+    # Check if already lead
+    if matter.lead_counsel_id == staff.id:
+        raise HTTPException(status_code=400, detail="This lawyer is already the lead counsel on this matter")
+
+    # Check if already a team member
+    existing = db.query(MatterTeamMember).filter(
+        MatterTeamMember.matter_id == matter.id,
+        MatterTeamMember.staff_id == staff.id
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Lawyer is already assigned to this matter")
+
+    tm_id = f"tm-{uuid.uuid4().hex[:8]}"
+    new_tm = MatterTeamMember(
+        id=tm_id,
+        matter_id=matter.id,
+        staff_id=staff.id,
+        role_en=payload.role_en or "Associate",
+        role_ar=payload.role_ar or "محامٍ مشارك"
+    )
+    db.add(new_tm)
+
+    # Add timeline event
+    evt_id = f"evt-{uuid.uuid4().hex[:8]}"
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    evt = MatterTimelineEvent(
+        id=evt_id,
+        matter_id=matter.id,
+        kind="assignment",
+        title_en=f"Assigned to matter team: {staff.name_en}",
+        title_ar=f"انضمام لفريق العمل: الأستاذ / {staff.name_ar}",
+        date=today_str
+    )
+    db.add(evt)
+    db.commit()
+
+    return {
+        "ok": True,
+        "teamMemberId": tm_id,
+        "staffId": staff.id,
+        "name": {"en": staff.name_en, "ar": staff.name_ar},
+        "rank": staff.rank,
+        "role": {"en": new_tm.role_en, "ar": new_tm.role_ar},
+        "message": f"تم إضافة الأستاذ {staff.name_ar} إلى فريق عمل القضية بنجاح"
+    }
+
+
+@router.delete("/{reference}/team/{staff_id}", response_model=dict)
+def remove_matter_team_member(
+    reference: str,
+    staff_id: str,
+    current_user: User = Depends(require_staff),
+    db: Session = Depends(get_db)
+):
+    """
+    Remove a supporting lawyer from a matter team and record it in the timeline.
+    """
+    matter = db.query(Matter).filter(
+        func.lower(Matter.reference) == reference.lower(),
+        Matter.firm_id == current_user.firm_id
+    ).first()
+    if not matter:
+        raise HTTPException(status_code=404, detail="Matter not found")
+
+    if matter.lead_counsel_id == staff_id:
+        raise HTTPException(status_code=400, detail="Cannot remove lead counsel. Reassign lead counsel first.")
+
+    tm = db.query(MatterTeamMember).filter(
+        MatterTeamMember.matter_id == matter.id,
+        MatterTeamMember.staff_id == staff_id
+    ).first()
+    if not tm:
+        raise HTTPException(status_code=404, detail="Team member not found on this matter")
+
+    staff = db.query(User).filter(User.id == staff_id).first()
+    staff_name = staff.name_ar if staff else staff_id
+
+    db.delete(tm)
+
+    # Add timeline event
+    evt_id = f"evt-{uuid.uuid4().hex[:8]}"
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    evt = MatterTimelineEvent(
+        id=evt_id,
+        matter_id=matter.id,
+        kind="assignment",
+        title_en=f"Removed from matter team: {staff.name_en if staff else staff_id}",
+        title_ar=f"استبعاد من فريق العمل: الأستاذ / {staff_name}",
+        date=today_str
+    )
+    db.add(evt)
+    db.commit()
+
+    return {
+        "ok": True,
+        "message": f"تم استبعاد الأستاذ {staff_name} من فريق عمل القضية بنجاح"
+    }
+
 
 
 # ==============================================================================
@@ -894,6 +1039,17 @@ def get_client_matter_by_reference(
     client_shared_docs = []
     for d in client_docs_db:
         shared_days_ago = (today - d.created_at.replace(tzinfo=None)).days if d.created_at else 0
+        time_display = ""
+        if d.created_at:
+            h = d.created_at.hour
+            m = d.created_at.minute
+            s = d.created_at.second
+            period = "م" if h >= 12 else "ص"
+            h_12 = h if (h == 12 or h == 0) else (h % 12)
+            if h_12 == 0:
+                h_12 = 12
+            time_display = f"{h_12:02d}:{m:02d}:{s:02d} {period}"
+
         client_shared_docs.append({
             "id": d.id,
             "name": d.name,
@@ -901,6 +1057,9 @@ def get_client_matter_by_reference(
             "sizeBytes": d.size_bytes,
             "sharedDaysAgo": max(0, shared_days_ago),
             "sharedOn": d.created_at.strftime("%Y-%m-%d") if d.created_at else today.strftime("%Y-%m-%d"),
+            "createdAt": d.created_at.isoformat() if d.created_at else None,
+            "updatedAt": d.updated_at.isoformat() if d.updated_at else None,
+            "timeFormatted": time_display,
             "status": d.status,
             "engagementRef": matter.reference,
             "firmId": d.firm_id,

@@ -56,6 +56,7 @@ export function AddTeamMember({ ranks }: { ranks: readonly Rank[] }) {
 
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
   /*
     NO DEFAULT RANK, DELIBERATELY.
     
@@ -72,6 +73,7 @@ export function AddTeamMember({ ranks }: { ranks: readonly Rank[] }) {
     setName('');
     setEmail('');
     setRank('');
+    setPassword('');
     setError(null);
     setAdded(null);
   };
@@ -89,7 +91,12 @@ export function AddTeamMember({ ranks }: { ranks: readonly Rank[] }) {
     setError(null);
 
     startTransition(async () => {
-      const result = await addTeamMember({ name, email, rank });
+      const result = await addTeamMember({
+        name,
+        email,
+        rank,
+        password: password.trim() || undefined,
+      });
       if (result.ok) {
         setAdded({ name, email: result.member.email });
         // Pull the server component's roster again so the new row is there
@@ -173,6 +180,20 @@ export function AddTeamMember({ ranks }: { ranks: readonly Rank[] }) {
                   </option>
                 ))}
               </Select>
+            </Field>
+
+            <Field
+              htmlFor="member-password"
+              label="كلمة المرور / Password"
+              hint="حدد كلمة المرور لتسجيل الدخول (الافتراضي: password123)"
+            >
+              <Input
+                id="member-password"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="password123"
+              />
             </Field>
 
             {error ? (

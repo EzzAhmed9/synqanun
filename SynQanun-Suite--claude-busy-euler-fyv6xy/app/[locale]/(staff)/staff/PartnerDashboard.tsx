@@ -162,7 +162,9 @@ function ClientsCard({
               </p>
             </div>
             <Badge tone={client.standing === 'prospect' ? 'neutral' : 'info'}>
-              {t(`standing.${client.standing}`)}
+              {['retainer', 'active', 'prospect', 'goodStanding'].includes(client.standing)
+                ? t(`standing.${client.standing}`)
+                : t('standing.active')}
             </Badge>
           </li>
         ))}

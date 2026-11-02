@@ -216,7 +216,7 @@ def create_client(
         name_ar=name_ar,
         summary_en=summary_en,
         summary_ar=summary_ar,
-        standing=payload.standing or "active",
+        standing="active" if (payload.standing or "").lower() in ("active", "goodstanding") else (payload.standing if payload.standing in ("retainer", "prospect") else "active"),
         last_activity_days_ago=0
     )
     

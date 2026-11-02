@@ -1220,7 +1220,8 @@
     "standing": {
       "retainer": "On retainer",
       "active": "Active",
-      "prospect": "Prospect"
+      "prospect": "Prospect",
+      "goodStanding": "Good Standing"
     },
     "sources": {
       "portal": "Client portal",
@@ -1567,7 +1568,8 @@
       "standing": {
         "retainer": "On retainer",
         "active": "Active",
-        "prospect": "Prospect"
+        "prospect": "Prospect",
+        "goodStanding": "Good Standing"
       }
     },
     "billing": {

@@ -1,8 +1,10 @@
 import os
 import uuid
+import urllib.parse
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -24,6 +26,153 @@ class ExchangeTokenRequest(BaseModel):
     code: str
     redirect_uri: str
 
+class SaveClientIdRequest(BaseModel):
+    client_id: str
+    client_secret: Optional[str] = None
+
+@router.post("/microsoft/save-client-id")
+def save_microsoft_client_id(
+    payload: SaveClientIdRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Save or update Microsoft Azure Client ID and optional secret."""
+    clean_id = payload.client_id.strip()
+    if not clean_id:
+        raise HTTPException(status_code=400, detail="Client ID cannot be empty")
+
+    integration = db.query(Integration).filter(
+        Integration.firm_id == current_user.firm_id,
+        Integration.provider == "microsoft",
+    ).first()
+
+    if not integration:
+        integration = Integration(
+            id=f"intg-{uuid.uuid4().hex[:12]}",
+            firm_id=current_user.firm_id,
+            provider="microsoft",
+            client_id=clean_id,
+            client_secret=payload.client_secret.strip() if payload.client_secret else None,
+            is_active=False,
+        )
+        db.add(integration)
+    else:
+        integration.client_id = clean_id
+        if payload.client_secret:
+            integration.client_secret = payload.client_secret.strip()
+
+    db.commit()
+    db.refresh(integration)
+    return {"success": True, "client_id": clean_id, "message": "تم حفظ Client ID بنجاح"}
+
+@router.get("/microsoft/login")
+def start_microsoft_login(
+    staff_id: Optional[str] = "stf-001",
+    return_to: Optional[str] = "/ar/staff",
+    db: Session = Depends(get_db),
+):
+    """Redirect user directly to Microsoft login."""
+    integration = db.query(Integration).filter(
+        Integration.provider == "microsoft",
+    ).first()
+
+    client_id = (integration.client_id if integration and integration.client_id else None) or \
+                os.getenv("MICROSOFT_OAUTH_CLIENT_ID") or \
+                os.getenv("MS_CLIENT_ID")
+
+    if not client_id:
+        raise HTTPException(status_code=400, detail="يرجى إدخال Client ID أولاً")
+
+    # State stores staff_id and return_to url
+    state = f"{staff_id or 'stf-001'}::{return_to or '/ar/staff'}"
+
+    redirect_uri = "http://localhost:8000/api/staff/integrations/microsoft/callback"
+    auth_url = onedrive_service.get_authorization_url(
+        client_id=client_id,
+        redirect_uri=redirect_uri,
+        state=state,
+    )
+    return RedirectResponse(url=auth_url)
+
+@router.get("/microsoft/callback")
+async def microsoft_oauth_callback(
+    code: str,
+    state: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """Callback receiving authorization code from Microsoft, saving tokens, and redirecting back."""
+    target_path = "/ar/staff"
+    if state and "::" in state:
+        try:
+            target_path = state.split("::", 1)[1]
+        except Exception:
+            target_path = "/ar/staff"
+
+    integration = db.query(Integration).filter(
+        Integration.provider == "microsoft",
+    ).order_by(Integration.updated_at.desc()).first()
+
+    client_id = (integration.client_id if integration and integration.client_id else None) or \
+                os.getenv("MICROSOFT_OAUTH_CLIENT_ID") or \
+                os.getenv("MS_CLIENT_ID")
+
+    client_secret = (integration.client_secret if integration and integration.client_secret else None) or \
+                    os.getenv("MICROSOFT_OAUTH_CLIENT_SECRET") or \
+                    os.getenv("MS_CLIENT_SECRET")
+
+    redirect_uri = "http://localhost:8000/api/staff/integrations/microsoft/callback"
+
+    try:
+        tokens = await onedrive_service.exchange_code_for_tokens(
+            client_id=client_id,
+            client_secret=client_secret,
+            code=code,
+            redirect_uri=redirect_uri,
+        )
+        access_token = tokens.get("access_token")
+        refresh_token = tokens.get("refresh_token")
+        expires_in = tokens.get("expires_in", 3600)
+        expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+
+        account_email = None
+        account_name = None
+        try:
+            profile = await onedrive_service.get_user_profile(access_token)
+            account_email = profile.get("mail") or profile.get("userPrincipalName")
+            account_name = profile.get("displayName")
+        except Exception:
+            pass
+
+        if not integration:
+            integration = Integration(
+                id=f"intg-{uuid.uuid4().hex[:12]}",
+                firm_id="firm-001",
+                provider="microsoft",
+                client_id=client_id,
+                client_secret=client_secret,
+                is_active=True,
+            )
+            db.add(integration)
+
+        integration.access_token = access_token
+        if refresh_token:
+            integration.refresh_token = refresh_token
+        integration.expires_at = expires_at
+        integration.account_email = account_email
+        integration.account_name = account_name
+        integration.is_active = True
+        db.commit()
+
+        separator = "&" if "?" in target_path else "?"
+        return RedirectResponse(url=f"http://localhost:3000{target_path}{separator}ms_connected=true")
+    except Exception as e:
+        import traceback
+        print(f"MICROSOFT OAUTH ERROR: {e}")
+        traceback.print_exc()
+        err_msg = urllib.parse.quote(str(e))
+        separator = "&" if "?" in target_path else "?"
+        return RedirectResponse(url=f"http://localhost:3000{target_path}{separator}ms_error={err_msg}")
+
 @router.get("/microsoft/status")
 def get_microsoft_status(
     db: Session = Depends(get_db),
@@ -33,24 +182,24 @@ def get_microsoft_status(
     integration = db.query(Integration).filter(
         Integration.firm_id == current_user.firm_id,
         Integration.provider == "microsoft",
-        Integration.is_active == True,
     ).first()
 
     env_client_id = os.getenv("MICROSOFT_OAUTH_CLIENT_ID") or os.getenv("MS_CLIENT_ID") or ""
+    configured_client_id = (integration.client_id if integration and integration.client_id else None) or env_client_id
 
-    if not integration:
+    if not integration or not integration.is_active or not integration.access_token:
         return {
             "is_connected": False,
-            "has_configured_client_id": bool(env_client_id),
-            "client_id": env_client_id,
-            "account_email": None,
-            "account_name": None,
+            "has_configured_client_id": bool(configured_client_id),
+            "client_id": configured_client_id,
+            "account_email": integration.account_email if integration else None,
+            "account_name": integration.account_name if integration else None,
         }
 
     return {
         "is_connected": True,
         "has_configured_client_id": True,
-        "client_id": integration.client_id or env_client_id,
+        "client_id": configured_client_id,
         "account_email": integration.account_email,
         "account_name": integration.account_name,
         "expires_at": integration.expires_at.isoformat() if integration.expires_at else None,
@@ -236,6 +385,17 @@ async def open_document_in_word_online(
 
         if token:
             try:
+                # If already uploaded to OneDrive, reuse existing item & URL to preserve edits
+                if doc.onedrive_item_id and doc.onedrive_web_url:
+                    return {
+                        "success": True,
+                        "mode": "onedrive",
+                        "webUrl": doc.onedrive_web_url,
+                        "document_id": doc.id,
+                        "filename": doc.name,
+                        "message": "تم فتح المستند المحفوظ في Microsoft Word Online الرسمي",
+                    }
+
                 with open(doc.file_path, "rb") as f:
                     file_bytes = f.read()
 
@@ -244,15 +404,20 @@ async def open_document_in_word_online(
                     file_bytes=file_bytes,
                     filename=doc.name,
                 )
+                web_url = upload_res["web_url"]
+                if "action=" not in web_url:
+                    separator = "&" if "?" in web_url else "?"
+                    web_url = f"{web_url}{separator}action=edit"
+
                 doc.onedrive_item_id = upload_res["item_id"]
-                doc.onedrive_web_url = upload_res["web_url"]
+                doc.onedrive_web_url = web_url
                 doc.onedrive_synced_at = datetime.now(timezone.utc)
                 db.commit()
 
                 return {
                     "success": True,
                     "mode": "onedrive",
-                    "webUrl": upload_res["web_url"],
+                    "webUrl": web_url,
                     "document_id": doc.id,
                     "filename": doc.name,
                     "message": "تم رفع المستند إلى OneDrive وفتحه في Microsoft Word Online الرسمي",
@@ -329,12 +494,24 @@ async def sync_from_word_online(
         doc.updated_at = datetime.now(timezone.utc)
         db.commit()
 
+        preview_text = ""
+        try:
+            import io
+            from docx import Document as DocxDoc
+            docx_file = DocxDoc(io.BytesIO(updated_bytes))
+            texts = [p.text.strip() for p in docx_file.paragraphs if p.text.strip()]
+            preview_text = "\n".join(texts[-3:]) if texts else ""
+        except Exception:
+            pass
+
         return {
             "success": True,
-            "message": "تمت مزامنة المستند من Microsoft Word Online وحفظه في الموقع بنجاح!",
+            "message": "تمت مزامنة وحفظ كافة التعديلات من Word في الموقع وقاعدة البيانات بنجاح!",
             "document_id": doc.id,
             "size_bytes": doc.size_bytes,
             "synced_at": doc.onedrive_synced_at.isoformat(),
+            "preview_text": preview_text,
+            "download_url": f"http://localhost:8000/api/documents/{doc.id}/download",
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"فشلت المزامنة من OneDrive: {str(e)}")

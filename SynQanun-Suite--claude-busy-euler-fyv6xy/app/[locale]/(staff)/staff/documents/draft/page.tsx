@@ -9,10 +9,10 @@ export default async function DocumentDraftPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ matter?: string; template?: string; auto_open?: string }>;
+  searchParams: Promise<{ matter?: string; template?: string; auto_open?: string; doc_id?: string }>;
 }) {
   const { locale } = await params;
-  const { matter, template, auto_open } = await searchParams;
+  const { matter, template, auto_open, doc_id } = await searchParams;
   setRequestLocale(locale);
 
   return (
@@ -20,6 +20,7 @@ export default async function DocumentDraftPage({
       initialMatter={matter || 'MAT-2201'}
       initialTemplate={template || 'pleading'}
       autoOpenWord={auto_open === 'word'}
+      initialDocId={doc_id}
       locale={locale}
     />
   );

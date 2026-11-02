@@ -17,6 +17,14 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    MICROSOFT_OAUTH_CLIENT_ID: str = Field(
+        default="",
+        validation_alias="MICROSOFT_OAUTH_CLIENT_ID"
+    )
+    MICROSOFT_OAUTH_CLIENT_SECRET: str = Field(
+        default="",
+        validation_alias="MICROSOFT_OAUTH_CLIENT_SECRET"
+    )
 
     class Config:
         env_file = ".env"

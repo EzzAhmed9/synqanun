@@ -109,7 +109,7 @@ export function ClientPortalProvider({
       // Ctrl+K on Windows and Linux, Cmd+K on a Mac — the convention users
       // already have from every other tool with a palette. Not bound to "/",
       // which would fire while typing into any of the portal's filter boxes.
-      if (event.key.toLowerCase() !== 'k' || !(event.metaKey || event.ctrlKey)) return;
+      if (!event.key || event.key.toLowerCase() !== 'k' || !(event.metaKey || event.ctrlKey)) return;
       event.preventDefault();
       setSearchOpen(true);
     }

@@ -2,6 +2,7 @@ import * as React from 'react';
 import {
   ArrowLeft,
   CalendarClock,
+  Clock,
   Download,
   FileSpreadsheet,
   FileText,
@@ -26,6 +27,8 @@ import { LogTimeModal } from '../time/LogTimeModal';
 import { NewDocumentModal } from './NewDocumentModal';
 import { GenerateLegalDocModal } from './GenerateLegalDocModal';
 import { ExportExcelModal } from './ExportExcelModal';
+import { DocumentPreviewModalButton } from './DocumentPreviewModalButton';
+import { MatterTeamCard } from './MatterTeamCard';
 import { ApprovalsCard, TasksCard } from '../work-cards';
 
 /**
@@ -62,6 +65,51 @@ import { ApprovalsCard, TasksCard } from '../work-cards';
  * court file, and a transaction's target is not an opponent. The way back and
  * the kind-of-work badge are the register's own words whatever the kind.
  */
+function getDocumentTimeDisplay(document: any, locale: string): string | null {
+  // 1. If backend gave timeFormatted
+  if (document.timeFormatted) {
+    return document.timeFormatted;
+  }
+
+  // 2. If createdAt or updatedAt is present
+  const rawDate = document.createdAt || document.updatedAt;
+  if (rawDate) {
+    try {
+      const d = new Date(rawDate);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleTimeString(locale === 'ar' ? 'ar-EG' : 'en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  // 3. Fallback: Parse from filename timestamp e.g. _20261102_132645.docx
+  if (typeof document.name === 'string') {
+    const match = document.name.match(/_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})/);
+    if (match) {
+      const h = parseInt(match[4], 10);
+      const m = match[5];
+      const s = match[6];
+      if (locale === 'ar') {
+        const period = h >= 12 ? 'م' : 'ص';
+        const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+        return `${String(h12).padStart(2, '0')}:${m}:${s} ${period}`;
+      } else {
+        const period = h >= 12 ? 'PM' : 'AM';
+        const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+        return `${String(h12).padStart(2, '0')}:${m}:${s} ${period}`;
+      }
+    }
+  }
+
+  return null;
+}
+
 export function EngagementView({
   locale,
   namespace,
@@ -263,39 +311,11 @@ export function EngagementView({
         </Card>
 
         {/* Who is on it ------------------------------------------------- */}
-        <Card padding="none" className="overflow-hidden">
-          <header className="border-b border-gray-200 p-5">
-            <CardHead
-              icon={Users}
-              heading={t('columns.team')}
-              caption={t('detail.teamCount', { count: engagement.team.length })}
-            />
-          </header>
-          <ul className="divide-y divide-gray-200">
-            {engagement.team.map((member) => (
-              <li
-                key={`${member.name.en}-${member.role}`}
-                className="flex flex-wrap items-center justify-between gap-3 p-4"
-              >
-                <span className="text-body text-gray-700">
-                  <bdi>{member.name[locale]}</bdi>
-                </span>
-                <span className="flex flex-wrap items-center gap-2">
-                  {/* The JOB on this file, then the rank in the firm. Two
-                      different facts; the exports conflate them into invented
-                      titles like "Senior Drafter" and "Financial Modeling
-                      Analyst". */}
-                  <Badge tone={member.role === 'lead' ? 'info' : 'neutral'} icon={null}>
-                    {member.role === 'lead' ? t('team.lead') : tRole(member.role)}
-                  </Badge>
-                  <span className="text-caption text-gray-500">
-                    {tRank(`holder.${member.rank}`)}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Card>
+        <MatterTeamCard
+          matterRef={engagement.reference}
+          team={engagement.team}
+          locale={locale}
+        />
 
         {/* What happens next -------------------------------------------- */}
         <Card padding="none" className="overflow-hidden">
@@ -440,7 +460,7 @@ export function EngagementView({
                   <span className="flex items-center gap-2">
                     {/* Direct download button for stored files */}
                     <a
-                      href={document.downloadUrl || `http://127.0.0.1:8000/api/documents/${document.id}/download`}
+                      href={(document as any).downloadUrl || `http://127.0.0.1:8000/api/documents/${document.id}/download`}
                       download
                       title="تحميل الملف"
                       className="inline-flex h-8 items-center gap-1.5 rounded border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-action transition-colors"
@@ -498,47 +518,80 @@ export function EngagementView({
             <p className="p-5 text-body text-gray-500">{t('detail.noDocuments')}</p>
           ) : (
             <ul className="divide-y divide-gray-200">
-              {documents.map((document) => (
-                <li
-                  key={document.id}
-                  className="flex flex-wrap items-center justify-between gap-3 p-4"
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2">
-                      <span className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] font-bold ${
-                        document.kind === 'docx'
-                          ? 'bg-blue-100 text-blue-800'
-                          : document.kind === 'xlsx'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {document.kind.toUpperCase()}
+              {documents.map((document, idx) => {
+                const timeStr = getDocumentTimeDisplay(document, locale);
+                const isLatest = idx === 0 && document.kind === 'docx';
+
+                return (
+                  <li
+                    key={document.id}
+                    className={`flex flex-wrap items-center justify-between gap-3 p-4 transition-colors ${
+                      isLatest ? 'bg-blue-50/25' : ''
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] font-bold ${
+                          document.kind === 'docx'
+                            ? 'bg-blue-100 text-blue-800'
+                            : document.kind === 'xlsx'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {document.kind.toUpperCase()}
+                        </span>
+                        <span className="block text-body font-medium text-gray-800 [unicode-bidi:isolate]">
+                          <bdi>{document.name}</bdi>
+                        </span>
+                        {timeStr && (
+                          <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 font-mono text-[11px] font-bold text-amber-900 border border-amber-200">
+                            <Clock size={11} className="text-amber-700" />
+                            <span>{timeStr}</span>
+                          </span>
+                        )}
+                        {isLatest && (
+                          <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-300">
+                            🌟 أحدث نسخة
+                          </span>
+                        )}
                       </span>
-                      <span className="block text-body font-medium text-gray-800 [unicode-bidi:isolate]">
-                        <bdi>{document.name}</bdi>
+                      <span className="mt-1 flex flex-wrap items-center gap-2 text-caption text-gray-500 [unicode-bidi:isolate]">
+                        <span>{formatFileSize(document.sizeBytes, locale)}</span>
+                        <span>·</span>
+                        <span>{formatRelativeDays(document.sharedOn, locale)}</span>
+                        {timeStr && (
+                          <>
+                            <span>·</span>
+                            <span className="font-semibold text-gray-700 inline-flex items-center gap-1">
+                              <Clock size={12} className="text-gray-400" />
+                              الساعة {timeStr}
+                            </span>
+                          </>
+                        )}
                       </span>
                     </span>
-                    <span className="mt-0.5 block text-caption text-gray-500 [unicode-bidi:isolate]">
-                      {formatFileSize(document.sizeBytes, locale)}
-                      {' · '}
-                      {formatRelativeDays(document.sharedOn, locale)}
-                    </span>
-                  </span>
                   <span className="flex items-center gap-2">
+                    <DocumentPreviewModalButton
+                      documentId={document.id}
+                      documentName={document.name}
+                      matterRef={engagement.reference}
+                      timeFormatted={timeStr}
+                      locale={locale}
+                    />
                     {document.kind === 'docx' && (
                       <a
-                        href={`/${locale}/staff/documents/draft?matter=${engagement.reference}&auto_open=word`}
+                        href={`/${locale}/staff/documents/draft?matter=${engagement.reference}&doc_id=${document.id}&auto_open=word`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        title="فتح في Word Online الرسمي"
+                        title="متابعة التعديل على هذا المستند في Microsoft Word Online"
                         className="inline-flex h-8 items-center gap-1.5 rounded border border-[#0078D4] bg-blue-50/70 px-2.5 text-xs font-bold text-[#0078D4] shadow-xs hover:bg-blue-100 transition-colors"
                       >
                         <FileText size={13} className="text-[#0078D4]" />
-                        <span>Word Online</span>
+                        <span>✏️ متابعة التعديل في Word</span>
                       </a>
                     )}
                     <a
-                      href={document.downloadUrl || `http://127.0.0.1:8000/api/documents/${document.id}/download`}
+                      href={(document as any).downloadUrl || `http://127.0.0.1:8000/api/documents/${document.id}/download`}
                       download
                       title="تحميل الملف"
                       className="inline-flex h-8 items-center gap-1.5 rounded border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-action transition-colors"
@@ -558,7 +611,8 @@ export function EngagementView({
                     ) : null}
                   </span>
                 </li>
-              ))}
+              );
+            })}
             </ul>
           )}
         </Card>

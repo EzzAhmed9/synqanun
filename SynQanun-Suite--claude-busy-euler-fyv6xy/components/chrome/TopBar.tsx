@@ -1,9 +1,11 @@
 'use client';
 
-import { Bell, Mail, Search } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import * as React from 'react';
+import { Bell, Mail, Search, LogOut } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/lib/i18n/navigation';
 import { cn, initialsOf } from '@/lib/utils';
+import { signOutAction } from '@/app/[locale]/(auth)/sign-out-action';
 import { DigestTrigger } from './DigestTrigger';
 import { LanguageToggle } from './LanguageToggle';
 
@@ -90,6 +92,19 @@ export function TopBar({
   className,
 }: TopBarProps) {
   const t = useTranslations('common');
+  const locale = useLocale();
+  const [isSigningOut, startSignOut] = React.useTransition();
+
+  const handleSignOut = () => {
+    startSignOut(async () => {
+      await signOutAction();
+      const isClient =
+        typeof window !== 'undefined' &&
+        (window.location.pathname.includes('/client') ||
+          window.location.pathname.includes('/dashboard'));
+      window.location.href = isClient ? `/${locale}/gateway/client` : `/${locale}/gateway/firm`;
+    });
+  };
 
   return (
     <header
@@ -240,6 +255,28 @@ export function TopBar({
               ) : null}
             </span>
           ) : null}
+        </button>
+
+        <span aria-hidden className="mx-1 h-6 w-px bg-gray-200" />
+
+        <button
+          type="button"
+          onClick={handleSignOut}
+          disabled={isSigningOut}
+          title={locale === 'ar' ? 'تسجيل الخروج' : 'Log out'}
+          aria-label={locale === 'ar' ? 'تسجيل الخروج' : 'Log out'}
+          className={cn(
+            'inline-flex h-9 items-center gap-1.5 rounded-sm px-2.5 text-caption font-medium transition-colors',
+            'text-gray-600 hover:bg-red-50 hover:text-red-700',
+            isSigningOut && 'opacity-50 cursor-not-allowed'
+          )}
+        >
+          <LogOut aria-hidden size={16} className="rtl:-scale-x-100 text-gray-500 group-hover:text-red-700" />
+          <span className="hidden tablet:inline">
+            {isSigningOut
+              ? (locale === 'ar' ? 'جاري الخروج...' : 'Signing out...')
+              : (locale === 'ar' ? 'تسجيل الخروج' : 'Log out')}
+          </span>
         </button>
       </div>
     </header>

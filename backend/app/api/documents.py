@@ -2,7 +2,7 @@ import os
 import uuid
 import urllib.parse
 from typing import Optional, List
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -16,6 +16,8 @@ from app.models.client import Client
 from app.models.matter import Matter, MatterTimelineEvent
 from app.models.invoice import Invoice, TimeEntry
 from app.models.document import Document
+from app.models.integration import Integration
+from app.services import onedrive_service
 from app.schemas.document import (
     WordGenerationRequest,
     ExcelExportRequest,
@@ -337,6 +339,100 @@ def list_documents_for_client(
 # =========================================================================
 # DOWNLOAD ENDPOINT
 # =========================================================================
+
+@public_download_router.get("/{document_id}/preview")
+async def get_document_preview(
+    document_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get text and paragraphs of a document for in-website preview.
+    If the document has been opened in Word Online / OneDrive, automatically
+    pulls the latest edits from OneDrive first so preview is 100% up-to-date!
+    """
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="المستند غير موجود")
+
+    # Auto-pull latest edits from OneDrive if connected
+    if doc.onedrive_item_id:
+        integration = db.query(Integration).filter(
+            Integration.firm_id == doc.firm_id,
+            Integration.provider == "microsoft",
+            Integration.is_active == True,
+        ).first()
+
+        if integration and integration.access_token:
+            token = integration.access_token
+            # Refresh token if expired
+            if integration.expires_at and datetime.now(timezone.utc) >= integration.expires_at:
+                if integration.refresh_token:
+                    try:
+                        refreshed = await onedrive_service.refresh_access_token(
+                            client_id=integration.client_id,
+                            client_secret=integration.client_secret,
+                            refresh_token=integration.refresh_token,
+                        )
+                        token = refreshed.get("access_token")
+                        integration.access_token = token
+                        if refreshed.get("refresh_token"):
+                            integration.refresh_token = refreshed.get("refresh_token")
+                        integration.expires_at = datetime.now(timezone.utc) + timedelta(seconds=refreshed.get("expires_in", 3600))
+                        db.commit()
+                    except Exception:
+                        token = None
+
+            if token:
+                try:
+                    updated_bytes = await onedrive_service.download_docx_from_onedrive(
+                        access_token=token,
+                        item_id=doc.onedrive_item_id,
+                    )
+                    if updated_bytes and len(updated_bytes) > 0:
+                        with open(doc.file_path, "wb") as f:
+                            f.write(updated_bytes)
+                        doc.size_bytes = len(updated_bytes)
+                        doc.onedrive_synced_at = datetime.now(timezone.utc)
+                        doc.updated_at = datetime.now(timezone.utc)
+                        db.commit()
+                except Exception:
+                    pass
+
+    if not os.path.exists(doc.file_path):
+        raise HTTPException(status_code=404, detail="الملف غير موجود على الخادم")
+
+    paragraphs = []
+    if doc.kind == "docx":
+        try:
+            from docx import Document as DocxDoc
+            d = DocxDoc(doc.file_path)
+            paragraphs = [p.text.strip() for p in d.paragraphs if p.text.strip()]
+        except Exception as e:
+            paragraphs = [f"تعذر استخراج النص: {str(e)}"]
+
+    time_display = ""
+    if doc.created_at:
+        h = doc.created_at.hour
+        m = doc.created_at.minute
+        s = doc.created_at.second
+        period = "م" if h >= 12 else "ص"
+        h_12 = h if (h == 12 or h == 0) else (h % 12)
+        if h_12 == 0:
+            h_12 = 12
+        time_display = f"{h_12:02d}:{m:02d}:{s:02d} {period}"
+
+    return {
+        "id": doc.id,
+        "name": doc.name,
+        "title": doc.title,
+        "kind": doc.kind,
+        "paragraphs": paragraphs,
+        "created_at": doc.created_at.isoformat() if doc.created_at else None,
+        "updated_at": doc.updated_at.isoformat() if doc.updated_at else None,
+        "time_formatted": time_display,
+        "timeFormatted": time_display,
+        "size_bytes": doc.size_bytes,
+    }
 
 @public_download_router.get("/{document_id}/download")
 def download_document(

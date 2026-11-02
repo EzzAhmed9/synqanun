@@ -654,6 +654,23 @@ export const backendBridge = {
 
   // --- Microsoft 365 & Word Online Integrations ---
   integrations: {
+    async saveMicrosoftClientId(clientId: string, clientSecret?: string) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/integrations/microsoft/save-client-id`, {
+          method: 'POST',
+          headers: await getHeaders(),
+          body: JSON.stringify({ client_id: clientId, client_secret: clientSecret }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          return { ok: false, error: err.detail || 'Failed to save client id' };
+        }
+        return { ok: true, data: await res.json() };
+      } catch (err: any) {
+        return { ok: false, error: err.message || 'Network error' };
+      }
+    },
+
     async getMicrosoftStatus() {
       try {
         const res = await fetch(`${BACKEND_URL}/staff/integrations/microsoft/status`, {
@@ -761,6 +778,99 @@ export const backendBridge = {
         return { ok: true, data: await res.json() };
       } catch (err: any) {
         return { ok: false, error: err.message || 'Network error' };
+      }
+    },
+  },
+
+  // --- Team & Roster (Users & Permissions) ---
+  team: {
+    async list() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/users`, {
+          headers: await getHeaders(),
+          cache: 'no-store',
+        });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      }
+    },
+
+    async addMember(input: {
+      name: string;
+      email: string;
+      rank: string;
+      phone?: string;
+      password?: string;
+    }) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/users`, {
+          method: 'POST',
+          headers: await getHeaders(),
+          body: JSON.stringify(input),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          return { ok: false, error: data.detail || 'failedToAdd' };
+        }
+        return { ok: true, member: data };
+      } catch {
+        return { ok: false, error: 'networkError' };
+      }
+    },
+
+    async setAccess(input: { staffId: string; grant: boolean }) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/users/${input.staffId}/access`, {
+          method: 'POST',
+          headers: await getHeaders(),
+          body: JSON.stringify({ grant: input.grant }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          return { ok: false, error: data.detail || 'failedToSetAccess' };
+        }
+        return { ok: true, ...data };
+      } catch {
+        return { ok: false, error: 'networkError' };
+      }
+    },
+
+    async assignToMatter(matterRef: string, input: { staffId: string; roleAr?: string; roleEn?: string }) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/matters/${matterRef}/team`, {
+          method: 'POST',
+          headers: await getHeaders(),
+          body: JSON.stringify({
+            staff_id: input.staffId,
+            role_ar: input.roleAr,
+            role_en: input.roleEn,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          return { ok: false, error: data.detail || 'failedToAssign' };
+        }
+        return { ok: true, ...data };
+      } catch {
+        return { ok: false, error: 'networkError' };
+      }
+    },
+
+    async removeFromMatter(matterRef: string, staffId: string) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/matters/${matterRef}/team/${staffId}`, {
+          method: 'DELETE',
+          headers: await getHeaders(),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          return { ok: false, error: data.detail || 'failedToRemove' };
+        }
+        return { ok: true, ...data };
+      } catch {
+        return { ok: false, error: 'networkError' };
       }
     },
   },

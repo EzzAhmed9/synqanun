@@ -229,13 +229,13 @@ export function InvoiceBuilder({
 
       if (result.ok && result.draft) {
         setIssuedInfo({
-          reference: result.reference || result.draft.reference || result.draft.id,
+          reference: result.reference || (result.draft as any).reference || result.draft.id,
           total: result.draft.total,
           lines: result.draft.lines.length,
         });
         router.refresh();
       } else {
-        setError(result.error);
+        setError((result as any).error || 'حدث خطأ أثناء إصدار الفاتورة');
       }
     });
   };
@@ -274,7 +274,7 @@ export function InvoiceBuilder({
         setSaved({ total: result.draft.total, lines: result.draft.lines.length });
         router.refresh();
       } else {
-        setError(result.error);
+        setError((result as any).error || 'حدث خطأ أثناء إصدار الفاتورة');
       }
     });
   };
@@ -316,7 +316,7 @@ export function InvoiceBuilder({
           <Link href="/invoices" className={buttonClasses({ variant: 'secondary', size: 'md' })}>
             {locale === 'ar' ? 'عرض في بوابة العميل' : 'View in Client Portal'}
           </Link>
-          <Button variant="ghost" size="md" onClick={() => router.refresh()}>
+          <Button variant="secondary" size="md" onClick={() => router.refresh()}>
             {t('saved.another')}
           </Button>
         </div>

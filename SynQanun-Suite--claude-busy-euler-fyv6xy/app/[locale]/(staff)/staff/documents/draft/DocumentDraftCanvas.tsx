@@ -19,6 +19,7 @@ import {
   Loader2,
   Printer,
   Cloud,
+  Eye,
   RefreshCw,
   Upload,
   Settings,
@@ -42,6 +43,7 @@ interface DocumentDraftCanvasProps {
   initialMatter?: string;
   initialTemplate?: string;
   autoOpenWord?: boolean;
+  initialDocId?: string;
   locale: string;
 }
 
@@ -108,6 +110,7 @@ export function DocumentDraftCanvas({
   initialMatter = 'MAT-2201',
   initialTemplate = 'pleading',
   autoOpenWord = false,
+  initialDocId,
   locale,
 }: DocumentDraftCanvasProps) {
   const [selectedMatter, setSelectedMatter] = React.useState(initialMatter);
@@ -132,6 +135,12 @@ export function DocumentDraftCanvas({
   const [savedDoc, setSavedDoc] = React.useState<any | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [syncSuccessMessage, setSyncSuccessMessage] = React.useState<string | null>(null);
+  const [syncedPreview, setSyncedPreview] = React.useState<string | null>(null);
+
+  // In-Website Document Viewer Modal
+  const [previewModalOpen, setPreviewModalOpen] = React.useState(false);
+  const [previewData, setPreviewData] = React.useState<any | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = React.useState(false);
 
   // Active Word Online Session State
   const [wordOnlineSession, setWordOnlineSession] = React.useState<{
@@ -158,10 +167,88 @@ export function DocumentDraftCanvas({
       if (status) setMsStatus(status);
     });
 
-    if (autoOpenWord) {
+    if (initialDocId) {
+      let isMounted = true;
+      setIsLoadingPreview(true);
+
+      // 1. Sync pending changes from OneDrive
+      syncFromWordOnlineAction(initialDocId)
+        .catch(() => null)
+        .finally(() => {
+          // 2. Fetch preview metadata
+          fetch(`http://127.0.0.1:8000/api/documents/${initialDocId}/preview`)
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+              if (!isMounted || !data) return;
+              const loaded = {
+                id: data.id,
+                name: data.name,
+                title: data.title,
+                download_url: `/api/documents/${data.id}/download`,
+                size_label: `${Math.round((data.size_bytes || 0) / 1024)} KB`,
+                engagement_ref: initialMatter,
+              };
+              setSavedDoc(loaded);
+              if (data.title) setTitle(data.title);
+              if (data.paragraphs && data.paragraphs.length > 0) {
+                setSyncedPreview(data.paragraphs.slice(-3).join('\n'));
+              }
+
+              if (autoOpenWord) {
+                setIsOpeningWordOnline(true);
+                openWordOnlineAction(data.id)
+                  .then((res) => {
+                    if (res.ok && res.data?.webUrl) {
+                      window.open(res.data.webUrl, '_blank', 'noopener,noreferrer');
+                      setWordOnlineSession({
+                        docId: data.id,
+                        docName: data.name,
+                        webUrl: res.data.webUrl,
+                        mode: res.data.mode || 'onedrive',
+                      });
+                    }
+                  })
+                  .finally(() => {
+                    setIsOpeningWordOnline(false);
+                  });
+              }
+            })
+            .finally(() => {
+              if (isMounted) setIsLoadingPreview(false);
+            });
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    } else if (autoOpenWord) {
       handleOpenWordOnline();
     }
-  }, [autoOpenWord]);
+  }, [autoOpenWord, initialDocId]);
+
+  // Auto-sync when user returns from the Word Online tab
+  React.useEffect(() => {
+    const docId = wordOnlineSession?.docId || savedDoc?.id || initialDocId;
+    if (!docId) return;
+
+    const onWindowFocus = () => {
+      syncFromWordOnlineAction(docId)
+        .then((res) => {
+          if (res.ok && res.data) {
+            setSyncSuccessMessage('تمت مزامنة وحفظ التعديلات تلقائياً من Word!');
+            if (res.data.preview_text) {
+              setSyncedPreview(res.data.preview_text);
+            }
+          }
+        })
+        .catch(() => null);
+    };
+
+    window.addEventListener('focus', onWindowFocus);
+    return () => {
+      window.removeEventListener('focus', onWindowFocus);
+    };
+  }, [wordOnlineSession?.docId, savedDoc?.id, initialDocId]);
 
   // When template changes, apply preset
   const handleTemplateChange = (type: 'pleading' | 'contract' | 'assignment') => {
@@ -228,7 +315,7 @@ export function DocumentDraftCanvas({
 
     try {
       // First ensure the document is saved and registered in PostgreSQL
-      let currentDocId = savedDoc?.id;
+      let currentDocId = savedDoc?.id || initialDocId;
       let currentDocName = savedDoc?.name;
 
       if (!currentDocId) {
@@ -251,7 +338,7 @@ export function DocumentDraftCanvas({
         // Set active session for live syncing
         setWordOnlineSession({
           docId: currentDocId,
-          docName: currentDocName,
+          docName: currentDocName || savedDoc?.name || 'مستند وورد',
           webUrl: targetUrl,
           mode: res.data.mode || 'direct',
         });
@@ -265,17 +352,45 @@ export function DocumentDraftCanvas({
     }
   };
 
+  // Open Preview Modal
+  const handleOpenPreviewModal = async (targetDocId?: string) => {
+    const docId = targetDocId || wordOnlineSession?.docId || savedDoc?.id || initialDocId;
+    if (!docId) {
+      setErrorMessage('يرجى حفظ المستند أولاً للمعاينة.');
+      return;
+    }
+    setIsLoadingPreview(true);
+    try {
+      const res = await fetch(`http://localhost:8000/api/documents/${docId}/preview`);
+      if (res.ok) {
+        const data = await res.json();
+        setPreviewData(data);
+        setPreviewModalOpen(true);
+      } else {
+        setErrorMessage('تعذر جلب محتوى المستند للمعاينة.');
+      }
+    } catch (err: any) {
+      setErrorMessage('حدث خطأ أثناء تحميل معاينة المستند.');
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
   // 3. Sync edits back from Microsoft Word Online / OneDrive
   const handleSyncFromWordOnline = async () => {
-    if (!wordOnlineSession?.docId) return;
+    const docId = wordOnlineSession?.docId || savedDoc?.id || initialDocId;
+    if (!docId) return;
     setIsSyncing(true);
     setErrorMessage(null);
     setSyncSuccessMessage(null);
 
     try {
-      const res = await syncFromWordOnlineAction(wordOnlineSession.docId);
+      const res = await syncFromWordOnlineAction(docId);
       if (res.ok && res.data) {
         setSyncSuccessMessage('تمت مزامنة كافة التعديلات من Microsoft Word Online وحفظها في الموقع بنجاح!');
+        if (res.data.preview_text) {
+          setSyncedPreview(res.data.preview_text);
+        }
         if (savedDoc) {
           setSavedDoc({
             ...savedDoc,
@@ -427,6 +542,17 @@ export function DocumentDraftCanvas({
             مشاركة مع العميل
           </label>
 
+          {/* IN-WEBSITE PREVIEW BUTTON */}
+          <Button
+            variant="secondary"
+            onClick={() => handleOpenPreviewModal()}
+            disabled={isLoadingPreview}
+            icon={isLoadingPreview ? <Loader2 size={16} className="animate-spin" /> : <Eye size={16} className="text-gray-700" />}
+            className="border-gray-300 bg-white text-gray-800 hover:bg-gray-50 font-bold shadow-xs transition-all"
+          >
+            {isLoadingPreview ? 'جاري التحميل...' : '👁️ عرض المستند في الموقع'}
+          </Button>
+
           {/* PRIMARY BUTTON 1: Open in Official Microsoft Word Online Tab */}
           <Button
             variant="secondary"
@@ -508,6 +634,16 @@ export function DocumentDraftCanvas({
                 />
               </label>
 
+              <button
+                type="button"
+                onClick={() => handleOpenPreviewModal()}
+                disabled={isLoadingPreview}
+                className="inline-flex items-center gap-2 rounded-lg border border-blue-300 bg-white px-4 py-2 text-xs font-bold text-gray-800 hover:bg-blue-50 transition-colors shadow-xs"
+              >
+                {isLoadingPreview ? <Loader2 size={15} className="animate-spin" /> : <Eye size={15} className="text-gray-700" />}
+                👁️ عرض المستند في الموقع
+              </button>
+
               <Link
                 href={`/staff/matters/${selectedMatter}`}
                 className="ms-auto inline-flex items-center gap-1 text-xs font-bold text-blue-800 hover:underline"
@@ -515,6 +651,22 @@ export function DocumentDraftCanvas({
                 عرض المستند في صفحة القضية ({selectedMatter})
                 <ArrowRight size={14} className="rotate-180" />
               </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Synced Content Live Preview */}
+        {syncedPreview && (
+          <div className="mb-4 rounded-xl border border-emerald-300 bg-emerald-50/90 p-4 text-xs space-y-2 text-right shadow-xs">
+            <div className="flex items-center justify-between font-bold text-emerald-950">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 size={16} className="text-emerald-600" />
+                آخر نص وتوقيع تم حفظه من Word في قاعدة بيانات الموقع:
+              </span>
+              <span className="text-[11px] text-emerald-800 bg-emerald-200/70 px-2 py-0.5 rounded-full">محفوظ بنجاح ✅</span>
+            </div>
+            <div className="rounded-lg bg-white p-3.5 font-sans font-medium text-gray-900 whitespace-pre-wrap border border-emerald-200 text-xs leading-relaxed">
+              {syncedPreview}
             </div>
           </div>
         )}
@@ -725,6 +877,77 @@ export function DocumentDraftCanvas({
           </div>
         </div>
       </div>
+
+      {/* In-Website Document Preview Modal */}
+      <Modal
+        open={previewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+        title={previewData?.title || 'معاينة المستند المحفوظ'}
+        description={`الملف: ${previewData?.name || savedDoc?.name || ''}`}
+        size="lg"
+        footer={
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="primary"
+                onClick={handleOpenWordOnline}
+                disabled={isOpeningWordOnline}
+                icon={isOpeningWordOnline ? <Loader2 size={15} className="animate-spin" /> : <ExternalLink size={15} />}
+              >
+                فتح ومتابعة التعديل في Word Online
+              </Button>
+              {savedDoc && (
+                <a
+                  href={`http://localhost:8000/api/documents/${savedDoc.id}/download`}
+                  download
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  <Download size={13} />
+                  تحميل .docx
+                </a>
+              )}
+            </div>
+            <Button variant="secondary" onClick={() => setPreviewModalOpen(false)}>
+              إغلاق
+            </Button>
+          </div>
+        }
+      >
+        <div className="max-h-[65vh] overflow-y-auto p-4 space-y-4" dir="rtl">
+          <div className="rounded-xl border border-gray-300 bg-white p-6 shadow-sm font-sans space-y-4 text-gray-900 text-sm leading-relaxed">
+            {previewData?.paragraphs && previewData.paragraphs.length > 0 ? (
+              previewData.paragraphs.map((para: string, idx: number) => {
+                const isHeading =
+                  para.startsWith('أولاً') ||
+                  para.startsWith('ثانياً') ||
+                  para.startsWith('ثالثاً') ||
+                  para.startsWith('بـنـاءً') ||
+                  para.startsWith('مذكرة') ||
+                  para.startsWith('الوقائع') ||
+                  para.startsWith('الطلبات');
+                const isSignature = para.includes('التوقيع') || para.includes('وكـيـل الـمـوكـل');
+
+                return (
+                  <p
+                    key={idx}
+                    className={`${
+                      isSignature
+                        ? 'rounded-lg border border-emerald-300 bg-emerald-50/70 p-3.5 font-bold text-emerald-950 text-right whitespace-pre-wrap'
+                        : isHeading
+                        ? 'font-bold text-gray-900 pt-2 border-b border-gray-100 pb-1'
+                        : 'text-gray-800'
+                    }`}
+                  >
+                    {para}
+                  </p>
+                );
+              })
+            ) : (
+              <p className="text-center text-gray-400 py-8">المستند لا يحتوي على فقرات نصية مقروءة.</p>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

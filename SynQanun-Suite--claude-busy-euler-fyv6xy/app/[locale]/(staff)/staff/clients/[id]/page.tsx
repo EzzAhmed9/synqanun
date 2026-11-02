@@ -72,7 +72,11 @@ function ClientDetail({ locale, record }: { locale: Locale; record: ClientRecord
     <>
       <StaffTopBar
         title={client.name[locale]}
-        subtitle={t(`standing.${client.standing}`)}
+        subtitle={
+          ['retainer', 'active', 'prospect', 'goodStanding'].includes(client.standing)
+            ? t(`standing.${client.standing}`)
+            : t('standing.active')
+        }
       />
 
       <main className="mx-auto flex w-full max-w-content flex-1 flex-col gap-6 px-6 py-6 [&>*]:shrink-0">

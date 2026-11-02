@@ -144,6 +144,9 @@ export interface SharedDocument {
   versions: DocumentVersion[];
   firmId: string;
   downloadUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  timeFormatted?: string;
 }
 
 // MOCK: replace with GET /api/documents?shared=true — scoped server-side to
@@ -356,6 +359,9 @@ export interface FirmDocument {
   createdDaysAgo: number;
   firmId: string;
   downloadUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  timeFormatted?: string;
 }
 
 /**

@@ -298,7 +298,7 @@ export function TimerLogModal() {
           </Field>
 
           {/* Billable Choice */}
-          <Field label={locale === 'ar' ? 'هل العمل قابل للفوترة والتحميل على العميل؟' : t('billableLabel')}>
+          <Field htmlFor="billableChoice" label={locale === 'ar' ? 'هل العمل قابل للفوترة والتحميل على العميل؟' : t('billableLabel')}>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -343,7 +343,7 @@ export function TimerLogModal() {
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-200 pt-4">
             <Button
               type="button"
-              variant="ghost"
+              variant="secondary"
               onClick={discardTimer}
               className="text-rose-600 hover:bg-rose-50"
             >

@@ -106,7 +106,7 @@ export function StaffProvider({
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       // Ctrl+K / Cmd+K, the same shortcut as the client portal.
-      if (event.key.toLowerCase() !== 'k' || !(event.metaKey || event.ctrlKey)) return;
+      if (!event.key || event.key.toLowerCase() !== 'k' || !(event.metaKey || event.ctrlKey)) return;
       event.preventDefault();
       openSearch();
     }

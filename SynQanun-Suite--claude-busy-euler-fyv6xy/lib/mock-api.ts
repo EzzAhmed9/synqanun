@@ -4326,6 +4326,33 @@ export const staff = {
   async currentStaff(): Promise<StaffMember> {
     await latency();
     const id = await viewerStaffId();
+
+    try {
+      const backendData = await backendBridge.team.list();
+      if (backendData?.members && Array.isArray(backendData.members)) {
+        const found = backendData.members.find((m: any) => m.id === id);
+        if (found) {
+          const member: StaffMember = {
+            id: found.id,
+            name: {
+              en: found.name?.en || found.name?.ar || found.email,
+              ar: found.name?.ar || found.name?.en || found.email,
+            },
+            rank: found.rank,
+            email: found.email,
+            status: found.status,
+            joinedDaysAgo: found.joinedDaysAgo || 0,
+          };
+          if (!sessionStaff.some((s) => s.id === member.id)) {
+            sessionStaff.push(member);
+          }
+          return member;
+        }
+      }
+    } catch {
+      // Backend unavailable fallback
+    }
+
     const person =
       demoStaff.find((member) => member.id === id) ??
       demoStaff.find((member) => member.id === SIGNED_IN_STAFF_ID);
@@ -6303,6 +6330,43 @@ export const staff = {
     await latency();
 
     const today = tenantToday();
+
+    // Track A.5 Real PostgreSQL Backend Bridge
+    const backendData = await backendBridge.team.list();
+    if (backendData?.members && backendData.members.length > 0) {
+      const items: RosterMember[] = backendData.members.map((member: any) => ({
+        id: member.id,
+        name: member.name,
+        rank: member.rank,
+        email: member.email,
+        status: member.status,
+        joinedOn: addDays(today, -(member.joinedDaysAgo || 0)),
+        openEngagements: member.engagementsCount || 0,
+        practiceAreas: (member.practiceAreas || []).map((p: string) => ({ en: p, ar: p })),
+        isYou: member.isSelf,
+        addedThisSession: member.status === 'temporaryPasswordIssued',
+      }));
+
+      const filtered = items.filter((row) => {
+        if (status && row.status !== status) return false;
+        if (rank && row.rank !== rank) return false;
+        return true;
+      });
+
+      const counts = {
+        all: items.length,
+        active: items.filter((row) => row.status === 'active').length,
+        temporaryPasswordIssued: items.filter(
+          (row) => row.status === 'temporaryPasswordIssued'
+        ).length,
+        deactivated: items.filter((row) => row.status === 'deactivated').length,
+      };
+
+      const ranks = [...new Set(items.map((row) => row.rank))] as Rank[];
+
+      return { items: filtered, total: items.length, counts, ranks };
+    }
+
     const engagements = [...allMatters(), ...allProjects()];
 
     const items: RosterMember[] = allStaff().map((member) => {
@@ -6533,6 +6597,35 @@ export const staff = {
     await latency();
     const people = staffIndex();
     const unknown = { en: '—', ar: '—' };
+
+    // Track A.5 Real PostgreSQL Backend Bridge
+    const backendData = await backendBridge.team.list();
+    if (backendData?.members && backendData.members.length > 0) {
+      const members = backendData.members.map((member: any) => ({
+        id: member.id,
+        name: member.name,
+        rank: member.rank,
+        email: member.email,
+        hasAccess: member.hasAccess,
+        isSelf: member.id === viewerId,
+        changedThisSession: lastAccessChange(member.id) !== undefined,
+      })).sort(
+        (a: any, b: any) =>
+          RANKS.indexOf(a.rank) - RANKS.indexOf(b.rank) || a.name.en.localeCompare(b.name.en)
+      );
+
+      const log = [...sessionAccessLog].reverse().map((entry) => ({
+        id: entry.id,
+        change: entry.change,
+        subject: people.get(entry.staffId)?.name ?? unknown,
+        actor: people.get(entry.byStaffId)?.name ?? unknown,
+        on: entry.on,
+        at: entry.at,
+      }));
+
+      return { members, log };
+    }
+
     const members = allStaff()
       .map((member) => ({
         id: member.id,

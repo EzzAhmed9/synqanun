@@ -143,7 +143,10 @@ function Clients({
     name: client.name[locale],
     summary: client.summary[locale],
     standing: client.standing,
-    standingLabel: t(`standing.${client.standing}`),
+    standingLabel:
+      client.standing === 'retainer' || client.standing === 'active' || client.standing === 'prospect' || client.standing === 'goodStanding'
+        ? t(`standing.${client.standing}`)
+        : (client.standing || t('standing.active')),
     engagements:
       client.matters + client.projects > 0
         ? // One register since October 2026: former projects count as matters.

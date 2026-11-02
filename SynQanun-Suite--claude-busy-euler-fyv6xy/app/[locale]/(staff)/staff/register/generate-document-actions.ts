@@ -51,12 +51,20 @@ export async function getMicrosoftStatusAction() {
   return await backendBridge.integrations.getMicrosoftStatus();
 }
 
+export async function saveMicrosoftClientIdAction(clientId: string, clientSecret?: string) {
+  return await backendBridge.integrations.saveMicrosoftClientId(clientId, clientSecret);
+}
+
 export async function getMicrosoftAuthUrlAction(redirectUri: string) {
   return await backendBridge.integrations.getMicrosoftAuthUrl(redirectUri);
 }
 
 export async function exchangeMicrosoftTokenAction(code: string, redirectUri: string) {
   return await backendBridge.integrations.exchangeMicrosoftToken(code, redirectUri);
+}
+
+export async function getMatterDocumentsAction(matterReference: string) {
+  return await backendBridge.documents.list({ engagement_ref: matterReference });
 }
 
 export async function disconnectMicrosoftAction() {

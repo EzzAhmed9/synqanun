@@ -93,127 +93,43 @@ export interface StaffMember {
 export const demoStaff: StaffMember[] = [
   {
     id: 'stf-001',
-    name: { en: 'Mansoor Al-Farooq', ar: 'منصور الفاروق' },
+    name: { en: 'Mansoor Al-Farooq', ar: 'الأستاذ / منصور الفاروق' },
     rank: 'partner',
-    email: `m.alfarooq@${demoFirm.domain}`,
+    email: 'partner@mr-law.eg',
     status: 'active',
     joinedDaysAgo: 2190,
   },
   {
     id: 'stf-002',
-    name: { en: 'Rami Al-Khatib', ar: 'رامي الخطيب' },
-    rank: 'partner',
-    email: `r.alkhatib@${demoFirm.domain}`,
-    status: 'active',
-    joinedDaysAgo: 1825,
-  },
-  {
-    id: 'stf-003',
-    name: { en: 'Fatima Al-Zahra', ar: 'فاطمة الزهراء' },
+    name: { en: 'Fatima Al-Zahra', ar: 'الأستاذة / فاطمة الزهراء' },
     rank: 'seniorAssociate',
-    email: `f.alzahra@${demoFirm.domain}`,
+    email: 'senior@mr-law.eg',
     status: 'active',
     joinedDaysAgo: 1460,
   },
   {
-    id: 'stf-004',
-    name: { en: 'Dalia Al-Sabah', ar: 'داليا الصباح' },
-    rank: 'seniorAssociate',
-    email: `d.alsabah@${demoFirm.domain}`,
-    status: 'active',
-    joinedDaysAgo: 1190,
-  },
-  {
-    id: 'stf-005',
-    name: { en: 'Huda Al-Mansoor', ar: 'هدى المنصور' },
+    id: 'stf-003',
+    name: { en: 'Hani Al-Mansoor', ar: 'الأستاذ / هاني المنصور' },
     rank: 'juniorAssociate',
-    email: `h.almansoor@${demoFirm.domain}`,
+    email: 'junior@mr-law.eg',
     status: 'active',
     joinedDaysAgo: 700,
   },
   {
-    id: 'stf-006',
-    name: { en: 'Noor Abdelrahman', ar: 'نور عبد الرحمن' },
+    id: 'stf-004',
+    name: { en: 'Nour Abdel-Rahman', ar: 'الأستاذة / نور عبد الرحمن' },
     rank: 'paralegal',
-    email: `n.abdelrahman@${demoFirm.domain}`,
+    email: 'paralegal@mr-law.eg',
     status: 'active',
     joinedDaysAgo: 520,
   },
-  /*
-   * ADDED BECAUSE THE FILE'S OWN CLAIM WAS FALSE.
-   *
-   * The comment above says these are "the same people the client-facing
-   * fixtures already name as lead counsel and project leads". Salem Al-Hashemi
-   * leads MAT-1940 and MAT-1104 in fixtures/matters.ts and had no staff record,
-   * so resolving a matter's lead to a person silently failed on two of the six.
-   * Found by building the per-rank dashboards, which are the first screens that
-   * have to answer "whose matter is this".
-   */
   {
-    id: 'stf-007',
-    name: { en: 'Salem Al-Hashemi', ar: 'سالم الهاشمي' },
-    rank: 'partner',
-    email: `s.alhashemi@${demoFirm.domain}`,
-    status: 'active',
-    joinedDaysAgo: 1680,
-  },
-  /*
-   * The fifth rank finally has a person in it. lib/ranks.ts has listed
-   * `legalSecretary` since Batch 0 and nobody held it, which is why nothing
-   * caught that the nav and the timer were being handed to a rank the fixtures
-   * could not produce.
-   */
-  {
-    id: 'stf-008',
-    name: { en: 'Layla Saeed', ar: 'ليلى سعيد' },
+    id: 'stf-005',
+    name: { en: 'Laila Saeed', ar: 'الأستاذة / ليلى سعيد' },
     rank: 'legalSecretary',
-    email: `l.saeed@${demoFirm.domain}`,
+    email: 'secretary@mr-law.eg',
     status: 'active',
     joinedDaysAgo: 430,
-  },
-  /*
-   * Two more the client fixtures already name and this file did not, found the
-   * same way Salem Al-Hashemi was: fixtures/messages.ts gives each portal
-   * thread a firm holder, and resolving that holder to a person failed on two
-   * of the five. Distinct people from Rami Al-Khatib and Salem Al-Hashemi —
-   * different given names in both locales — not spellings of them.
-   */
-  {
-    id: 'stf-009',
-    name: { en: 'Rana Al-Khatib', ar: 'رنا الخطيب' },
-    rank: 'seniorAssociate',
-    email: `rana.alkhatib@${demoFirm.domain}`,
-    status: 'active',
-    joinedDaysAgo: 910,
-  },
-  {
-    id: 'stf-010',
-    name: { en: 'Salma Al-Hashemi', ar: 'سلمى الهاشمي' },
-    rank: 'juniorAssociate',
-    email: `salma.alhashemi@${demoFirm.domain}`,
-    status: 'deactivated',
-    joinedDaysAgo: 640,
-  },
-  /*
-   * THE NEWEST HIRE, AND THE ONLY ONE WITH NO WORK YET.
-   *
-   * Added so the roster can show `temporaryPasswordIssued` truthfully. Every
-   * other person in this file already leads, supports, submits or decides
-   * something, which means they have demonstrably signed in — labelling any of
-   * them as still holding an unused temporary password would contradict the
-   * screens that show their work.
-   *
-   * She is referenced nowhere else on purpose. A person provisioned three days
-   * ago who has not been given a file yet is the ordinary case, and it is the
-   * case the status exists to describe.
-   */
-  {
-    id: 'stf-011',
-    name: { en: 'Mariam Fouad', ar: 'مريم فؤاد' },
-    rank: 'juniorAssociate',
-    email: `m.fouad@${demoFirm.domain}`,
-    status: 'temporaryPasswordIssued',
-    joinedDaysAgo: 3,
   },
 ];
 
