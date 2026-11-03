@@ -6809,6 +6809,12 @@ export const staff = {
 
     sessionMatters.push(opened);
 
+    // Auto-convert prospect client to active upon opening a matter
+    if (client.standing === 'prospect') {
+      client.standing = 'active';
+    }
+    client.lastActivityDaysAgo = 0;
+
     return { ok: true, reference };
   },
 

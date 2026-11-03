@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { mockApi, type CreateMatterResult } from '@/lib/mock-api';
 import { canOpenMatter } from '../permissions';
 import { backendBridge } from '@/lib/backend-bridge';
@@ -23,11 +24,20 @@ export async function createMatter(input: {
     return { ok: false, error: 'notPermitted' };
   }
 
+  let res: CreateMatterResult;
   const backendRes = await backendBridge.matters.create(input);
   if (backendRes) {
     if (!backendRes.ok) return { ok: false, error: backendRes.error };
-    return { ok: true, reference: backendRes.reference };
+    res = { ok: true, reference: backendRes.reference };
+  } else {
+    res = await mockApi.staff.createMatter(input);
   }
 
-  return mockApi.staff.createMatter(input);
+  if (res.ok) {
+    revalidatePath('/[locale]/staff/clients', 'page');
+    revalidatePath('/[locale]/staff/matters', 'page');
+    revalidatePath('/[locale]/staff', 'page');
+  }
+
+  return res;
 }

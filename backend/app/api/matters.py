@@ -579,6 +579,12 @@ def create_matter(
         is_closed=False
     )
     
+    # Auto-convert prospect client to active upon opening a new matter, and reset last activity
+    if client.standing == "prospect":
+        client.standing = "active"
+    client.last_activity_days_ago = 0
+    db.add(client)
+
     db.add(new_matter)
     db.commit()
     db.refresh(new_matter)
