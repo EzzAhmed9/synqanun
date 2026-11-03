@@ -4,6 +4,9 @@ import json
 import uuid
 import sys
 
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
 BASE = "http://localhost:8000"
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):

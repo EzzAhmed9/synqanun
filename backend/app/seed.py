@@ -508,6 +508,32 @@ def seed():
                 content_ar="تحدد واجبات الأمانة والحرص الملقاة على عاتق أعضاء مجلس الإدارة والشروط الواجب توافرها في أحكام التعويض والمسؤولية في اللوائح الداخلية للشركات.",
                 tags="DIFC, governance, directors, corporate",
             ),
+            LegalDatabaseEntry(
+                id="leg-004",
+                reference="EGY-CIVIL-131-1948",
+                kind="statute",
+                title_en="Egyptian Civil Code (Law No. 131/1948) - Binding Force of Contracts (Pacta Sunt Servanda)",
+                title_ar="القانون المدني المصري رقم 131 لسنة 1948 - القوة الملزمة للعقد ونظرية الظروف الطارئة",
+                jurisdiction_en="Egyptian Parliament / Official Gazette",
+                jurisdiction_ar="مجلس النواب / الجريدة الرسمية المصرية",
+                issued_on="1948-07-29",
+                content_en="Article 147: The contract makes the law of the parties. It cannot be revoked or altered except by mutual agreement of the parties or for causes provided for by law. If, however, as a result of exceptional occurrences of a general nature which could not have been foreseen, the performance of the contractual obligation becomes excessively onerous, the judge may reduce the onerous obligation to reasonable limits.",
+                content_ar="مادة 147: العقد شريعة المتعاقدين، فلا يجوز نقضه ولا تعديله إلا باتفاق الطرفين أو للأسباب التي يقررها القانون. ومع ذلك إذا طرأت حوادث استثنائية عامة لم يكن في الوسع توقعها وترتب على حدوثها أن تنفيذ الالتزام التعاقدي صار مرهقاً للمدين، جاز للقاضي رد الالتزام المرهق إلى الحد المعقول.",
+                tags="civil code, contract, pacta sunt servanda, emergency conditions",
+            ),
+            LegalDatabaseEntry(
+                id="leg-005",
+                reference="EGY-LAW-159-1981",
+                kind="statute",
+                title_en="Egyptian Companies Law (Law No. 159/1981) - Board of Directors Liabilities",
+                title_ar="قانون شركات المساهمة وشركات التوصية بالأسهم رقم 159 لسنة 1981 - مسؤولية أعضاء مجلس الإدارة",
+                jurisdiction_en="General Authority for Investment & Free Zones (GAFI)",
+                jurisdiction_ar="الهيئة العامة للاستثمار والمناطق الحرة (GAFI)",
+                issued_on="1981-09-22",
+                content_en="Article 52: Members of the Board of Directors shall be jointly liable for damages sustained by the company, shareholders, or third parties resulting from breach of laws or bylaws, or negligence in performing duties.",
+                content_ar="مادة 52: يسأل أعضاء مجلس الإدارة بالتضامن عن تعويض الشركة أو المساهمين أو الغير عن الضرر الذي ينشأ عن مخالفتهم أحكام القانون أو النظام الأساسي للشركة، وكذلك عن أي إهمال أو تقصير في أداء واجباتهم.",
+                tags="companies, governance, corporate liability, gafi",
+            ),
         ]
         db.add_all(legal_entries)
 

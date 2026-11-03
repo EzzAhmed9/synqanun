@@ -1,7 +1,6 @@
 'use client';
 
 import { demoFirm, isThemedTenant } from '@/fixtures/firm';
-import type { DemoViewerOption } from '@/components/chrome/DemoViewerMenu';
 import * as React from 'react';
 import { useLocale } from 'next-intl';
 import type { Locale } from '@/lib/i18n/routing';
@@ -41,9 +40,6 @@ interface StaffAccount {
   /** Rank label, already translated. */
   meta: string;
   rank: Rank;
-  /** Demo scaffolding — see components/chrome/DemoViewerMenu.tsx. */
-  viewers: DemoViewerOption[];
-  viewerId: string;
   /** Unread items in the unified inbox — the top bar envelope's badge. */
   inboxUnread: number;
 }
@@ -212,8 +208,6 @@ export function StaffTopBar({ title, subtitle }: StaffTopBarProps) {
     openDigest,
     toggleNotifications,
     unreadNotifications,
-    viewers,
-    viewerId,
     inboxUnread,
   } = useStaff();
 

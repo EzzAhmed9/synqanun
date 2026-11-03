@@ -939,6 +939,6 @@
 
 يمكنك تشغيل سكربت الفحص الآلي من الطرفية في أي وقت لاختبار جميع الواجهات في ثوانٍ معدودة:
 ```powershell
-backend\venv\Scripts\python.exe scratch\test_all_60_apis.py
+backend\venv\Scripts\python.exe tests\test_all_60_apis.py
 ```
 سيعطيك تقريراً فورياً بعلامات النجاح `[PASS]` لكل API وحالة الاستجابة بالأرقام.

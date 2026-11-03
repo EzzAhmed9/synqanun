@@ -504,10 +504,11 @@ export const backendBridge = {
 
   // --- Legal Database ---
   legalDatabase: {
-    async search(params?: { kind?: string; q?: string }) {
+    async search(params?: { kind?: string; jurisdiction?: string; q?: string }) {
       try {
         const query = new URLSearchParams();
         if (params?.kind) query.set('kind', params.kind);
+        if (params?.jurisdiction) query.set('jurisdiction', params.jurisdiction);
         if (params?.q) query.set('q', params.q);
 
         const res = await fetch(`${BACKEND_URL}/staff/legal-database?${query.toString()}`, {
@@ -537,6 +538,19 @@ export const backendBridge = {
 
   // --- Auth ---
   auth: {
+    async me() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/auth/me`, {
+          headers: await getHeaders(),
+          cache: 'no-store',
+        });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      }
+    },
+
     async login(email: string, password: string) {
       try {
         const res = await fetch(`${BACKEND_URL}/auth/login`, {

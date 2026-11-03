@@ -131,10 +131,6 @@ function PortalChooser({ locale }: { locale: Locale }) {
             </TenantAuthCard>
           ))}
         </div>
-
-        <div className="flex justify-center">
-          <DemoEntrance />
-        </div>
       </SplitAuthShell>
     </>
   );
@@ -193,8 +189,6 @@ function Splash({ locale }: { locale: Locale }) {
           {/* 16px below the wordmark. Caption scale, gray-500 — design.md §3. */}
           <p className="mt-4 text-caption text-gray-500">{t('caption')}</p>
         </div>
-
-        <DemoEntrance />
       </main>
 
       <footer className="flex flex-col items-center gap-3 p-6 text-caption text-gray-500 tablet:flex-row tablet:justify-between">
@@ -227,99 +221,5 @@ function Splash({ locale }: { locale: Locale }) {
         </span>
       </footer>
     </>
-  );
-}
-
-/** The demo's way in — shared by both splash variants. MOCK, deleted at Track A.5. */
-function DemoEntrance() {
-  const tDemo = useTranslations('demoEntrance');
-
-  /*
-  ===================================================================
-  THE DEMO ENTRANCE, AND WHY IT IS NOT A SIGN-IN BUTTON
-  ===================================================================
-  This screen had no links at all, and neither gateway's Sign in button
-  does anything — both handlers exist to CANCEL a native submit that was
-  otherwise putting the typed password in the URL. That was the right
-  call for the gateways and it left the deployed site with no way in:
-  every route was reachable only by typing a path.
-
-  The fix could have been to make those buttons navigate. It is not,
-  because that would fake a login — it would imply the typed credentials
-  were checked, which is the one thing this build has refused to do
-  everywhere else. So the doors are offered separately, under a heading
-  that says outright there is no authentication behind them.
-
-  Dashed and gray, the same treatment every other piece of scaffolding
-  in this product wears, so it does not read as product chrome.
-
-  MOCK: deleted at Track A.5. Once a real sign-in exists, the gateways
-  ARE the entrance and this block is the thing standing in for them.
-  */
-  return (
-    <section
-      aria-labelledby="demo-entrance"
-      className="mt-10 w-full max-w-[26rem] rounded-card border border-dashed border-gray-300 bg-gray-50 p-5"
-    >
-      <h2 id="demo-entrance" className="text-caption font-medium text-gray-700">
-        {tDemo('heading')}
-      </h2>
-      <p className="mt-1 text-caption text-gray-600">{tDemo('body')}</p>
-
-      <div className="mt-4 grid grid-cols-1 gap-2 tablet:grid-cols-2">
-        <Link
-          href="/staff"
-          className="rounded-card border border-gray-200 bg-white p-3 hover:bg-gray-100"
-        >
-          <span className="block text-body font-medium text-gray-700">{tDemo('staff')}</span>
-          <span className="mt-0.5 block text-caption text-gray-600">{tDemo('staffNote')}</span>
-        </Link>
-
-        <Link
-          href="/dashboard"
-          className="rounded-card border border-gray-200 bg-white p-3 hover:bg-gray-100"
-        >
-          <span className="block text-body font-medium text-gray-700">{tDemo('client')}</span>
-          <span className="mt-0.5 block text-caption text-gray-600">{tDemo('clientNote')}</span>
-        </Link>
-      </div>
-
-      {/* The gateways are still worth reaching — they are two of the
-          screens under review — so they are named rather than hidden. */}
-      <p className="mt-3 text-caption text-gray-600">
-        {/*
-          TAG placeholders (`<firm></firm>`), not value placeholders.
-          `t.rich` only accepts tag functions: written as `{firm}` the
-          message treats the function as a value and React refuses it with
-          "Functions are not valid as a child of Client Components" — which
-          is exactly how this first shipped, and it 500'd the splash.
-
-          The path is the link text and lives in the component rather than
-          the dictionary, because a route is not translatable — and it takes
-          `dir="ltr"`, since it is Latin in both locales (lib/format.ts's
-          identifier rule).
-        */}
-        {tDemo.rich('gateways', {
-          firm: () => (
-            <Link
-              href="/gateway/firm"
-              dir="ltr"
-              className="font-mono text-reference text-legal-navy hover:underline"
-            >
-              /gateway/firm
-            </Link>
-          ),
-          client: () => (
-            <Link
-              href="/gateway/client"
-              dir="ltr"
-              className="font-mono text-reference text-legal-navy hover:underline"
-            >
-              /gateway/client
-            </Link>
-          ),
-        })}
-      </p>
-    </section>
   );
 }

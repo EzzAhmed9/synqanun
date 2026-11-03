@@ -14,30 +14,33 @@ router = APIRouter(prefix="/staff/legal-database", tags=["Legal Database"])
 @router.get("", response_model=dict)
 def search_legal_database(
     kind: Optional[str] = Query(None),
+    jurisdiction: Optional[str] = Query(None),
     q: Optional[str] = Query(None),
     current_user: User = Depends(require_staff),
     db: Session = Depends(get_db)
 ):
-    all_entries = db.query(LegalDatabaseEntry).all()
+    all_entries = db.query(LegalDatabaseEntry).order_by(desc(LegalDatabaseEntry.issued_on)).all()
     
     # Calculate facets over the entire collection
-    kinds_count = {}
-    jurisdictions_count = {}
+    unique_kinds = list(dict.fromkeys([e.kind for e in all_entries]))
+    
+    jurisdictions_map = {}
     for e in all_entries:
-        kinds_count[e.kind] = kinds_count.get(e.kind, 0) + 1
-        jurisdictions_count[e.jurisdiction_en] = jurisdictions_count.get(e.jurisdiction_en, 0) + 1
-        
-    facets = {
-        "kinds": [{"value": k, "count": cnt} for k, cnt in kinds_count.items()],
-        "jurisdictions": [{"value": j, "count": cnt} for j, cnt in jurisdictions_count.items()],
-    }
+        if e.jurisdiction_en not in jurisdictions_map:
+            jurisdictions_map[e.jurisdiction_en] = {
+                "value": e.jurisdiction_en,
+                "label": {"en": e.jurisdiction_en, "ar": e.jurisdiction_ar}
+            }
     
     target_pool = all_entries
     if kind and kind != "all":
         target_pool = [e for e in target_pool if e.kind == kind]
+
+    if jurisdiction and jurisdiction != "all":
+        target_pool = [e for e in target_pool if e.jurisdiction_en == jurisdiction]
         
     if q:
-        search = q.lower()
+        search = q.lower().strip()
         target_pool = [
             e for e in target_pool
             if search in e.reference.lower() or
@@ -58,14 +61,16 @@ def search_legal_database(
             "title": {"en": e.title_en, "ar": e.title_ar},
             "jurisdiction": {"en": e.jurisdiction_en, "ar": e.jurisdiction_ar},
             "issuedOn": e.issued_on,
-            "body": e.content_en,  # Latin text
+            "body": {"en": e.content_en, "ar": e.content_ar},
+            "content": {"en": e.content_en, "ar": e.content_ar},
             "tags": [t.strip() for t in e.tags.split(",")] if e.tags else []
         })
         
     return {
         "items": items,
         "total": len(items),
-        "facets": facets
+        "kinds": unique_kinds,
+        "jurisdictions": list(jurisdictions_map.values())
     }
 
 @router.get("/{reference}", response_model=dict)
@@ -74,19 +79,38 @@ def get_legal_entry(
     current_user: User = Depends(require_staff),
     db: Session = Depends(get_db)
 ):
-    entry = db.query(LegalDatabaseEntry).filter(
-        LegalDatabaseEntry.reference == reference
-    ).first()
+    all_entries = db.query(LegalDatabaseEntry).order_by(desc(LegalDatabaseEntry.issued_on)).all()
+    entry = next((e for e in all_entries if e.reference.lower() == reference.lower()), None)
     
     if not entry:
         raise HTTPException(status_code=404, detail="Legal database entry not found")
         
-    return {
+    all_refs = [e.reference for e in all_entries]
+    idx = all_refs.index(entry.reference)
+    prev_ref = all_refs[idx - 1] if idx > 0 else None
+    next_ref = all_refs[idx + 1] if idx < len(all_refs) - 1 else None
+
+    entry_data = {
         "reference": entry.reference,
         "kind": entry.kind,
         "title": {"en": entry.title_en, "ar": entry.title_ar},
         "jurisdiction": {"en": entry.jurisdiction_en, "ar": entry.jurisdiction_ar},
         "issuedOn": entry.issued_on,
-        "body": entry.content_en,
+        "body": {"en": entry.content_en, "ar": entry.content_ar},
+        "content": {"en": entry.content_en, "ar": entry.content_ar},
         "tags": [t.strip() for t in entry.tags.split(",")] if entry.tags else []
+    }
+
+    return {
+        "entry": entry_data,
+        "reference": entry.reference,
+        "kind": entry.kind,
+        "title": {"en": entry.title_en, "ar": entry.title_ar},
+        "jurisdiction": {"en": entry.jurisdiction_en, "ar": entry.jurisdiction_ar},
+        "issuedOn": entry.issued_on,
+        "body": {"en": entry.content_en, "ar": entry.content_ar},
+        "previous": prev_ref,
+        "next": next_ref,
+        "position": idx + 1,
+        "total": len(all_refs)
     }

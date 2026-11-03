@@ -2414,7 +2414,7 @@
       "label": "Search the library",
       "placeholder": "Search statutes, judgments or commentary…",
       "submit": "Search",
-      "resultTitle": "Nothing was searched",
+      "resultTitle": "Search results for",
       "result": "No legal source is connected to this workspace, so “{query}” was not looked up and no result was produced. The sample entries below are unchanged.",
       "dismiss": "Clear"
     },

@@ -2,7 +2,13 @@
 Comprehensive Automated Test Suite for SynQanun Suite Backend.
 Tests Auth, RBAC, Clients, Matters, Billing, and Legal Database.
 """
+import sys
 import uuid
+
+# Ensure clean UTF-8 console output across all platforms (especially Windows cp1252)
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
 from fastapi.testclient import TestClient
 from app.main import app
 
@@ -16,7 +22,7 @@ def test_full_flow():
 
     print("\n--- 2. Testing Authentication (Partner Login) ---")
     login_res = client.post("/api/auth/login", json={
-        "email": "m.alfarooq@mr-law.eg",
+        "email": "partner@mr-law.eg",
         "password": "password123"
     })
     assert login_res.status_code == 200, login_res.text
@@ -33,7 +39,7 @@ def test_full_flow():
 
     print("\n--- 3. Testing RBAC (Junior Associate Login & Restricted Access) ---")
     jr_res = client.post("/api/auth/login", json={
-        "email": "k.adel@mr-law.eg",
+        "email": "junior@mr-law.eg",
         "password": "password123"
     })
     assert jr_res.status_code == 200
@@ -96,8 +102,9 @@ def test_full_flow():
     mat_detail = client.get("/api/staff/matters/MAT-2201", headers=partner_headers)
     assert mat_detail.status_code == 200
     m_data = mat_detail.json()
-    print(f"Matter MAT-2201: {m_data['title']['ar']} - Forum: {m_data['forum']['ar']}")
-    print(f"Hearings: {len(m_data['hearings'])} | Timeline events: {len(m_data['timeline'])}")
+    eng = m_data.get("engagement", m_data)
+    print(f"Matter MAT-2201: {eng['title']['ar']} - Forum: {eng['venue']['ar']}")
+    print(f"Timeline events: {len(m_data['timeline'])}")
 
     # Create new matter
     new_mat_res = client.post("/api/staff/matters", headers=partner_headers, json={

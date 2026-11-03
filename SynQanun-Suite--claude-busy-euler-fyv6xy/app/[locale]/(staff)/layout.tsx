@@ -6,6 +6,7 @@ import { TenantFooter } from '@/components/chrome';
 import { MueenLauncher } from '@/components/mueen';
 import { firmName } from '@/fixtures/firm';
 import type { Locale } from '@/lib/i18n/routing';
+import { backendBridge } from '@/lib/backend-bridge';
 import { mockApi, type StaffNotificationRecord } from '@/lib/mock-api';
 import { recordsTime, type Rank } from '@/lib/ranks';
 import { StaffProvider, StaffSidebar, StaffTabBar, StaffTimer } from './StaffChrome';
@@ -56,22 +57,33 @@ export default async function StaffLayout({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  // MOCK: the session resolves this in production, and the rank it returns is
-  // what gates the nav. Nothing here checks a credential. Track A.5.
-  const person = await mockApi.staff.currentStaff();
+  let personName = '';
+  let personRank: Rank = 'partner';
+  let personId = 'stf-001';
+
+  try {
+    const me = await backendBridge.auth.me();
+    if (me && me.id) {
+      personName = locale === 'ar' ? (me.name_ar || me.name_en) : (me.name_en || me.name_ar);
+      personRank = (me.rank as Rank) || 'partner';
+      personId = me.id;
+    }
+  } catch {
+    // fallback
+  }
+
+  if (!personName) {
+    const person = await mockApi.staff.currentStaff();
+    personName = person.name[locale as Locale];
+    personRank = person.rank;
+    personId = person.id;
+  }
+
   const [notifications, inbox] = await Promise.all([
-    mockApi.staff.notifications(person.id),
-    // The envelope's count — the same `unreadCount` the dashboards' Unread
-    // counter reads, so the top bar and the tile cannot disagree.
-    mockApi.staff.inbox(person.id),
+    mockApi.staff.notifications(personId),
+    mockApi.staff.inbox(personId),
   ]);
 
-  /*
-    Demo scaffolding. Resolved here because this is where the locale is and
-    because the list is the same on every staff screen — see
-    components/chrome/DemoViewerMenu.tsx for why a deployed build needs it.
-    Deleted at Track A.5 along with lib/demo-viewer.ts.
-  */
   const viewers = switchableViewers().map(({ id, rank }) => ({
     id,
     rank,
@@ -81,10 +93,10 @@ export default async function StaffLayout({
   return (
     <StaffShell
       locale={locale as Locale}
-      name={person.name[locale as Locale]}
-      rank={person.rank}
+      name={personName}
+      rank={personRank}
       viewers={viewers}
-      viewerId={person.id}
+      viewerId={personId}
       notifications={notifications}
       inboxUnread={inbox.unreadCount}
     >
