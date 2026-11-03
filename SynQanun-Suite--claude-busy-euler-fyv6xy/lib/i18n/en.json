@@ -1174,14 +1174,24 @@
       "consultation": "Consultation",
       "contract": "Contract",
       "enforcement": "Enforcement",
-      "otherProject": "Other project"
+      "otherProject": "Other project",
+      "arbitration": "Arbitration",
+      "dispute": "Dispute",
+      "advisory": "Advisory",
+      "corporate": "Corporate",
+      "litigation": "Litigation"
     },
     "typesPlural": {
       "case": "Cases",
       "consultation": "Consultations",
       "contract": "Contracts",
       "enforcement": "Enforcement",
-      "otherProject": "Other projects"
+      "otherProject": "Other projects",
+      "arbitration": "Arbitration",
+      "dispute": "Disputes",
+      "advisory": "Advisory",
+      "corporate": "Corporate",
+      "litigation": "Litigation"
     },
     "views": {
       "label": "Which legal matters",

@@ -5,7 +5,14 @@
  * Its own module, with nothing imported, so a client component (the register's
  * filter, the New matter form) can use the list without bundling fixture data.
  */
-export type MatterWorkType = 'case' | 'consultation' | 'contract' | 'enforcement' | 'otherProject';
+export type MatterWorkType =
+  | 'case'
+  | 'consultation'
+  | 'contract'
+  | 'enforcement'
+  | 'arbitration'
+  | 'dispute'
+  | 'otherProject';
 
 /** In the order the client's sidebar lists them. */
 export const MATTER_WORK_TYPES: MatterWorkType[] = [
@@ -13,6 +20,8 @@ export const MATTER_WORK_TYPES: MatterWorkType[] = [
   'consultation',
   'contract',
   'enforcement',
+  'arbitration',
+  'dispute',
   'otherProject',
 ];
 

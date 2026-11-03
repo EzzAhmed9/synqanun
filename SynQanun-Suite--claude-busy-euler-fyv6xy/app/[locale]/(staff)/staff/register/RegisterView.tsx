@@ -73,7 +73,20 @@ export function RegisterView({
 
   const rows: RegisterRowData[] = result.items.map((row) => ({
     reference: row.reference,
-    typeLabel: tType(row.workType),
+    typeLabel: [
+      'case',
+      'consultation',
+      'contract',
+      'enforcement',
+      'otherProject',
+      'arbitration',
+      'dispute',
+      'advisory',
+      'corporate',
+      'litigation',
+    ].includes(row.workType)
+      ? tType(row.workType as any)
+      : (row.workType || (locale === 'ar' ? 'قضية' : 'Case')),
     leadReassigned: row.leadReassignedThisSession,
     title: row.title[locale],
     category: row.category[locale],

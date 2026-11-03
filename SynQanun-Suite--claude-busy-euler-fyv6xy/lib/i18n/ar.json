@@ -1174,14 +1174,24 @@
       "consultation": "استشارة",
       "contract": "عقد",
       "enforcement": "تنفيذ",
-      "otherProject": "مشروع آخر"
+      "otherProject": "مشروع آخر",
+      "arbitration": "تحكيم",
+      "dispute": "نزاع قضائي",
+      "advisory": "استشارة",
+      "corporate": "شركات",
+      "litigation": "تقاضي"
     },
     "typesPlural": {
       "case": "القضايا",
       "consultation": "الاستشارات",
       "contract": "العقود",
       "enforcement": "التنفيذ",
-      "otherProject": "المشاريع الأخرى"
+      "otherProject": "المشاريع الأخرى",
+      "arbitration": "التحكيم",
+      "dispute": "النزاعات القضائية",
+      "advisory": "الاستشارات",
+      "corporate": "الشركات",
+      "litigation": "التقاضي"
     },
     "views": {
       "label": "المسائل القانونية المعروضة",
