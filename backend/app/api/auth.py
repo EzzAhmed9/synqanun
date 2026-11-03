@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import (
     verify_password,
@@ -10,6 +11,7 @@ from app.core.security import (
     create_reset_token,
     verify_reset_token,
 )
+from app.core.ratelimit import check_rate_limit, record_failure, record_success
 from app.models.user import User
 from app.schemas.auth import (
     Token,
@@ -24,22 +26,29 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/token", response_model=Token)
 def login_for_access_token(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    user = db.query(User).filter(User.email == form_data.username).first()
+    clean_user = form_data.username.strip().lower()
+    check_rate_limit(request, clean_user)
+
+    user = db.query(User).filter(func.lower(User.email) == clean_user).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
+        record_failure(request, clean_user)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     if user.status == "deactivated":
+        record_failure(request, clean_user)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is deactivated"
         )
     
+    record_success(request, clean_user)
     access_token = create_access_token(
         data={"sub": user.id, "side": user.side, "rank": user.rank, "firm_id": user.firm_id}
     )
@@ -47,29 +56,30 @@ def login_for_access_token(
 
 @router.post("/login", response_model=Token)
 def login_json(
+    request: Request,
     credentials: LoginRequest,
     db: Session = Depends(get_db)
 ):
     email_clean = credentials.email.strip().lower()
-    user = db.query(User).filter(User.email.ilike(email_clean)).first()
-    if not user:
-        prefix = email_clean.split("@")[0]
-        user = db.query(User).filter(User.email.ilike(f"{prefix}@%")).first()
-    if not user:
-        user = db.query(User).filter(User.id == email_clean).first()
+    check_rate_limit(request, email_clean)
+
+    user = db.query(User).filter(func.lower(User.email) == email_clean).first()
 
     if not user or not verify_password(credentials.password, user.hashed_password):
+        record_failure(request, email_clean)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     if user.status == "deactivated":
+        record_failure(request, email_clean)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is deactivated"
         )
     
+    record_success(request, email_clean)
     access_token = create_access_token(
         data={"sub": user.id, "side": user.side, "rank": user.rank, "firm_id": user.firm_id}
     )
@@ -84,23 +94,39 @@ def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user
 
 @router.post("/password-reset/request")
-def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+def request_password_reset(
+    request: Request,
+    payload: PasswordResetRequest,
+    db: Session = Depends(get_db)
+):
     clean_email = payload.email.strip().lower()
+    check_rate_limit(request, clean_email)
+
     user = db.query(User).filter(func.lower(User.email) == clean_email).first()
     
-    # Always respond ok to avoid user enumeration
     token = None
     if user:
+        record_success(request, clean_email)
         token = create_reset_token(user.email, user.side)
+        if settings.DEV_PRINT_RESET_TOKEN and settings.ENVIRONMENT.lower() != "production":
+            print(f"[DEV] Password reset token for {user.email}: {token}", flush=True)
     else:
-        token = create_reset_token(clean_email, "staff")
-        
-    return {
+        record_failure(request, clean_email)
+
+    # Always respond with the SAME generic message to prevent user enumeration
+    response_data = {
         "ok": True,
-        "message": "Password reset token generated",
-        "token": token,
-        "email": clean_email
+        "message": "If this email is registered, a password reset link has been sent."
     }
+
+    # Backward compatibility for local dev flow only when explicitly enabled
+    if settings.DEV_RETURN_RESET_TOKEN and settings.ENVIRONMENT.lower() != "production":
+        if not token:
+            token = create_reset_token(clean_email, "staff")
+        response_data["token"] = token
+        response_data["email"] = clean_email
+
+    return response_data
 
 @router.get("/password-reset/verify/{token}")
 def verify_reset(token: str, db: Session = Depends(get_db)):
@@ -152,4 +178,3 @@ def complete_password_reset(payload: PasswordResetComplete, db: Session = Depend
         "message": "Password updated successfully in PostgreSQL",
         "email": user.email
     }
-

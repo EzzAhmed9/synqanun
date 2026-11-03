@@ -1,3 +1,6 @@
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { AUTH_COOKIE_NAME, getAuthToken } from '@/lib/auth-token';
 import { demoStaff } from '@/fixtures/practice';
 import { switchableViewers } from '@/lib/demo-viewer';
 import { useTranslations } from 'next-intl';
@@ -57,27 +60,25 @@ export default async function StaffLayout({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  let personName = '';
-  let personRank: Rank = 'partner';
-  let personId = 'stf-001';
+  const token = await getAuthToken();
+  if (!token) {
+    redirect(`/${locale}/gateway/firm`);
+  }
 
-  try {
-    const me = await backendBridge.auth.me();
-    if (me && me.id) {
-      personName = locale === 'ar' ? (me.name_ar || me.name_en) : (me.name_en || me.name_ar);
-      personRank = (me.rank as Rank) || 'partner';
-      personId = me.id;
+  const me = await backendBridge.auth.me();
+  if (!me || me.side !== 'staff') {
+    try {
+      const jar = await cookies();
+      jar.delete(AUTH_COOKIE_NAME);
+    } catch {
+      // ignore
     }
-  } catch {
-    // fallback
+    redirect(`/${locale}/gateway/firm`);
   }
 
-  if (!personName) {
-    const person = await mockApi.staff.currentStaff();
-    personName = person.name[locale as Locale];
-    personRank = person.rank;
-    personId = person.id;
-  }
+  const personName = locale === 'ar' ? (me.name_ar || me.name_en) : (me.name_en || me.name_ar);
+  const personRank = (me.rank as Rank) || 'partner';
+  const personId = me.id;
 
   const [notifications, inbox] = await Promise.all([
     mockApi.staff.notifications(personId),

@@ -440,7 +440,7 @@ export function DocumentsLibrary({
 
                       <TableCell className="py-3 text-end">
                         <a
-                          href={`http://127.0.0.1:8000/api/documents/${row.id}/download`}
+                          href={`/api/docs/${row.id}/download`}
                           download
                           aria-label={t('download', { name: row.name })}
                           className="inline-flex h-9 items-center justify-center gap-2 rounded-sm px-2 text-caption text-gray-500 hover:bg-gray-100 hover:text-action tablet:w-9 tablet:px-0 tablet:text-gray-500 transition-colors"
@@ -587,7 +587,7 @@ function DocumentPanel({ row }: { row: DocumentRowData }) {
 
       <div className="mt-4 flex flex-col gap-2">
         <a
-          href={`http://127.0.0.1:8000/api/documents/${row.id}/download`}
+          href={`/api/docs/${row.id}/download`}
           download
           className="inline-flex w-full items-center justify-center gap-2 rounded-sm border border-gray-300 bg-white py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-action transition-colors"
         >

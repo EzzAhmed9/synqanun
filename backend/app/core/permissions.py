@@ -3,6 +3,7 @@ from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import decode_access_token
 from app.models.user import User
@@ -21,31 +22,32 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    # 1. First check Bearer token if provided
+    # 1. Primary Authentication: Bearer token
     if token:
         payload = decode_access_token(token)
         if payload:
-            user_id: str = payload.get("sub")
+            user_id: Optional[str] = payload.get("sub")
             if user_id:
                 user = db.query(User).filter(User.id == user_id).first()
                 if user and user.status != "deactivated":
                     return user
+        raise credentials_exception
                     
-    # 2. Check internal server header (from Next.js Server Components)
-    if x_viewer_staff_id:
-        user = db.query(User).filter(User.id == x_viewer_staff_id).first()
-        if user and user.status != "deactivated":
-            return user
+    # 2. X-Viewer-* headers: ONLY permitted when ALLOW_VIEWER_HEADERS is True (dev only)
+    if settings.ALLOW_VIEWER_HEADERS:
+        if x_viewer_staff_id:
+            user = db.query(User).filter(User.id == x_viewer_staff_id).first()
+            if user and user.status != "deactivated":
+                return user
 
-    # 3. Check client viewer header
-    if x_viewer_client_id:
-        user = db.query(User).filter(
-            or_(User.id == x_viewer_client_id, User.client_id == x_viewer_client_id)
-        ).first()
-        if user and user.status != "deactivated":
-            return user
+        if x_viewer_client_id:
+            user = db.query(User).filter(
+                or_(User.id == x_viewer_client_id, User.client_id == x_viewer_client_id)
+            ).first()
+            if user and user.status != "deactivated":
+                return user
 
-    # Strict Security: If no valid token or authenticated header is provided, reject with 401
+    # Strict Security: If no valid token is provided, reject with 401
     raise credentials_exception
 
 def require_staff(current_user: User = Depends(get_current_user)) -> User:
@@ -81,18 +83,19 @@ def require_time_recording(current_user: User = Depends(require_staff)) -> User:
     return current_user
 
 def require_lead_eligible(current_user: User = Depends(require_staff)) -> User:
-    if current_user.rank not in ["partner", "seniorAssociate"]:
+    """Only Partner and Senior Associate can lead cases or reassign leads."""
+    if current_user.rank not in ("partner", "seniorAssociate"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied: Only partners and senior associates can lead matters"
+            detail="notPermitted"
         )
     return current_user
 
 def require_partner(current_user: User = Depends(require_staff)) -> User:
+    """Only Partner can perform executive operations (invoicing, deleting drafts, financial summary)."""
     if current_user.rank != "partner":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied: Only partners can perform this action"
+            detail="Partner rank required for this operation"
         )
     return current_user
-

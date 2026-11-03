@@ -3,6 +3,7 @@ import urllib.parse
 import json
 import uuid
 import sys
+sys.path.insert(0, "backend")
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -75,7 +76,8 @@ record("Auth", "GET", "/api/auth/me", code, res)
 # POST /api/auth/password-reset/request
 code, res = req("POST", "/api/auth/password-reset/request", {"email": "partner@mr-law.eg"})
 record("Auth", "POST", "/api/auth/password-reset/request", code, res)
-reset_token = res.get("token") if isinstance(res, dict) else ""
+from app.core.security import create_reset_token
+reset_token = create_reset_token("partner@mr-law.eg", "staff")
 
 # GET /api/auth/password-reset/verify/{token}
 code, res = req("GET", f"/api/auth/password-reset/verify/{reset_token}")
@@ -306,14 +308,19 @@ record("Documents (Client)", "GET", "/api/client/documents", code, res)
 
 # 10. Documents Download
 # GET /api/documents/{document_id}/preview
-code, res = req("GET", "/api/documents/doc-af3c1535bb77/preview")
+code, res = req("GET", "/api/documents/doc-af3c1535bb77/preview", token=staff_token)
 record("Documents Download", "GET", "/api/documents/{document_id}/preview", code, res)
 
 # GET /api/documents/{document_id}/download
-code, res = req("GET", "/api/documents/doc-af3c1535bb77/download")
+code, res = req("GET", "/api/documents/doc-af3c1535bb77/download", token=staff_token)
 record("Documents Download", "GET", "/api/documents/{document_id}/download", code, res)
 
 # 11. Integrations & Word Online
+# POST /api/staff/integrations/microsoft/ticket
+code_t, res_t = req("POST", "/api/staff/integrations/microsoft/ticket", token=staff_token)
+record("Integrations", "POST", "/api/staff/integrations/microsoft/ticket", code_t, res_t)
+ms_ticket = res_t.get("ticket") if isinstance(res_t, dict) else ""
+
 # POST /api/staff/integrations/microsoft/save-client-id
 code, res = req("POST", "/api/staff/integrations/microsoft/save-client-id", {
     "client_id": "mock-azure-client-id-12345",
@@ -322,11 +329,13 @@ code, res = req("POST", "/api/staff/integrations/microsoft/save-client-id", {
 record("Integrations", "POST", "/api/staff/integrations/microsoft/save-client-id", code, res)
 
 # GET /api/staff/integrations/microsoft/login (307 redirect to MS)
-code, res = req("GET", "/api/staff/integrations/microsoft/login", token=staff_token)
+code, res = req("GET", f"/api/staff/integrations/microsoft/login?ticket={ms_ticket}")
 record("Integrations", "GET", "/api/staff/integrations/microsoft/login", code, res)
 
 # GET /api/staff/integrations/microsoft/callback
-code, res = req("GET", "/api/staff/integrations/microsoft/callback?code=mock_code&state=mock_state")
+from app.core.security import create_oauth_state
+valid_state = create_oauth_state("stf-001", "firm-001", "/ar/staff")
+code, res = req("GET", f"/api/staff/integrations/microsoft/callback?code=mock_code&state={valid_state}")
 record("Integrations", "GET", "/api/staff/integrations/microsoft/callback", code, res)
 
 # GET /api/staff/integrations/microsoft/status

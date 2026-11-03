@@ -1,5 +1,6 @@
 import os
 import uuid
+import logging
 import urllib.parse
 from typing import Optional, List
 from datetime import datetime, timezone, timedelta
@@ -7,6 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
+
+logger = logging.getLogger(__name__)
 
 from app.core.database import get_db
 from app.core.permissions import get_current_user, require_staff, require_client
@@ -341,10 +344,28 @@ def list_documents_for_client(
 # DOWNLOAD ENDPOINT
 # =========================================================================
 
+def check_document_access(doc: Document, user: User) -> bool:
+    """
+    Check if a user (staff or client) is allowed to access the document.
+    Staff: document must belong to user's firm.
+    Client: document must belong to user's firm AND user's client_id AND not is_firm_only.
+    """
+    if not doc or not user:
+        return False
+    if doc.firm_id != user.firm_id:
+        return False
+    if user.side == "staff":
+        return True
+    if user.side == "client":
+        return bool(user.client_id and doc.client_id == user.client_id and not doc.is_firm_only)
+    return False
+
+
 @public_download_router.get("/{document_id}/preview")
 async def get_document_preview(
     document_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get text and paragraphs of a document for in-website preview.
@@ -352,7 +373,7 @@ async def get_document_preview(
     pulls the latest edits from OneDrive first so preview is 100% up-to-date!
     """
     doc = db.query(Document).filter(Document.id == document_id).first()
-    if not doc:
+    if not doc or not check_document_access(doc, current_user):
         raise HTTPException(status_code=404, detail="المستند غير موجود")
 
     # Auto-pull latest edits from OneDrive if connected
@@ -409,7 +430,8 @@ async def get_document_preview(
             d = DocxDoc(doc.file_path)
             paragraphs = [p.text.strip() for p in d.paragraphs if p.text.strip()]
         except Exception as e:
-            paragraphs = [f"تعذر استخراج النص: {str(e)}"]
+            logger.error("Failed to extract docx paragraphs for doc %s: %s", document_id, e)
+            paragraphs = ["تعذر استخراج النص من المستند"]
 
     time_display = ""
     if doc.created_at:
@@ -438,13 +460,14 @@ async def get_document_preview(
 @public_download_router.get("/{document_id}/download")
 def download_document(
     document_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Stream document file (.docx or .xlsx) with proper headers for instant browser downloading.
     """
     doc = db.query(Document).filter(Document.id == document_id).first()
-    if not doc:
+    if not doc or not check_document_access(doc, current_user):
         raise HTTPException(status_code=404, detail="Document not found")
 
     if not os.path.exists(doc.file_path):

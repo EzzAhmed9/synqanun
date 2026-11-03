@@ -517,9 +517,9 @@ function DocumentsPanel({
                 ) : null}
               </div>
 
-              {/* Real file streaming from PostgreSQL document store */}
+              {/* Real file streaming from PostgreSQL document store via authenticated proxy */}
               <a
-                href={document.downloadUrl || `http://127.0.0.1:8000/api/documents/${document.id}/download`}
+                href={document.downloadUrl || `/api/docs/${document.id}/download`}
                 download
                 aria-label={t('download', { name: document.name })}
                 className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-gray-500 hover:bg-gray-100 hover:text-action transition-colors"

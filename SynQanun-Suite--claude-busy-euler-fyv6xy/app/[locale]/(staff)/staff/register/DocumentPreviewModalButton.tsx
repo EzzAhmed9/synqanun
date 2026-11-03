@@ -38,7 +38,7 @@ export function DocumentPreviewModalButton({
     else setIsRefreshing(true);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:8000/api/documents/${documentId}/preview`);
+      const res = await fetch(`/api/docs/${documentId}/preview`);
       if (!res.ok) throw new Error('تعذر تحميل معاينة المستند');
       const json = await res.json();
       setData(json);
@@ -105,7 +105,7 @@ export function DocumentPreviewModalButton({
               </button>
 
               <a
-                href={`http://localhost:8000/api/documents/${documentId}/download`}
+                href={`/api/docs/${documentId}/download`}
                 download
                 className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
               >

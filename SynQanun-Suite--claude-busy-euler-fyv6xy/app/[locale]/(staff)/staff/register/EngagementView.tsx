@@ -458,9 +458,9 @@ export function EngagementView({
                     </span>
                   </span>
                   <span className="flex items-center gap-2">
-                    {/* Direct download button for stored files */}
+                    {/* Direct download button for stored files via authenticated proxy */}
                     <a
-                      href={(document as any).downloadUrl || `http://127.0.0.1:8000/api/documents/${document.id}/download`}
+                      href={(document as any).downloadUrl || `/api/docs/${document.id}/download`}
                       download
                       title="تحميل الملف"
                       className="inline-flex h-8 items-center gap-1.5 rounded border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-action transition-colors"
@@ -591,7 +591,7 @@ export function EngagementView({
                       </a>
                     )}
                     <a
-                      href={(document as any).downloadUrl || `http://127.0.0.1:8000/api/documents/${document.id}/download`}
+                      href={(document as any).downloadUrl || `/api/docs/${document.id}/download`}
                       download
                       title="تحميل الملف"
                       className="inline-flex h-8 items-center gap-1.5 rounded border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-action transition-colors"

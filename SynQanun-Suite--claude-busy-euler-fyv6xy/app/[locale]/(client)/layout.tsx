@@ -1,3 +1,7 @@
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { AUTH_COOKIE_NAME, getAuthToken } from '@/lib/auth-token';
+import { backendBridge } from '@/lib/backend-bridge';
 import { useTranslations } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { TenantFooter } from '@/components/chrome';
@@ -66,6 +70,22 @@ export default async function ClientPortalLayout({
   const { locale } = await params;
   setRequestLocale(locale);
 
+  const token = await getAuthToken();
+  if (!token) {
+    redirect(`/${locale}/gateway/client`);
+  }
+
+  const me = await backendBridge.auth.me();
+  if (!me || me.side !== 'client') {
+    try {
+      const jar = await cookies();
+      jar.delete(AUTH_COOKIE_NAME);
+    } catch {
+      // ignore
+    }
+    redirect(`/${locale}/gateway/client`);
+  }
+
   // MOCK: both are fetched per navigation because a layout re-runs on every
   // route in its group. A real client would resolve the session once and
   // subscribe to the unread count rather than refetching it. Track A.5.
@@ -86,7 +106,7 @@ export default async function ClientPortalLayout({
     <ClientPortalShell
       locale={typedLocale}
       account={{
-        name: account.name[typedLocale],
+        name: locale === 'ar' ? (me.name_ar || me.name_en) : (me.name_en || me.name_ar),
         meta: [account.title?.[typedLocale], account.organisation?.[typedLocale]]
           .filter(Boolean)
           .join(' · '),

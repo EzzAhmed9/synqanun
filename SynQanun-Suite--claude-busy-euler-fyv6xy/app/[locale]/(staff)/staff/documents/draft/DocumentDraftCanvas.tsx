@@ -175,8 +175,8 @@ export function DocumentDraftCanvas({
       syncFromWordOnlineAction(initialDocId)
         .catch(() => null)
         .finally(() => {
-          // 2. Fetch preview metadata
-          fetch(`http://127.0.0.1:8000/api/documents/${initialDocId}/preview`)
+          // 2. Fetch preview metadata via authenticated Next.js proxy route
+          fetch(`/api/docs/${initialDocId}/preview`)
             .then((res) => (res.ok ? res.json() : null))
             .then((data) => {
               if (!isMounted || !data) return;
@@ -184,7 +184,7 @@ export function DocumentDraftCanvas({
                 id: data.id,
                 name: data.name,
                 title: data.title,
-                download_url: `/api/documents/${data.id}/download`,
+                download_url: `/api/docs/${data.id}/download`,
                 size_label: `${Math.round((data.size_bytes || 0) / 1024)} KB`,
                 engagement_ref: initialMatter,
               };
@@ -294,7 +294,7 @@ export function DocumentDraftCanvas({
       const res = await saveDocumentLocally();
       if (res.ok && res.data) {
         setSavedDoc(res.data);
-        const downloadUrl = `http://127.0.0.1:8000${res.data.download_url}`;
+        const downloadUrl = `/api/docs/${res.data.id}/download`;
         const a = document.createElement('a');
         a.href = downloadUrl;
         a.download = res.data.name;
@@ -361,7 +361,7 @@ export function DocumentDraftCanvas({
     }
     setIsLoadingPreview(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/documents/${docId}/preview`);
+      const res = await fetch(`/api/docs/${docId}/preview`);
       if (res.ok) {
         const data = await res.json();
         setPreviewData(data);

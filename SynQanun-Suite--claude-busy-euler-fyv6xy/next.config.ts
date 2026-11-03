@@ -26,12 +26,16 @@ const nextConfig: NextConfig = {
    * history of app/[locale]/(staff)/staff/projects/.
    */
   async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'http://127.0.0.1:8000/api/:path*',
-      },
-    ];
+    return {
+      beforeFiles: [],
+      afterFiles: [],
+      fallback: [
+        {
+          source: '/api/:path*',
+          destination: 'http://127.0.0.1:8000/api/:path*',
+        },
+      ],
+    };
   },
 
   async redirects() {

@@ -13,10 +13,29 @@ from app.models.document import Document
 from app.models.firm import Firm
 from app.models.integration import Integration
 from app.models.user import User
-from app.core.permissions import get_current_user
+import logging
+from app.core.permissions import get_current_user, require_staff, require_partner
+from app.core.config import settings
+from app.core.security import (
+    create_oauth_ticket,
+    verify_oauth_ticket,
+    create_oauth_state,
+    verify_oauth_state,
+)
 from app.services import onedrive_service
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/staff/integrations", tags=["Integrations & Word Online"])
+
+def sanitize_return_to(return_to: Optional[str]) -> str:
+    default_path = "/ar/staff"
+    if not return_to:
+        return default_path
+    clean = return_to.strip()
+    if not clean.startswith("/") or clean.startswith("//") or "://" in clean or "\\" in clean:
+        return default_path
+    return clean
 
 class ConfigureMicrosoftRequest(BaseModel):
     client_id: str
@@ -34,7 +53,7 @@ class SaveClientIdRequest(BaseModel):
 def save_microsoft_client_id(
     payload: SaveClientIdRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_partner),
 ):
     """Save or update Microsoft Azure Client ID and optional secret."""
     clean_id = payload.client_id.strip()
@@ -65,14 +84,54 @@ def save_microsoft_client_id(
     db.refresh(integration)
     return {"success": True, "client_id": clean_id, "message": "تم حفظ Client ID بنجاح"}
 
+@router.post("/microsoft/ticket")
+def create_microsoft_login_ticket(
+    current_user: User = Depends(require_staff),
+):
+    """
+    Generate a short-lived (5 min) cryptographically signed ticket for browser-initiated
+    Microsoft OAuth login. Ensures only authenticated staff can initiate Microsoft login.
+    """
+    ticket = create_oauth_ticket(current_user.id, current_user.firm_id)
+    return {"ticket": ticket, "expires_in": 300}
+
 @router.get("/microsoft/login")
 def start_microsoft_login(
-    staff_id: Optional[str] = "stf-001",
+    ticket: Optional[str] = None,
+    staff_id: Optional[str] = None,
     return_to: Optional[str] = "/ar/staff",
     db: Session = Depends(get_db),
 ):
-    """Redirect user directly to Microsoft login."""
+    """Redirect user directly to Microsoft login using a signed ticket or dev staff_id."""
+    target_staff_id = None
+    target_firm_id = None
+
+    if ticket:
+        payload = verify_oauth_ticket(ticket)
+        if not payload:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired Microsoft login ticket")
+        target_staff_id = payload.get("sub")
+        target_firm_id = payload.get("firm_id")
+    elif settings.ALLOW_VIEWER_HEADERS and staff_id and staff_id.strip():
+        target_staff_id = staff_id.strip()
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A valid login ticket is required to initiate Microsoft login"
+        )
+
+    staff_user = db.query(User).filter(User.id == target_staff_id).first()
+    if not staff_user or staff_user.side != "staff":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Staff user not found")
+
+    if target_firm_id and staff_user.firm_id != target_firm_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Firm mismatch")
+
+    safe_return_to = sanitize_return_to(return_to)
+    frontend_base = settings.FRONTEND_URL.rstrip("/")
+
     integration = db.query(Integration).filter(
+        Integration.firm_id == staff_user.firm_id,
         Integration.provider == "microsoft",
     ).first()
 
@@ -81,13 +140,12 @@ def start_microsoft_login(
                 os.getenv("MS_CLIENT_ID")
 
     if not client_id or "mock" in client_id.lower():
-        target = return_to or "/ar/staff"
-        separator = "&" if "?" in target else "?"
+        separator = "&" if "?" in safe_return_to else "?"
         err_text = urllib.parse.quote("يلزم إدخال Azure Client ID حقيقي لتفعيل المزامنة التلقائية مع OneDrive، أو يمكنك استخدام محرر Word المباشر فوراً بالضغط على 'فتح في Microsoft Word'.")
-        return RedirectResponse(url=f"http://localhost:3000{target}{separator}ms_error={err_text}")
+        return RedirectResponse(url=f"{frontend_base}{safe_return_to}{separator}ms_error={err_text}")
 
-    # State stores staff_id and return_to url
-    state = f"{staff_id or 'stf-001'}::{return_to or '/ar/staff'}"
+    # Cryptographically signed state JWT (staff_id, firm_id, nonce, safe_return_to, 10 min expiry)
+    state = create_oauth_state(staff_user.id, staff_user.firm_id, safe_return_to)
 
     redirect_uri = "http://localhost:8000/api/staff/integrations/microsoft/callback"
     auth_url = onedrive_service.get_authorization_url(
@@ -104,16 +162,33 @@ async def microsoft_oauth_callback(
     db: Session = Depends(get_db),
 ):
     """Callback receiving authorization code from Microsoft, saving tokens, and redirecting back."""
-    target_path = "/ar/staff"
-    if state and "::" in state:
-        try:
-            target_path = state.split("::", 1)[1]
-        except Exception:
-            target_path = "/ar/staff"
+    frontend_base = settings.FRONTEND_URL.rstrip("/")
+    default_target = "/ar/staff"
+
+    if not state:
+        err_msg = urllib.parse.quote("Missing OAuth state parameter")
+        return RedirectResponse(url=f"{frontend_base}{default_target}?ms_error={err_msg}")
+
+    state_payload = verify_oauth_state(state)
+    if not state_payload:
+        err_msg = urllib.parse.quote("Invalid or expired OAuth state parameter")
+        return RedirectResponse(url=f"{frontend_base}{default_target}?ms_error={err_msg}")
+
+    staff_id = state_payload.get("sub")
+    firm_id = state_payload.get("firm_id")
+    raw_return_to = state_payload.get("return_to")
+    target_path = sanitize_return_to(raw_return_to)
+
+    staff_user = db.query(User).filter(User.id == staff_id, User.firm_id == firm_id).first()
+    if not staff_user or staff_user.side != "staff":
+        err_msg = urllib.parse.quote("Staff user or firm not found")
+        separator = "&" if "?" in target_path else "?"
+        return RedirectResponse(url=f"{frontend_base}{target_path}{separator}ms_error={err_msg}")
 
     integration = db.query(Integration).filter(
+        Integration.firm_id == firm_id,
         Integration.provider == "microsoft",
-    ).order_by(Integration.updated_at.desc()).first()
+    ).first()
 
     client_id = (integration.client_id if integration and integration.client_id else None) or \
                 os.getenv("MICROSOFT_OAUTH_CLIENT_ID") or \
@@ -149,7 +224,7 @@ async def microsoft_oauth_callback(
         if not integration:
             integration = Integration(
                 id=f"intg-{uuid.uuid4().hex[:12]}",
-                firm_id="firm-001",
+                firm_id=firm_id,
                 provider="microsoft",
                 client_id=client_id,
                 client_secret=client_secret,
@@ -167,14 +242,12 @@ async def microsoft_oauth_callback(
         db.commit()
 
         separator = "&" if "?" in target_path else "?"
-        return RedirectResponse(url=f"http://localhost:3000{target_path}{separator}ms_connected=true")
+        return RedirectResponse(url=f"{frontend_base}{target_path}{separator}ms_connected=true")
     except Exception as e:
-        import traceback
-        print(f"MICROSOFT OAUTH ERROR: {e}")
-        traceback.print_exc()
-        err_msg = urllib.parse.quote(str(e))
+        logger.error("MICROSOFT OAUTH ERROR: %s", e)
+        err_msg = urllib.parse.quote("فشل ربط الحساب مع Microsoft")
         separator = "&" if "?" in target_path else "?"
-        return RedirectResponse(url=f"http://localhost:3000{target_path}{separator}ms_error={err_msg}")
+        return RedirectResponse(url=f"{frontend_base}{target_path}{separator}ms_error={err_msg}")
 
 @router.get("/microsoft/status")
 def get_microsoft_status(
@@ -264,7 +337,8 @@ async def exchange_microsoft_token(
             redirect_uri=payload.redirect_uri,
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Token exchange failed: {str(e)}")
+        logger.error("Token exchange failed: %s", e)
+        raise HTTPException(status_code=400, detail="فشل تبادل رمز المصادقة مع Microsoft")
 
     access_token = tokens.get("access_token")
     refresh_token = tokens.get("refresh_token")
@@ -318,7 +392,7 @@ async def exchange_microsoft_token(
 @router.post("/microsoft/disconnect")
 def disconnect_microsoft(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_partner),
 ):
     """Disconnect Microsoft account."""
     integration = db.query(Integration).filter(
@@ -517,7 +591,8 @@ async def sync_from_word_online(
             "download_url": f"http://localhost:8000/api/documents/{doc.id}/download",
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"فشلت المزامنة من OneDrive: {str(e)}")
+        logger.error("OneDrive sync error for document %s: %s", document_id, e)
+        raise HTTPException(status_code=500, detail="فشلت المزامنة من OneDrive")
 
 
 @router.post("/documents/{document_id}/upload-updated-docx")
@@ -528,7 +603,9 @@ async def upload_updated_docx(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Directly update/replace an existing document with an edited .docx file (e.g. edited from Word Online or desktop).
+    Directly update/replace an existing document with an edited .docx or .xlsx file.
+    Validates file extension against document kind, checks ZIP magic bytes (PK\x03\x04),
+    and enforces maximum upload size.
     Persists immediately in server storage and PostgreSQL.
     """
     doc = db.query(Document).filter(
@@ -539,9 +616,28 @@ async def upload_updated_docx(
     if not doc:
         raise HTTPException(status_code=404, detail="المستند غير موجود")
 
+    filename = (file.filename or "").lower()
+    expected_ext = f".{doc.kind.lower()}"
+    if not filename.endswith(expected_ext):
+        raise HTTPException(
+            status_code=400,
+            detail=f"نوع الملف غير مطابق للمستند (يجب أن يكون {expected_ext})"
+        )
+
     content = await file.read()
     if not content:
         raise HTTPException(status_code=400, detail="الملف المرفوع فارغ")
+
+    max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+    if len(content) > max_bytes:
+        raise HTTPException(
+            status_code=400,
+            detail=f"حجم الملف يتجاوز الحد الأقصى المسموح به ({settings.MAX_UPLOAD_SIZE_MB} ميجابايت)"
+        )
+
+    if doc.kind.lower() in ("docx", "xlsx"):
+        if not content.startswith(b"PK\x03\x04"):
+            raise HTTPException(status_code=400, detail="محتوى الملف غير صالح أو تالف")
 
     with open(doc.file_path, "wb") as f:
         f.write(content)

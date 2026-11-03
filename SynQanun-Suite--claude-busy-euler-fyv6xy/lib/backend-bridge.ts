@@ -2,23 +2,16 @@
  * Bridge between Next.js Frontend and FastAPI PostgreSQL Backend.
  * Implements Track A.5 real data persistence with seamless fallback.
  */
-import { viewerStaffId } from '@/lib/demo-viewer';
+import { getAuthHeaders, getAuthToken } from '@/lib/auth-token';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
 
 async function getHeaders(): Promise<HeadersInit> {
-  const staffId = await viewerStaffId().catch(() => 'stf-001');
-  return {
-    'Content-Type': 'application/json',
-    'X-Viewer-Staff-Id': staffId,
-  };
+  return await getAuthHeaders();
 }
 
 async function getClientHeaders(): Promise<HeadersInit> {
-  return {
-    'Content-Type': 'application/json',
-    'X-Viewer-Client-Id': 'cli-001',
-  };
+  return await getAuthHeaders();
 }
 
 export const backendBridge = {
@@ -707,12 +700,24 @@ export const backendBridge = {
     },
 
     getDownloadUrl(docId: string) {
-      return `http://127.0.0.1:8000/api/documents/${docId}/download`;
+      return `/api/docs/${docId}/download`;
     },
   },
 
   // --- Microsoft 365 & Word Online Integrations ---
   integrations: {
+    async getMicrosoftLoginTicket(): Promise<{ ticket: string; expires_in: number } | null> {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/integrations/microsoft/ticket`, {
+          method: 'POST',
+          headers: await getHeaders(),
+        });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      }
+    },
     async saveMicrosoftClientId(clientId: string, clientSecret?: string) {
       try {
         const res = await fetch(`${BACKEND_URL}/staff/integrations/microsoft/save-client-id`, {
@@ -822,12 +827,14 @@ export const backendBridge = {
 
     async uploadUpdatedDocx(documentId: string, formData: FormData) {
       try {
-        const staffId = await viewerStaffId().catch(() => 'stf-001');
+        const token = await getAuthToken();
+        const headers: Record<string, string> = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
         const res = await fetch(`${BACKEND_URL}/staff/integrations/documents/${documentId}/upload-updated-docx`, {
           method: 'POST',
-          headers: {
-            'X-Viewer-Staff-Id': staffId,
-          },
+          headers,
           body: formData,
         });
         if (!res.ok) {

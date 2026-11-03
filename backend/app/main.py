@@ -3,12 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api import auth, clients, matters, billing, legal_db, documents, integrations, users
 
+is_prod = settings.ENVIRONMENT.lower() == "production"
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="SynQanun Suite — Bilingual (EN/AR) Legal-Tech Platform Backend",
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=None if is_prod else "/docs",
+    redoc_url=None if is_prod else "/redoc",
+    openapi_url=None if is_prod else "/openapi.json",
 )
 
 # CORS configuration
@@ -39,7 +42,7 @@ def root():
     return {
         "project": "SynQanun Suite Backend",
         "status": "online",
-        "docs": "/docs",
+        "docs": None if is_prod else "/docs",
         "api": "/api"
     }
 
