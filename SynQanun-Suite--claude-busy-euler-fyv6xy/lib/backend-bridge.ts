@@ -61,9 +61,17 @@ export const backendBridge = {
           headers: await getHeaders(),
           body: JSON.stringify(input),
         });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          if (errData && typeof errData === 'object' && 'ok' in errData) {
+            return errData;
+          }
+          const detail = typeof errData?.detail === 'string' ? errData.detail : (errData?.detail?.[0]?.msg || `HTTP ${res.status}`);
+          return { ok: false, error: detail };
+        }
         return await res.json();
-      } catch {
-        return null;
+      } catch (err: any) {
+        return { ok: false, error: err?.message || 'Network error' };
       }
     },
 
@@ -87,9 +95,14 @@ export const backendBridge = {
           headers: await getHeaders(),
           body: JSON.stringify(input),
         });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          const detail = typeof errData?.detail === 'string' ? errData.detail : (errData?.detail?.[0]?.msg || `HTTP ${res.status}`);
+          return { ok: false, error: detail };
+        }
         return await res.json();
-      } catch {
-        return null;
+      } catch (err: any) {
+        return { ok: false, error: err?.message || 'Network error' };
       }
     },
   },
@@ -341,9 +354,31 @@ export const backendBridge = {
           headers: await getHeaders(),
           body: JSON.stringify(input),
         });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          const detail = typeof errData?.detail === 'string' ? errData.detail : (errData?.detail?.[0]?.msg || `HTTP ${res.status}`);
+          return { ok: false, error: detail };
+        }
         return await res.json();
-      } catch {
-        return null;
+      } catch (err: any) {
+        return { ok: false, error: err?.message || 'Network error' };
+      }
+    },
+
+    async deleteDraft(id: string) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/billing/drafts/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: await getHeaders(),
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          const detail = typeof errData?.detail === 'string' ? errData.detail : (errData?.detail?.[0]?.msg || `HTTP ${res.status}`);
+          return { ok: false, error: detail };
+        }
+        return await res.json();
+      } catch (err: any) {
+        return { ok: false, error: err?.message || 'Network error' };
       }
     },
 
@@ -353,10 +388,14 @@ export const backendBridge = {
           method: 'POST',
           headers: await getHeaders(),
         });
-        if (!res.ok) return null;
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          const detail = typeof errData?.detail === 'string' ? errData.detail : (errData?.detail?.[0]?.msg || `HTTP ${res.status}`);
+          return { ok: false, error: detail };
+        }
         return await res.json();
-      } catch {
-        return null;
+      } catch (err: any) {
+        return { ok: false, error: err?.message || 'Network error' };
       }
     },
 
@@ -366,10 +405,14 @@ export const backendBridge = {
           method: 'POST',
           headers: await getHeaders(),
         });
-        if (!res.ok) return null;
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          const detail = typeof errData?.detail === 'string' ? errData.detail : (errData?.detail?.[0]?.msg || `HTTP ${res.status}`);
+          return { ok: false, error: detail };
+        }
         return await res.json();
-      } catch {
-        return null;
+      } catch (err: any) {
+        return { ok: false, error: err?.message || 'Network error' };
       }
     },
 

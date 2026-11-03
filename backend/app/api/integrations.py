@@ -80,8 +80,11 @@ def start_microsoft_login(
                 os.getenv("MICROSOFT_OAUTH_CLIENT_ID") or \
                 os.getenv("MS_CLIENT_ID")
 
-    if not client_id:
-        raise HTTPException(status_code=400, detail="يرجى إدخال Client ID أولاً")
+    if not client_id or "mock" in client_id.lower():
+        target = return_to or "/ar/staff"
+        separator = "&" if "?" in target else "?"
+        err_text = urllib.parse.quote("يلزم إدخال Azure Client ID حقيقي لتفعيل المزامنة التلقائية مع OneDrive، أو يمكنك استخدام محرر Word المباشر فوراً بالضغط على 'فتح في Microsoft Word'.")
+        return RedirectResponse(url=f"http://localhost:3000{target}{separator}ms_error={err_text}")
 
     # State stores staff_id and return_to url
     state = f"{staff_id or 'stf-001'}::{return_to or '/ar/staff'}"

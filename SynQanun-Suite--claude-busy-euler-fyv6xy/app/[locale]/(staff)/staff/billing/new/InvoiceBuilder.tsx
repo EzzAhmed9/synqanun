@@ -522,7 +522,9 @@ export function InvoiceBuilder({
 
       {error ? (
         <p role="alert" className="text-caption text-error">
-          {t(`errors.${error}`)}
+          {['engagementInvalid', 'descriptionRequired', 'noLines', 'lineDescriptionRequired', 'lineAmountRequired', 'entryAlreadyBilled', 'entryInvalid', 'notPermitted'].includes(error)
+            ? t(`errors.${error}`)
+            : error}
         </p>
       ) : null}
 

@@ -40,6 +40,8 @@ interface StaffAccount {
   /** Rank label, already translated. */
   meta: string;
   rank: Rank;
+  viewerId?: string;
+  viewers?: Array<{ id: string; name: string; rankLabel: string }>;
   /** Unread items in the unified inbox — the top bar envelope's badge. */
   inboxUnread: number;
 }

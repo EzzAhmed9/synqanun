@@ -26,8 +26,13 @@ export async function saveInvoiceDraft(input: {
 
   // Persist draft to FastAPI PostgreSQL backend
   const backendRes = await backendBridge.billing.saveDraft(input);
-  if (backendRes && backendRes.ok && backendRes.draft) {
-    return { ok: true, draft: backendRes.draft as any };
+  if (backendRes) {
+    if (!backendRes.ok) {
+      return { ok: false, error: backendRes.error };
+    }
+    if (backendRes.draft) {
+      return { ok: true, draft: backendRes.draft as any };
+    }
   }
 
   return mockApi.staff.saveInvoiceDraft({ ...input, preparedById: me.id });
@@ -54,13 +59,25 @@ export async function sendInvoiceToClient(input: {
 
   // 1. Save draft to PostgreSQL backend
   const backendRes = await backendBridge.billing.saveDraft(input);
-  if (backendRes && backendRes.ok && backendRes.draft) {
-    const ref = backendRes.reference || backendRes.draft.reference;
-    // 2. Officially issue the invoice so status = "due"
-    if (ref) {
-      await backendBridge.billing.issue(ref);
+  if (backendRes) {
+    if (!backendRes.ok) {
+      return { ok: false, error: backendRes.error };
     }
-    return { ok: true, draft: backendRes.draft as any, reference: ref };
+    if (backendRes.draft) {
+      const ref = backendRes.reference || backendRes.draft.reference;
+      // 2. Officially issue the invoice so status = "due"
+      if (ref) {
+        const issueRes = await backendBridge.billing.issue(ref);
+        if (issueRes && !issueRes.ok) {
+          const draftId = backendRes.id || backendRes.draft.id;
+          if (draftId) {
+            await backendBridge.billing.deleteDraft(draftId);
+          }
+          return { ok: false, error: (issueRes as any).error || 'Failed to issue invoice' };
+        }
+      }
+      return { ok: true, draft: backendRes.draft as any, reference: ref };
+    }
   }
 
   return mockApi.staff.saveInvoiceDraft({ ...input, preparedById: me.id });

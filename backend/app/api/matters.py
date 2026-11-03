@@ -3,8 +3,9 @@ from datetime import datetime, timedelta
 from typing import Optional, List
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import or_, desc, func
+from sqlalchemy.orm import Session, subqueryload
+from sqlalchemy import or_, desc, func, Integer
+from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.core.permissions import require_staff, require_client, require_lead_eligible, require_partner
 from app.models.user import User
@@ -13,6 +14,8 @@ from app.models.matter import Matter, MatterTeamMember, MatterHearing, MatterTim
 from app.models.invoice import Invoice, Quote
 from app.models.document import Document
 from app.schemas.matter import MatterCreate
+from app.core.dates import parse_date, days_until
+from app.api.billing import refresh_overdue_invoices
 
 router = APIRouter(prefix="/staff/matters", tags=["Staff Matters"])
 client_router = APIRouter(prefix="/client/matters", tags=["Client Matters"])
@@ -34,6 +37,24 @@ FORUMS = [
     {"en": "Abu Dhabi Global Market Registration Authority", "ar": "سلطة التسجيل في سوق أبوظبي العالمي"},
     {"en": "Dubai International Financial Centre Courts", "ar": "محاكم مركز دبي المالي العالمي (DIFC)"},
 ]
+
+
+def normalize_work_type(wt: Optional[str]) -> Optional[str]:
+    if not wt:
+        return wt
+    w = wt.strip()
+    if w == "case":
+        return "dispute"
+    if w == "enforcement":
+        return "execution"
+    return w
+
+def map_work_type_for_display(wt: Optional[str]) -> str:
+    if wt == "dispute":
+        return "case"
+    if wt == "execution":
+        return "enforcement"
+    return wt or "dispute"
 
 def map_support_role(role_en: Optional[str]) -> str:
     if not role_en:
@@ -69,8 +90,14 @@ def list_matters(
     current_user: User = Depends(require_staff),
     db: Session = Depends(get_db)
 ):
-    all_matters = db.query(Matter).filter(Matter.firm_id == current_user.firm_id).all()
+    all_matters = db.query(Matter).options(
+        subqueryload(Matter.team),
+        subqueryload(Matter.hearings)
+    ).filter(Matter.firm_id == current_user.firm_id).all()
     today = datetime.now()
+    
+    clients_by_id = {c.id: c for c in db.query(Client).filter(Client.firm_id == current_user.firm_id).all()}
+    users_by_id = {u.id: u for u in db.query(User).filter(User.firm_id == current_user.firm_id).all()}
     
     # Pre-calculate counts
     open_matters = [m for m in all_matters if not m.is_closed]
@@ -83,13 +110,11 @@ def list_matters(
         
     def has_soon_hearing(m: Matter) -> bool:
         for h in m.hearings:
-            try:
-                h_date = datetime.strptime(h.date, "%Y-%m-%d")
-                delta = (h_date - today).days
-                if 0 <= delta <= 14:
-                    return True
-            except Exception:
-                pass
+            if h.status and h.status.lower() not in ["scheduled"]:
+                continue
+            delta = days_until(h.date)
+            if delta is not None and 0 <= delta <= 14:
+                return True
         return False
         
     counts = {
@@ -119,7 +144,8 @@ def list_matters(
     if leadId:
         target_pool = [m for m in target_pool if m.lead_counsel_id == leadId]
     if workType:
-        target_pool = [m for m in target_pool if m.work_type == workType]
+        norm_wt = normalize_work_type(workType)
+        target_pool = [m for m in target_pool if m.work_type == norm_wt]
         
     if q:
         search = q.lower()
@@ -131,8 +157,8 @@ def list_matters(
     # Build rows
     items = []
     for m in target_pool:
-        lead = db.query(User).filter(User.id == m.lead_counsel_id).first()
-        client = db.query(Client).filter(Client.id == m.client_id).first()
+        lead = users_by_id.get(m.lead_counsel_id)
+        client = clients_by_id.get(m.client_id)
         
         team_members = [
             {
@@ -143,7 +169,7 @@ def list_matters(
         ] if lead else []
         
         for tm in m.team:
-            st = db.query(User).filter(User.id == tm.staff_id).first()
+            st = users_by_id.get(tm.staff_id)
             if st and st.id != m.lead_counsel_id:
                 team_members.append({
                     "name": {"en": st.name_en, "ar": st.name_ar},
@@ -152,33 +178,32 @@ def list_matters(
                 })
                 
         # Next date
-        next_date = None
+        upcoming_hearings = []
         for h in m.hearings:
-            try:
-                h_date = datetime.strptime(h.date, "%Y-%m-%d")
-                delta = (h_date - today).days
-                if delta >= 0:
-                    next_date = {
-                        "kind": "hearing",
-                        "title": {
-                            "en": h.notes_en or "Court Hearing",
-                            "ar": h.notes_ar or "جلسة محكمة"
-                        },
-                        "on": h.date,
-                        "date": h.date,
-                        "inDays": delta
-                    }
-                    break
-            except Exception:
-                pass
+            if h.status and h.status.lower() not in ["scheduled"]:
+                continue
+            delta = days_until(h.date)
+            if delta is not None and delta >= 0:
+                p_date = parse_date(h.date)
+                upcoming_hearings.append((p_date, delta, h))
+        upcoming_hearings.sort(key=lambda x: x[0])
+        next_date = None
+        if upcoming_hearings:
+            _, delta, h = upcoming_hearings[0]
+            next_date = {
+                "kind": "hearing",
+                "title": {
+                    "en": h.notes_en or "Court Hearing",
+                    "ar": h.notes_ar or "جلسة محكمة"
+                },
+                "on": h.date,
+                "date": h.date,
+                "inDays": delta
+            }
                 
         last_updated = m.updated_at.strftime("%Y-%m-%d") if m.updated_at else today.strftime("%Y-%m-%d")
         
-        mapped_work_type = m.work_type
-        if mapped_work_type == "dispute":
-            mapped_work_type = "case"
-        elif mapped_work_type == "execution":
-            mapped_work_type = "enforcement"
+        mapped_work_type = map_work_type_for_display(m.work_type)
 
         items.append({
             "reference": m.reference,
@@ -205,7 +230,7 @@ def list_matters(
     venues_seen = {}
     leads_seen = {}
     for m in (archived_matters if view == "archive" else open_matters):
-        c = db.query(Client).filter(Client.id == m.client_id).first()
+        c = clients_by_id.get(m.client_id)
         if c:
             clients_seen[c.id] = clients_seen.get(c.id, {"value": c.id, "label": {"en": c.name_en, "ar": c.name_ar}, "count": 0})
             clients_seen[c.id]["count"] += 1
@@ -213,7 +238,7 @@ def list_matters(
         venues_seen[m.forum_en] = venues_seen.get(m.forum_en, {"value": m.forum_en, "label": {"en": m.forum_en, "ar": m.forum_ar}, "count": 0})
         venues_seen[m.forum_en]["count"] += 1
         
-        ld = db.query(User).filter(User.id == m.lead_counsel_id).first()
+        ld = users_by_id.get(m.lead_counsel_id)
         if ld:
             leads_seen[ld.id] = leads_seen.get(ld.id, {"value": ld.id, "label": {"en": ld.name_en, "ar": ld.name_ar}, "count": 0})
             leads_seen[ld.id]["count"] += 1
@@ -317,30 +342,29 @@ def get_matter_by_reference(
             })
             
     # Next date from hearings
-    next_date = None
+    upcoming_hearings = []
     for h in matter.hearings:
-        try:
-            h_date = datetime.strptime(h.date, "%Y-%m-%d")
-            delta = (h_date - today).days
-            if delta >= 0:
-                next_date = {
-                    "on": h.date,
-                    "date": h.date,
-                    "inDays": delta,
-                    "title": {
-                        "en": h.notes_en or "Court Hearing",
-                        "ar": h.notes_ar or "جلسة محكمة"
-                    }
-                }
-                break
-        except Exception:
-            pass
+        if h.status and h.status.lower() not in ["scheduled"]:
+            continue
+        delta = days_until(h.date)
+        if delta is not None and delta >= 0:
+            p_date = parse_date(h.date)
+            upcoming_hearings.append((p_date, delta, h))
+    upcoming_hearings.sort(key=lambda x: x[0])
+    next_date = None
+    if upcoming_hearings:
+        _, delta, h = upcoming_hearings[0]
+        next_date = {
+            "on": h.date,
+            "date": h.date,
+            "inDays": delta,
+            "title": {
+                "en": h.notes_en or "Court Hearing",
+                "ar": h.notes_ar or "جلسة محكمة"
+            }
+        }
 
-    mapped_wt = matter.work_type
-    if mapped_wt == "dispute":
-        mapped_wt = "case"
-    elif mapped_wt == "execution":
-        mapped_wt = "enforcement"
+    mapped_wt = map_work_type_for_display(matter.work_type)
 
     opened_date = matter.created_at.strftime("%Y-%m-%d") if matter.created_at else today.strftime("%Y-%m-%d")
     updated_date = matter.updated_at.strftime("%Y-%m-%d") if matter.updated_at else today.strftime("%Y-%m-%d")
@@ -413,6 +437,7 @@ def get_matter_by_reference(
     timeline_events.sort(key=lambda x: x["date"])
 
     # Invoices for this engagement from DB
+    refresh_overdue_invoices(db, firm_id=current_user.firm_id)
     matter_invoices = []
     invoices_db = db.query(Invoice).filter(
         Invoice.engagement_ref == matter.reference,
@@ -436,10 +461,21 @@ def get_matter_by_reference(
             "lineItems": []
         })
 
-    # Approvals / quotes for this engagement from DB
+    # Approvals / quotes for this engagement from DB (issued only)
     matter_approvals = []
-    quotes_db = db.query(Quote).filter(Quote.engagement_ref == matter.reference).all()
+    quotes_db = db.query(Quote).filter(
+        Quote.engagement_ref == matter.reference,
+        Quote.status == "issued"
+    ).all()
     for q in quotes_db:
+        delta = days_until(q.valid_until)
+        if delta is None:
+            days_overdue = 0
+            due_today = False
+        else:
+            due_today = (delta == 0)
+            days_overdue = -delta if delta < 0 else 0
+
         matter_approvals.append({
             "id": q.id,
             "kind": "quote",
@@ -449,8 +485,8 @@ def get_matter_by_reference(
             "clientName": {"en": client.name_en if client else "", "ar": client.name_ar if client else ""},
             "engagementRef": matter.reference,
             "dueOn": q.valid_until or today.strftime("%Y-%m-%d"),
-            "daysOverdue": 0,
-            "dueToday": False
+            "daysOverdue": days_overdue,
+            "dueToday": due_today
         })
 
     # Documents for this matter from PostgreSQL
@@ -543,52 +579,122 @@ def create_matter(
     current_user: User = Depends(require_lead_eligible),
     db: Session = Depends(get_db)
 ):
+    # 1. Inputs validation
+    title_raw = (payload.title or payload.title_en or payload.title_ar or "").strip()
+    if not title_raw:
+        raise HTTPException(status_code=400, detail="titleRequired")
+    title_en = (payload.title_en or payload.title or "").strip()
+    title_ar = (payload.title_ar or payload.title or "").strip()
+    if not title_en:
+        title_en = title_ar
+    if not title_ar:
+        title_ar = title_en
+
+    pa_raw = (payload.practiceArea or "").strip()
+    if not pa_raw:
+        raise HTTPException(status_code=400, detail="practiceAreaRequired")
+    pa_match = next((
+        p for p in PRACTICE_AREAS
+        if p["en"].strip().lower() == pa_raw.lower() or p["ar"].strip() == pa_raw
+    ), None)
+    if pa_match:
+        matter_type_en = pa_match["en"]
+        matter_type_ar = pa_match["ar"]
+    else:
+        matter_type_en = pa_raw
+        matter_type_ar = pa_raw
+
+    forum_raw = (payload.forum or "").strip()
+    if not forum_raw:
+        raise HTTPException(status_code=400, detail="forumRequired")
+    forum_match = next((
+        f for f in FORUMS
+        if f["en"].strip().lower() == forum_raw.lower() or f["ar"].strip() == forum_raw
+    ), None)
+    if forum_match:
+        forum_en = forum_match["en"]
+        forum_ar = forum_match["ar"]
+    else:
+        forum_en = forum_raw
+        forum_ar = forum_raw
+
+    norm_work_type = normalize_work_type(payload.workType)
+    if norm_work_type not in ["dispute", "consultation", "contract", "execution", "otherProject"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="workTypeInvalid"
+        )
+
     client = db.query(Client).filter(
         Client.id == payload.clientId,
         Client.firm_id == current_user.firm_id
     ).first()
     if not client:
         raise HTTPException(status_code=400, detail="Client not found")
-        
-    count = db.query(Matter).filter(Matter.firm_id == current_user.firm_id).count()
-    reference = f"MAT-{2200 + count + 1}"
-    
-    title_en = payload.title_en or payload.title
-    title_ar = payload.title_ar or payload.title
-    
-    new_matter = Matter(
-        id=f"mat-{uuid.uuid4().hex[:6]}",
-        reference=reference,
-        firm_id=current_user.firm_id,
-        client_id=payload.clientId,
-        title_en=title_en,
-        title_ar=title_ar,
-        work_type=payload.workType,
-        matter_type_en=payload.practiceArea,
-        matter_type_ar=payload.practiceArea,
-        forum_en=payload.forum,
-        forum_ar=payload.forum,
-        lead_counsel_id=payload.leadId,
-        status_en="Opened, no steps taken yet",
-        status_ar="فُتح الملف، ولم تُتَّخذ أي خطوة بعد",
-        status_tone="neutral",
-        current_phase_en="Intake",
-        current_phase_ar="القيد الأولي",
-        scope_summary_en=payload.scope or "No scope has been recorded for this matter yet.",
-        scope_summary_ar=payload.scope or "لم يُسجَّل بعد نطاق تكليف لهذه المسألة القانونية.",
-        is_closed=False
-    )
-    
-    # Auto-convert prospect client to active upon opening a new matter, and reset last activity
-    if client.standing == "prospect":
-        client.standing = "active"
-    client.last_activity_days_ago = 0
-    db.add(client)
 
-    db.add(new_matter)
-    db.commit()
-    db.refresh(new_matter)
-    
+    lead_user = db.query(User).filter(
+        User.id == payload.leadId,
+        User.firm_id == current_user.firm_id,
+        User.side == "staff",
+        User.status != "deactivated",
+        User.rank.in_(["partner", "seniorAssociate"])
+    ).first()
+    if not lead_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid lead counsel: must be an active partner or senior associate in your firm"
+        )
+
+    # Reference generation with retry loop
+    new_matter = None
+    for attempt in range(3):
+        max_num = db.query(
+            func.max(func.cast(func.substr(Matter.reference, 5), Integer))
+        ).filter(Matter.reference.op("~")("^MAT-[0-9]+$")).scalar()
+
+        base_num = max_num if (max_num is not None and max_num >= 2200) else 2200
+        reference = f"MAT-{base_num + 1}"
+
+        new_matter = Matter(
+            id=f"mat-{uuid.uuid4().hex[:12]}",
+            reference=reference,
+            firm_id=current_user.firm_id,
+            client_id=payload.clientId,
+            title_en=title_en,
+            title_ar=title_ar,
+            work_type=norm_work_type,
+            matter_type_en=matter_type_en,
+            matter_type_ar=matter_type_ar,
+            forum_en=forum_en,
+            forum_ar=forum_ar,
+            lead_counsel_id=payload.leadId,
+            status_en="Opened, no steps taken yet",
+            status_ar="فُتح الملف، ولم تُتَّخذ أي خطوة بعد",
+            status_tone="neutral",
+            current_phase_en="Intake",
+            current_phase_ar="القيد الأولي",
+            scope_summary_en=payload.scope or "No scope has been recorded for this matter yet.",
+            scope_summary_ar=payload.scope or "لم يُسجَّل بعد نطاق تكليف لهذه المسألة القانونية.",
+            is_closed=False
+        )
+
+        c = db.query(Client).filter(Client.id == payload.clientId).first()
+        if c:
+            if c.standing == "prospect":
+                c.standing = "active"
+            c.last_activity_days_ago = 0
+            db.add(c)
+
+        db.add(new_matter)
+        try:
+            db.commit()
+            db.refresh(new_matter)
+            break
+        except IntegrityError:
+            db.rollback()
+            if attempt == 2:
+                raise
+
     return {
         "ok": True,
         "reference": new_matter.reference,
@@ -608,14 +714,32 @@ def reopen_matter(
     
     if not matter:
         raise HTTPException(status_code=404, detail="Matter not found")
+
+    if not matter.is_closed:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Matter is not closed"
+        )
         
     matter.is_closed = False
-    matter.status_en = "Reopened by lead counsel"
-    matter.status_ar = "أعيد فتح الملف بقرار المحامي المسؤول"
+    matter.status_en = "Reopened"
+    matter.status_ar = "أعيد فتح الملف"
     matter.status_tone = "positive"
     matter.current_phase_en = "Reopened - Under Review"
     matter.current_phase_ar = "مُعاد فتحه - قيد المتابعة والإجراءات"
-    
+
+    actor_name_en = current_user.name_en or current_user.name_ar or "Partner"
+    actor_name_ar = current_user.name_ar or current_user.name_en or "الشريك"
+
+    evt = MatterTimelineEvent(
+        id=f"evt-{uuid.uuid4().hex[:12]}",
+        matter_id=matter.id,
+        kind="assignment",
+        date=datetime.now().strftime("%Y-%m-%d"),
+        title_en=f"Matter reopened by {actor_name_en}",
+        title_ar=f"أعيد فتح الملف بواسطة {actor_name_ar}"
+    )
+    db.add(evt)
     db.commit()
     return {"ok": True, "reference": matter.reference}
 
@@ -632,6 +756,12 @@ def close_matter(
     
     if not matter:
         raise HTTPException(status_code=404, detail="Matter not found")
+
+    if matter.is_closed:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Matter is already closed"
+        )
         
     matter.is_closed = True
     matter.status_en = "Closed and archived"
@@ -639,7 +769,19 @@ def close_matter(
     matter.status_tone = "neutral"
     matter.current_phase_en = "Docket Closed"
     matter.current_phase_ar = "الملف مغلق ومؤرشف"
-    
+
+    actor_name_en = current_user.name_en or current_user.name_ar or "Partner"
+    actor_name_ar = current_user.name_ar or current_user.name_en or "الشريك"
+
+    evt = MatterTimelineEvent(
+        id=f"evt-{uuid.uuid4().hex[:12]}",
+        matter_id=matter.id,
+        kind="assignment",
+        date=datetime.now().strftime("%Y-%m-%d"),
+        title_en=f"Matter closed by {actor_name_en}",
+        title_ar=f"تم إغلاق القضية بواسطة {actor_name_ar}"
+    )
+    db.add(evt)
     db.commit()
     return {"ok": True, "reference": matter.reference}
 
@@ -650,9 +792,15 @@ class ReassignLeadPayload(BaseModel):
 @router.post("/reassign-lead", response_model=dict)
 def reassign_lead(
     payload: ReassignLeadPayload,
-    current_user: User = Depends(require_lead_eligible),
+    current_user: User = Depends(require_staff),
     db: Session = Depends(get_db)
 ):
+    if current_user.rank != "partner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="notPermitted"
+        )
+
     if not payload.references:
         raise HTTPException(status_code=400, detail="noEngagements")
         
@@ -664,27 +812,78 @@ def reassign_lead(
     ).first()
     if not new_lead:
         raise HTTPException(status_code=400, detail="leadInvalid")
-        
+
+    # De-duplicate references case-insensitively while preserving order
+    seen_refs = set()
+    unique_refs = []
     for ref in payload.references:
+        ref_lower = ref.lower()
+        if ref_lower not in seen_refs:
+            seen_refs.add(ref_lower)
+            unique_refs.append(ref)
+
+    # 1. Validate ALL references first (all-or-nothing)
+    matters_to_update = []
+    for ref in unique_refs:
         matter = db.query(Matter).filter(
             func.lower(Matter.reference) == ref.lower(),
             Matter.firm_id == current_user.firm_id
         ).first()
         if not matter:
             raise HTTPException(status_code=400, detail="engagementInvalid")
-            
-    for ref in payload.references:
-        matter = db.query(Matter).filter(
-            func.lower(Matter.reference) == ref.lower(),
-            Matter.firm_id == current_user.firm_id
-        ).first()
+        matters_to_update.append(matter)
+
+    # 2. Apply reassignment
+    reassigned_count = 0
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    for matter in matters_to_update:
+        if matter.lead_counsel_id == new_lead.id:
+            continue
+
+        old_lead_id = matter.lead_counsel_id
         matter.lead_counsel_id = new_lead.id
-        
+        reassigned_count += 1
+
+        # Keep previous lead on team if not already a member
+        if old_lead_id:
+            prev_lead_tm = db.query(MatterTeamMember).filter(
+                MatterTeamMember.matter_id == matter.id,
+                MatterTeamMember.staff_id == old_lead_id
+            ).first()
+            if not prev_lead_tm:
+                new_tm = MatterTeamMember(
+                    id=f"tm-{uuid.uuid4().hex[:12]}",
+                    matter_id=matter.id,
+                    staff_id=old_lead_id,
+                    role_en="Associate",
+                    role_ar="محامٍ مشارك"
+                )
+                db.add(new_tm)
+
+        # Remove new lead from team rows if present (lead shown separately)
+        new_lead_tm = db.query(MatterTeamMember).filter(
+            MatterTeamMember.matter_id == matter.id,
+            MatterTeamMember.staff_id == new_lead.id
+        ).first()
+        if new_lead_tm:
+            db.delete(new_lead_tm)
+
+        # Add timeline event
+        evt = MatterTimelineEvent(
+            id=f"evt-{uuid.uuid4().hex[:12]}",
+            matter_id=matter.id,
+            kind="assignment",
+            title_en=f"Lead counsel changed to: {new_lead.name_en}",
+            title_ar=f"تغيير المحامي المسؤول إلى: {new_lead.name_ar}",
+            date=today_str
+        )
+        db.add(evt)
+
     db.commit()
     return {
         "ok": True,
-        "reassignedCount": len(payload.references),
-        "changed": len(payload.references),
+        "reassignedCount": reassigned_count,
+        "changed": reassigned_count,
         "leadName": {"en": new_lead.name_en, "ar": new_lead.name_ar}
     }
 
@@ -712,6 +911,12 @@ def add_matter_team_member(
     if not matter:
         raise HTTPException(status_code=404, detail="Matter not found")
 
+    if current_user.rank != "partner" and current_user.id != matter.lead_counsel_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied: Only partners or the matter's lead counsel can modify the team"
+        )
+
     staff = db.query(User).filter(
         User.id == payload.staff_id,
         User.firm_id == current_user.firm_id,
@@ -732,7 +937,7 @@ def add_matter_team_member(
     if existing:
         raise HTTPException(status_code=400, detail="Lawyer is already assigned to this matter")
 
-    tm_id = f"tm-{uuid.uuid4().hex[:8]}"
+    tm_id = f"tm-{uuid.uuid4().hex[:12]}"
     new_tm = MatterTeamMember(
         id=tm_id,
         matter_id=matter.id,
@@ -743,7 +948,7 @@ def add_matter_team_member(
     db.add(new_tm)
 
     # Add timeline event
-    evt_id = f"evt-{uuid.uuid4().hex[:8]}"
+    evt_id = f"evt-{uuid.uuid4().hex[:12]}"
     today_str = datetime.now().strftime("%Y-%m-%d")
     evt = MatterTimelineEvent(
         id=evt_id,
@@ -784,6 +989,12 @@ def remove_matter_team_member(
     if not matter:
         raise HTTPException(status_code=404, detail="Matter not found")
 
+    if current_user.rank != "partner" and current_user.id != matter.lead_counsel_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied: Only partners or the matter's lead counsel can modify the team"
+        )
+
     if matter.lead_counsel_id == staff_id:
         raise HTTPException(status_code=400, detail="Cannot remove lead counsel. Reassign lead counsel first.")
 
@@ -800,7 +1011,7 @@ def remove_matter_team_member(
     db.delete(tm)
 
     # Add timeline event
-    evt_id = f"evt-{uuid.uuid4().hex[:8]}"
+    evt_id = f"evt-{uuid.uuid4().hex[:12]}"
     today_str = datetime.now().strftime("%Y-%m-%d")
     evt = MatterTimelineEvent(
         id=evt_id,
@@ -976,6 +1187,8 @@ def get_client_matter_by_reference(
     # Timeline events
     timeline_events = []
     for t in matter.timeline:
+        if t.kind == "assignment":
+            continue
         t_date = t.date if t.date else today.strftime("%Y-%m-%d")
         timeline_events.append({
             "id": t.id,
@@ -1016,8 +1229,13 @@ def get_client_matter_by_reference(
     timeline_events.sort(key=lambda x: x["date"])
 
     # Invoices for this engagement
+    client_firm_id = matter.firm_id or current_user.firm_id
+    refresh_overdue_invoices(db, firm_id=client_firm_id)
     matter_invoices = []
-    invoices_db = db.query(Invoice).filter(Invoice.engagement_ref == matter.reference).all()
+    invoices_db = db.query(Invoice).filter(
+        Invoice.engagement_ref == matter.reference,
+        Invoice.status.notin_(["draft", "pending_approval"])
+    ).all()
     for inv in invoices_db:
         total = sum(li.amount for li in inv.line_items) if inv.line_items else 0.0
         desc_en = inv.description_en or "Legal Services Invoice"

@@ -103,7 +103,7 @@ function Reader({ locale, record }: { locale: Locale; record: any }) {
             <span dir="ltr" className="font-mono text-reference font-semibold text-legal-navy bg-legal-navy/5 px-2.5 py-1 rounded-pill border border-legal-navy/10">
               {entry.reference}
             </span>
-            <Badge tone={entry.kind === 'judgment' ? 'action' : 'neutral'} icon={null} className="inline-flex items-center gap-1">
+            <Badge tone={entry.kind === 'judgment' ? 'info' : 'neutral'} icon={null} className="inline-flex items-center gap-1">
               <KindIcon size={12} />
               <span>{tDb(`kinds.${entry.kind}`)}</span>
             </Badge>

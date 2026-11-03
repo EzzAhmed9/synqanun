@@ -1,9 +1,9 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 
 class LineItemCreate(BaseModel):
-    description: str
-    amount: float
+    description: Optional[str] = None
+    amount: Optional[Any] = None
     detail: Optional[str] = None
     minutes: Optional[int] = None
     fromEntryIds: Optional[List[str]] = None
@@ -21,9 +21,9 @@ class LineItemResponse(BaseModel):
         from_attributes = True
 
 class InvoiceDraftCreate(BaseModel):
-    engagementRef: str
-    description: str
-    lines: List[LineItemCreate]
+    engagementRef: Optional[str] = None
+    description: Optional[str] = None
+    lines: Optional[List[LineItemCreate]] = None
 
 class InvoiceResponse(BaseModel):
     id: str
@@ -47,10 +47,10 @@ class InvoiceResponse(BaseModel):
         from_attributes = True
 
 class TimeEntryCreate(BaseModel):
-    matterId: str  # e.g. MAT-2201
-    minutes: int
-    description: str
-    billable: bool = True
+    matterId: Optional[str] = None
+    minutes: Optional[Any] = None
+    description: Optional[str] = None
+    billable: Optional[bool] = True
     entryDate: Optional[str] = None
 
 class TimeEntryResponse(BaseModel):
@@ -69,12 +69,13 @@ class TimeEntryResponse(BaseModel):
         from_attributes = True
 
 class BillingSummaryResponse(BaseModel):
-    unbilledMinutes: int
-    unbilledAmount: float
-    draftInvoicesCount: int
-    draftInvoicesAmount: float
-    dueInvoicesCount: int
-    dueInvoicesAmount: float
-    overdueInvoicesCount: int
-    overdueInvoicesAmount: float
-    currency: str
+    unbilled_hours: float
+    unbilled_amount: float
+    draft_invoices_count: int
+    draft_invoices_amount: float
+    due_invoices_count: int
+    due_invoices_amount: float
+    overdue_invoices_count: int
+    overdue_invoices_amount: float
+    paid_invoices_count: int
+    paid_invoices_amount: float

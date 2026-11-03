@@ -170,7 +170,7 @@ function Library({
                       <span dir="ltr" className="font-mono text-reference font-semibold text-legal-navy bg-legal-navy/5 px-2 py-0.5 rounded-pill border border-legal-navy/10">
                         {entry.reference}
                       </span>
-                      <Badge tone={entry.kind === 'judgment' ? 'action' : 'neutral'} icon={null} className="inline-flex items-center gap-1">
+                      <Badge tone={entry.kind === 'judgment' ? 'info' : 'neutral'} icon={null} className="inline-flex items-center gap-1">
                         <KindIcon size={12} />
                         <span>{t(`kinds.${entry.kind}`)}</span>
                       </Badge>

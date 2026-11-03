@@ -16,11 +16,11 @@ class ClientContactBase(BaseModel):
     status: str = "active"
 
 class ClientContactCreate(BaseModel):
-    name: str
+    name: Optional[str] = None
     title: Optional[str] = None
-    email: str
+    email: Optional[str] = None
     phone: Optional[str] = None
-    role: str = "member"
+    role: Optional[str] = "member"
     status: Optional[str] = "invited"
 
 class ClientContactResponse(ClientContactBase):
@@ -31,13 +31,13 @@ class ClientContactResponse(ClientContactBase):
         from_attributes = True
 
 class ClientCreate(BaseModel):
-    name: str  # Can be single input or dual
+    name: Optional[str] = None  # Can be single input or dual
     name_en: Optional[str] = None
     name_ar: Optional[str] = None
     summary: Optional[str] = None
     summary_en: Optional[str] = None
     summary_ar: Optional[str] = None
-    standing: str = "active"  # 'retainer' | 'active' | 'prospect'
+    standing: Optional[str] = "active"  # 'retainer' | 'active' | 'prospect'
 
 class ClientUpdate(BaseModel):
     name_en: Optional[str] = None

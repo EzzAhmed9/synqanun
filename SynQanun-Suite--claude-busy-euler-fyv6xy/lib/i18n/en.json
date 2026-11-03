@@ -2860,6 +2860,7 @@
       "lineDescriptionRequired": "Every line needs a description.",
       "lineAmountRequired": "Every line needs an amount before the draft can be saved.",
       "entryAlreadyBilled": "Some of this time has already been drawn into another draft.",
+      "entryInvalid": "One or more selected time entries are invalid or cannot be billed.",
       "notPermitted": "Your rank cannot raise a fee statement."
     },
     "saved": {

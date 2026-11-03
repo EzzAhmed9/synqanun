@@ -132,16 +132,17 @@ def generate_word_document(
     )
     db.add(new_doc)
 
-    # Add timeline event to matter
-    timeline_event = MatterTimelineEvent(
-        id=f"evt-{uuid.uuid4().hex[:8]}",
-        matter_id=matter.id,
-        kind="filing",
-        title_en=f"Generated document: {filename}",
-        title_ar=f"تم تحرير وتوليد مستند: {filename}",
-        date=datetime.now().strftime("%Y-%m-%d")
-    )
-    db.add(timeline_event)
+    # Add timeline event to matter only if not firm-only
+    if not payload.is_firm_only:
+        timeline_event = MatterTimelineEvent(
+            id=f"evt-{uuid.uuid4().hex[:8]}",
+            matter_id=matter.id,
+            kind="filing",
+            title_en=f"Generated document: {filename}",
+            title_ar=f"تم تحرير وتوليد مستند: {filename}",
+            date=datetime.now().strftime("%Y-%m-%d")
+        )
+        db.add(timeline_event)
 
     db.commit()
     db.refresh(new_doc)

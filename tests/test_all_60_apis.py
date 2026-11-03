@@ -258,7 +258,7 @@ code, res = req("GET", "/api/client/invoices/engagements", token=client_token)
 record("Client Invoices", "GET", "/api/client/invoices/engagements", code, res)
 
 # GET /api/client/invoices/{reference}
-code, res = req("GET", f"/api/client/invoices/INV-2026-089", token=client_token)
+code, res = req("GET", f"/api/client/invoices/INV-2026-090", token=client_token)
 record("Client Invoices", "GET", "/api/client/invoices/{reference}", code, res)
 
 # 7. Legal Database

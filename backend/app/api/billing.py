@@ -1,11 +1,14 @@
 import uuid
+import math
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from collections import defaultdict
+from sqlalchemy.orm import Session, subqueryload
+from sqlalchemy import desc, func, or_, Integer
+from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
-from app.core.permissions import require_staff, require_billing_access, require_time_recording, get_current_user
+from app.core.permissions import require_staff, require_billing_access, require_time_recording, get_current_user, require_client
 from app.models.user import User
 from app.models.client import Client
 from app.models.matter import Matter
@@ -15,9 +18,31 @@ from app.schemas.invoice import (
     TimeEntryCreate,
     BillingSummaryResponse
 )
+from app.core.dates import today, parse_date, days_until, days_ago
 
 router = APIRouter(prefix="/staff/billing", tags=["Billing"])
 client_router = APIRouter(prefix="/client/invoices", tags=["Client Invoices"])
+
+def refresh_overdue_invoices(db: Session, firm_id: Optional[str] = None) -> int:
+    today_str = today().isoformat()
+    q = db.query(Invoice).filter(
+        Invoice.status == "due",
+        Invoice.due_date < today_str
+    )
+    if firm_id:
+        q = q.filter(Invoice.firm_id == firm_id)
+    updated_count = q.update({"status": "overdue"}, synchronize_session=False)
+    if updated_count > 0:
+        db.commit()
+    return updated_count
+
+
+def map_work_type_for_display(wt: Optional[str]) -> str:
+    if wt == "dispute":
+        return "case"
+    if wt == "execution":
+        return "enforcement"
+    return wt or "dispute"
 
 HOURLY_RATES = {
     "partner": 3500.0,
@@ -36,16 +61,29 @@ def get_billing_summary(
     current_user: User = Depends(require_billing_access),
     db: Session = Depends(get_db)
 ):
-    unbilled_entries = db.query(TimeEntry).filter(
+    refresh_overdue_invoices(db, firm_id=current_user.firm_id)
+    
+    unbilled_row = db.query(
+        func.coalesce(func.sum(TimeEntry.minutes), 0),
+        func.coalesce(func.sum((TimeEntry.minutes / 60.0) * TimeEntry.rate_at_time), 0.0)
+    ).filter(
         TimeEntry.firm_id == current_user.firm_id,
         TimeEntry.is_invoiced == False,
         TimeEntry.billable == True
-    ).all()
+    ).first()
     
-    unbilled_minutes = sum(t.minutes for t in unbilled_entries)
-    unbilled_amount = sum((t.minutes / 60.0) * t.rate_at_time for t in unbilled_entries)
+    unbilled_minutes = int(unbilled_row[0]) if unbilled_row else 0
+    unbilled_amount = float(unbilled_row[1]) if unbilled_row else 0.0
     
     invoices = db.query(Invoice).filter(Invoice.firm_id == current_user.firm_id).all()
+    inv_ids = [inv.id for inv in invoices]
+    
+    inv_amounts = dict(
+        db.query(
+            InvoiceLineItem.invoice_id,
+            func.coalesce(func.sum(InvoiceLineItem.amount), 0.0)
+        ).filter(InvoiceLineItem.invoice_id.in_(inv_ids)).group_by(InvoiceLineItem.invoice_id).all()
+    ) if inv_ids else {}
     
     draft_count, draft_amount = 0, 0.0
     due_count, due_amount = 0, 0.0
@@ -53,7 +91,7 @@ def get_billing_summary(
     paid_count, paid_amount = 0, 0.0
     
     for inv in invoices:
-        inv_total = sum(item.amount for item in inv.line_items)
+        inv_total = float(inv_amounts.get(inv.id, 0.0))
         if inv.status == "draft":
             draft_count += 1
             draft_amount += inv_total
@@ -84,24 +122,36 @@ def list_invoices(
     current_user: User = Depends(require_billing_access),
     db: Session = Depends(get_db)
 ):
+    refresh_overdue_invoices(db, firm_id=current_user.firm_id)
     all_invoices = db.query(Invoice).filter(
         Invoice.firm_id == current_user.firm_id,
         Invoice.status != "draft"
     ).all()
     
-    today = datetime.now()
+    client_ids = {inv.client_id for inv in all_invoices if inv.client_id}
+    clients = {c.id: c for c in db.query(Client).filter(Client.id.in_(client_ids)).all()} if client_ids else {}
+    
+    prep_ids = {inv.prepared_by_id for inv in all_invoices if inv.prepared_by_id}
+    preps = {u.id: u for u in db.query(User).filter(User.id.in_(prep_ids)).all()} if prep_ids else {}
+    
+    inv_ids = [inv.id for inv in all_invoices]
+    line_items_by_inv = defaultdict(list)
+    if inv_ids:
+        all_lines = db.query(InvoiceLineItem).filter(InvoiceLineItem.invoice_id.in_(inv_ids)).order_by(InvoiceLineItem.order).all()
+        for li in all_lines:
+            line_items_by_inv[li.invoice_id].append(li)
+    
     rows = []
     clients_map = {}
     
     for inv in all_invoices:
-        client = db.query(Client).filter(Client.id == inv.client_id).first()
-        prep = db.query(User).filter(User.id == inv.prepared_by_id).first()
-        total_amount = sum(i.amount for i in inv.line_items)
+        client = clients.get(inv.client_id)
+        prep = preps.get(inv.prepared_by_id)
+        inv_lines = line_items_by_inv.get(inv.id, [])
+        total_amount = sum(i.amount for i in inv_lines)
         
-        try:
-            due_dt = datetime.strptime(inv.due_date, "%Y-%m-%d")
-            due_in_days = (due_dt - today).days
-        except Exception:
+        due_in_days = days_until(inv.due_date)
+        if due_in_days is None:
             due_in_days = 0
             
         row = {
@@ -118,7 +168,7 @@ def list_invoices(
             "dueOn": inv.due_date,
             "dueInDays": due_in_days,
             "paidOn": inv.paid_at,
-            "paidDaysAgo": 0 if inv.status == "paid" else None,
+            "paidDaysAgo": days_ago(inv.paid_at) if inv.status == "paid" else None,
             "preparedBy": {"en": prep.name_en if prep else "", "ar": prep.name_ar if prep else ""},
             "lineItems": [
                 {
@@ -127,7 +177,7 @@ def list_invoices(
                     "detail": {"en": li.detail_en or "", "ar": li.detail_ar or ""},
                     "amount": li.amount
                 }
-                for li in inv.line_items
+                for li in inv_lines
             ]
         }
         rows.append(row)
@@ -181,9 +231,21 @@ def list_invoice_drafts(
         Invoice.status == "draft"
     ).all()
     
+    client_ids = {d.client_id for d in drafts if d.client_id}
+    clients = {c.id: c for c in db.query(Client).filter(Client.id.in_(client_ids)).all()} if client_ids else {}
+    
+    draft_ids = [d.id for d in drafts]
+    line_items_by_draft = defaultdict(list)
+    if draft_ids:
+        all_lines = db.query(InvoiceLineItem).filter(InvoiceLineItem.invoice_id.in_(draft_ids)).order_by(InvoiceLineItem.order).all()
+        for li in all_lines:
+            line_items_by_draft[li.invoice_id].append(li)
+            
     items = []
     for d in drafts:
-        cl = db.query(Client).filter(Client.id == d.client_id).first()
+        cl = clients.get(d.client_id)
+        d_lines = line_items_by_draft.get(d.id, [])
+        d_total = sum(li.amount for li in d_lines)
         items.append({
             "id": d.id,
             "clientId": d.client_id,
@@ -200,10 +262,10 @@ def list_invoice_drafts(
                     "detail": li.detail_ar or li.detail_en or "",
                     "amount": li.amount
                 }
-                for li in d.line_items
+                for li in d_lines
             ],
-            "total": sum(li.amount for li in d.line_items),
-            "totalAmount": sum(li.amount for li in d.line_items)
+            "total": d_total,
+            "totalAmount": d_total
         })
     return items
 
@@ -213,77 +275,175 @@ def save_invoice_draft(
     current_user: User = Depends(require_billing_access),
     db: Session = Depends(get_db)
 ):
-    matter = db.query(Matter).filter(
-        Matter.reference == payload.engagementRef,
-        Matter.firm_id == current_user.firm_id
-    ).first()
-    
+    # 1. Validate matter case-insensitively
+    engagement_ref_raw = (payload.engagementRef or "").strip()
+    matter = None
+    if engagement_ref_raw:
+        matter = db.query(Matter).filter(
+            func.lower(Matter.reference) == engagement_ref_raw.lower(),
+            Matter.firm_id == current_user.firm_id
+        ).first()
+        if not matter:
+            matter = db.query(Matter).filter(
+                func.lower(Matter.id) == engagement_ref_raw.lower(),
+                Matter.firm_id == current_user.firm_id
+            ).first()
+
     if not matter:
-        raise HTTPException(status_code=400, detail="Matter engagement not found")
-        
-    inv_count = db.query(Invoice).filter(Invoice.firm_id == current_user.firm_id).count()
-    seq = f"{inv_count + 89:03d}"
-    year = datetime.now().year
-    ref = f"INV-{year}-{seq}"
-    
-    invoice_id = f"inv-{uuid.uuid4().hex[:6]}"
-    now_str = datetime.now().strftime("%Y-%m-%d")
-    due_str = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
-    
-    invoice = Invoice(
-        id=invoice_id,
-        sequence=seq,
-        reference=ref,
-        firm_id=current_user.firm_id,
-        client_id=matter.client_id,
-        engagement_ref=payload.engagementRef,
-        description_en=payload.description,
-        description_ar=payload.description,
-        status="draft",
-        currency="EGP",
-        issue_date=now_str,
-        due_date=due_str,
-        prepared_by_id=current_user.id
-    )
-    db.add(invoice)
-    db.flush()
-    
-    total_amount = 0.0
-    saved_lines = []
-    
-    for idx, line in enumerate(payload.lines, start=1):
-        line_id = f"itm-{uuid.uuid4().hex[:6]}"
-        item = InvoiceLineItem(
-            id=line_id,
-            invoice_id=invoice.id,
-            description_en=line.description,
-            description_ar=line.description,
-            detail_en=line.detail,
-            detail_ar=line.detail,
-            amount=line.amount,
-            order=idx
-        )
-        db.add(item)
-        total_amount += line.amount
-        saved_lines.append({
-            "id": line_id,
-            "description": line.description,
-            "amount": line.amount,
-            "minutes": line.minutes,
-            "fromEntryIds": line.fromEntryIds or []
-        })
-        
-        if line.fromEntryIds:
-            db.query(TimeEntry).filter(
-                TimeEntry.id.in_(line.fromEntryIds)
-            ).update(
-                {"is_invoiced": True, "invoice_id": invoice.id},
-                synchronize_session=False
+        raise HTTPException(status_code=400, detail="engagementInvalid")
+
+    # 2. Validate description
+    desc = (payload.description or "").strip()
+    if not desc:
+        raise HTTPException(status_code=400, detail="descriptionRequired")
+
+    # 3. Validate lines
+    if not payload.lines or len(payload.lines) == 0:
+        raise HTTPException(status_code=400, detail="noLines")
+
+    for line in payload.lines:
+        line_desc = (line.description or "").strip()
+        if not line_desc:
+            raise HTTPException(status_code=400, detail="lineDescriptionRequired")
+
+        if (
+            line.amount is None
+            or not isinstance(line.amount, (int, float))
+            or isinstance(line.amount, bool)
+            or not math.isfinite(line.amount)
+            or line.amount <= 0
+            or line.amount > 100_000_000
+        ):
+            raise HTTPException(status_code=400, detail="lineAmountRequired")
+
+    # 4. Validate time entries
+    all_entry_ids = []
+    seen_ids = set()
+    for line in payload.lines:
+        line_ids = set(line.fromEntryIds or [])
+        for eid in line_ids:
+            if eid in seen_ids:
+                raise HTTPException(status_code=400, detail="entryInvalid")
+            seen_ids.add(eid)
+            all_entry_ids.append(eid)
+
+    entries = []
+    if all_entry_ids:
+        entries = (
+            db.query(TimeEntry)
+            .filter(
+                TimeEntry.firm_id == current_user.firm_id,
+                TimeEntry.id.in_(all_entry_ids)
             )
-            
-    db.commit()
-    db.refresh(invoice)
-    
+            .with_for_update()
+            .all()
+        )
+
+        if len(entries) != len(all_entry_ids):
+            raise HTTPException(status_code=400, detail="entryInvalid")
+
+        for entry in entries:
+            if entry.matter_id != matter.reference:
+                raise HTTPException(status_code=400, detail="entryInvalid")
+            if not entry.billable:
+                raise HTTPException(status_code=400, detail="entryInvalid")
+            if entry.is_invoiced:
+                raise HTTPException(status_code=409, detail="entryAlreadyBilled")
+
+    # 5. Create invoice and lines with retry
+    invoice = None
+    saved_lines = []
+    total_amount = 0.0
+
+    for attempt in range(3):
+        year = datetime.now().year
+        max_num = db.query(
+            func.max(func.cast(func.substr(Invoice.reference, 10), Integer))
+        ).filter(Invoice.reference.op("~")(f"^INV-{year}-[0-9]+$")).scalar()
+
+        base_num = max_num if (max_num is not None and max_num >= 88) else 88
+        new_num = base_num + 1
+        seq = f"{new_num:03d}"
+        ref = f"INV-{year}-{seq}"
+
+        invoice_id = f"inv-{uuid.uuid4().hex[:12]}"
+        now_str = datetime.now().strftime("%Y-%m-%d")
+        due_str = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+
+        invoice = Invoice(
+            id=invoice_id,
+            sequence=seq,
+            reference=ref,
+            firm_id=current_user.firm_id,
+            client_id=matter.client_id,
+            engagement_ref=matter.reference,
+            description_en=desc,
+            description_ar=desc,
+            status="draft",
+            currency="EGP",
+            issue_date=now_str,
+            due_date=due_str,
+            prepared_by_id=current_user.id
+        )
+        db.add(invoice)
+        db.flush()
+
+        total_amount = 0.0
+        saved_lines = []
+
+        for idx, line in enumerate(payload.lines, start=1):
+            line_id = f"itm-{uuid.uuid4().hex[:12]}"
+            item = InvoiceLineItem(
+                id=line_id,
+                invoice_id=invoice.id,
+                description_en=(line.description or "").strip(),
+                description_ar=(line.description or "").strip(),
+                detail_en=line.detail,
+                detail_ar=line.detail,
+                amount=float(line.amount),
+                order=idx
+            )
+            db.add(item)
+            total_amount += float(line.amount)
+            saved_lines.append({
+                "id": line_id,
+                "description": (line.description or "").strip(),
+                "amount": float(line.amount),
+                "minutes": line.minutes,
+                "fromEntryIds": line.fromEntryIds or []
+            })
+
+        for entry in entries:
+            entry.is_invoiced = True
+            entry.invoice_id = invoice.id
+            db.add(entry)
+
+        try:
+            db.commit()
+            db.refresh(invoice)
+            break
+        except IntegrityError:
+            db.rollback()
+            if attempt == 2:
+                raise
+            matter = db.query(Matter).filter(
+                func.lower(Matter.reference) == engagement_ref_raw.lower(),
+                Matter.firm_id == current_user.firm_id
+            ).first() or db.query(Matter).filter(
+                func.lower(Matter.id) == engagement_ref_raw.lower(),
+                Matter.firm_id == current_user.firm_id
+            ).first()
+            if all_entry_ids:
+                entries = (
+                    db.query(TimeEntry)
+                    .filter(
+                        TimeEntry.firm_id == current_user.firm_id,
+                        TimeEntry.id.in_(all_entry_ids)
+                    )
+                    .with_for_update()
+                    .all()
+                )
+
     return {
         "ok": True,
         "id": invoice.id,
@@ -303,6 +463,47 @@ def save_invoice_draft(
         }
     }
 
+
+@router.delete("/drafts/{id}", response_model=dict)
+def delete_invoice_draft(
+    id: str,
+    current_user: User = Depends(require_billing_access),
+    db: Session = Depends(get_db)
+):
+    invoice = db.query(Invoice).filter(
+        Invoice.firm_id == current_user.firm_id,
+        or_(
+            Invoice.id == id,
+            Invoice.reference == id,
+            func.lower(Invoice.reference) == id.lower()
+        )
+    ).first()
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    if invoice.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot delete invoice with status '{invoice.status}'. Only draft invoices can be deleted."
+        )
+
+    # Release time entries
+    db.query(TimeEntry).filter(
+        TimeEntry.invoice_id == invoice.id,
+        TimeEntry.firm_id == current_user.firm_id
+    ).update(
+        {"is_invoiced": False, "invoice_id": None},
+        synchronize_session=False
+    )
+
+    # Delete line items explicitly
+    db.query(InvoiceLineItem).filter(InvoiceLineItem.invoice_id == invoice.id).delete(synchronize_session=False)
+
+    db.delete(invoice)
+    db.commit()
+
+    return {"ok": True, "message": "Draft deleted successfully", "id": invoice.id}
+
 @router.post("/invoices/{reference}/issue", response_model=dict)
 def issue_invoice(
     reference: str,
@@ -320,6 +521,18 @@ def issue_invoice(
         ).first()
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
+
+    if invoice.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot issue invoice with status '{invoice.status}'. Only draft invoices can be issued."
+        )
+
+    if not invoice.line_items:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot issue invoice without line items."
+        )
         
     now_str = datetime.now().strftime("%Y-%m-%d")
     due_str = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
@@ -355,6 +568,12 @@ def mark_invoice_paid(
         ).first()
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
+
+    if invoice.status not in ["due", "overdue"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot mark invoice as paid with status '{invoice.status}'. Only due or overdue invoices can be marked as paid."
+        )
         
     invoice.status = "paid"
     invoice.paid_at = datetime.now().strftime("%Y-%m-%d")
@@ -382,9 +601,19 @@ def list_quotes(
     totals = {"all": 0.0, "pending": 0.0, "approved": 0.0, "changesRequested": 0.0}
     pending_value = 0.0
     
+    client_ids = {q.client_id for q in quotes if q.client_id}
+    clients = {c.id: c for c in db.query(Client).filter(Client.id.in_(client_ids)).all()} if client_ids else {}
+    
+    engagement_refs = {q.engagement_ref for q in quotes if q.engagement_ref}
+    matters = {m.reference: m for m in db.query(Matter).filter(Matter.reference.in_(engagement_refs), Matter.firm_id == current_user.firm_id).all()} if engagement_refs else {}
+    
+    lead_ids = {m.lead_counsel_id for m in matters.values() if m.lead_counsel_id}
+    leads = {u.id: u for u in db.query(User).filter(User.id.in_(lead_ids)).all()} if lead_ids else {}
+    
     for q in quotes:
-        cl = db.query(Client).filter(Client.id == q.client_id).first()
-        matter = db.query(Matter).filter(Matter.reference == q.engagement_ref).first()
+        cl = clients.get(q.client_id)
+        matter = matters.get(q.engagement_ref)
+        lead = leads.get(matter.lead_counsel_id) if (matter and matter.lead_counsel_id) else None
         
         # State mapping
         if q.status == "accepted":
@@ -394,10 +623,8 @@ def list_quotes(
         else:
             item_state = "pending"
             
-        try:
-            valid_dt = datetime.strptime(q.valid_until, "%Y-%m-%d")
-            due_in_days = (valid_dt - today).days
-        except Exception:
+        due_in_days = days_until(q.valid_until)
+        if due_in_days is None:
             due_in_days = 0
             
         counts[item_state] = counts.get(item_state, 0) + 1
@@ -405,6 +632,15 @@ def list_quotes(
         totals["all"] += q.amount
         if item_state == "pending":
             pending_value += q.amount
+            
+        if lead:
+            submitted_by = {"en": lead.name_en, "ar": lead.name_ar}
+            submitted_by_rank = lead.rank or ""
+        else:
+            submitted_by = {"en": "", "ar": ""}
+            submitted_by_rank = ""
+            
+        assigned_to = submitted_by
             
         row = {
             "id": q.id,
@@ -421,9 +657,9 @@ def list_quotes(
             "dueInDays": due_in_days,
             "status": q.status,
             "state": item_state,
-            "submittedBy": {"en": "Mansoor Al-Farooq", "ar": "منصور الفاروق"},
-            "submittedByRank": "partner",
-            "assignedTo": {"en": "Salem Al-Hashemi", "ar": "سالم الهاشمي"}
+            "submittedBy": submitted_by,
+            "submittedByRank": submitted_by_rank,
+            "assignedTo": assigned_to
         }
         items.append(row)
         
@@ -449,43 +685,72 @@ def log_time_entry(
     current_user: User = Depends(require_time_recording),
     db: Session = Depends(get_db)
 ):
-    rate = HOURLY_RATES.get(current_user.rank, 1400.0)
-    entry_date = payload.entryDate or datetime.now().strftime("%Y-%m-%d")
-    
-    # Verify matter exists
-    matter = db.query(Matter).filter(
-        Matter.reference == payload.matterId,
-        Matter.firm_id == current_user.firm_id
-    ).first()
-    if not matter:
-        # Fallback by id
+    # 1. Unknown matter -> 400 "engagementInvalid" and NO row created
+    matter_id_raw = (payload.matterId or "").strip()
+    matter = None
+    if matter_id_raw:
         matter = db.query(Matter).filter(
-            Matter.id == payload.matterId,
+            func.lower(Matter.reference) == matter_id_raw.lower(),
             Matter.firm_id == current_user.firm_id
         ).first()
-        
-    matter_ref = matter.reference if matter else payload.matterId
-    
+        if not matter:
+            matter = db.query(Matter).filter(
+                func.lower(Matter.id) == matter_id_raw.lower(),
+                Matter.firm_id == current_user.firm_id
+            ).first()
+
+    if not matter:
+        raise HTTPException(status_code=400, detail="engagementInvalid")
+
+    # 2. Minutes must be an integer between 1 and 1440
+    if (
+        payload.minutes is None
+        or not isinstance(payload.minutes, int)
+        or isinstance(payload.minutes, bool)
+        or payload.minutes < 1
+        or payload.minutes > 1440
+    ):
+        raise HTTPException(status_code=400, detail="durationRequired")
+
+    # 3. EntryDate must be a valid YYYY-MM-DD and not in the future
+    if payload.entryDate:
+        try:
+            parsed_date = datetime.strptime(payload.entryDate, "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="dateRequired")
+        if parsed_date > datetime.now().date():
+            raise HTTPException(status_code=400, detail="dateFuture")
+        entry_date = payload.entryDate
+    else:
+        entry_date = datetime.now().strftime("%Y-%m-%d")
+
+    # 4. Description must be non-empty after strip and at most 500 characters
+    desc = (payload.description or "").strip()
+    if not desc or len(desc) > 500:
+        raise HTTPException(status_code=400, detail="descriptionRequired")
+
+    rate = HOURLY_RATES.get(current_user.rank, 1400.0)
+
     time_entry = TimeEntry(
-        id=f"tm-{uuid.uuid4().hex[:6]}",
+        id=f"tm-{uuid.uuid4().hex[:12]}",
         firm_id=current_user.firm_id,
-        matter_id=matter_ref,
+        matter_id=matter.reference,
         staff_id=current_user.id,
         minutes=payload.minutes,
         rate_at_time=rate,
-        billable=payload.billable,
+        billable=True if payload.billable is None else payload.billable,
         is_invoiced=False,
-        description_en=payload.description,
-        description_ar=payload.description,
+        description_en=desc,
+        description_ar=desc,
         entry_date=entry_date
     )
-    
+
     db.add(time_entry)
     db.commit()
     db.refresh(time_entry)
-    
+
     amount = (time_entry.minutes / 60.0) * time_entry.rate_at_time
-    
+
     return {
         "ok": True,
         "id": time_entry.id,
@@ -497,18 +762,18 @@ def log_time_entry(
             "staffName": {"en": current_user.name_en, "ar": current_user.name_ar},
             "staffRank": current_user.rank,
             "engagementRef": time_entry.matter_id,
-            "engagementTitle": {"en": matter.title_en if matter else "", "ar": matter.title_ar if matter else ""},
-            "engagementKind": "project" if (matter and matter.reference.startswith("PRJ")) else "matter",
-            "clientId": matter.client_id if matter else "",
-            "on": time_entry.entry_date,
+            "engagementTitle": {"en": matter.title_en, "ar": matter.title_ar},
+            "engagementKind": "project" if (matter and matter.work_type == "otherProject") else "matter",
+            "clientId": matter.client_id,
+            "clientName": {"en": matter.client.name_en if matter.client else "", "ar": matter.client.name_ar if matter.client else ""},
+            "date": time_entry.entry_date,
             "minutes": time_entry.minutes,
+            "hours": time_entry.minutes / 60.0,
+            "description": time_entry.description_ar,
+            "billable": time_entry.billable,
             "rate": time_entry.rate_at_time,
             "amount": amount,
-            "currency": "EGP",
-            "description": {"en": time_entry.description_en, "ar": time_entry.description_ar},
-            "billable": time_entry.billable,
-            "billed": time_entry.is_invoiced,
-            "invoiceId": time_entry.invoice_id
+            "billed": time_entry.is_invoiced
         }
     }
 
@@ -533,12 +798,21 @@ def list_time_entries(
         query = query.filter(TimeEntry.is_invoiced == False)
         
     entries = query.order_by(TimeEntry.entry_date.desc(), TimeEntry.created_at.desc()).all()
-    results = []
     
+    matter_refs = {t.matter_id for t in entries if t.matter_id}
+    matters = {m.reference: m for m in db.query(Matter).filter(Matter.reference.in_(matter_refs), Matter.firm_id == current_user.firm_id).all()} if matter_refs else {}
+    
+    client_ids = {m.client_id for m in matters.values() if m.client_id}
+    clients = {c.id: c for c in db.query(Client).filter(Client.id.in_(client_ids)).all()} if client_ids else {}
+    
+    staff_ids = {t.staff_id for t in entries if t.staff_id}
+    staff_map = {u.id: u for u in db.query(User).filter(User.id.in_(staff_ids)).all()} if staff_ids else {}
+    
+    results = []
     for t in entries:
-        matter = db.query(Matter).filter(Matter.reference == t.matter_id).first()
-        client = db.query(Client).filter(Client.id == matter.client_id).first() if matter else None
-        staff = db.query(User).filter(User.id == t.staff_id).first()
+        matter = matters.get(t.matter_id)
+        client = clients.get(matter.client_id) if matter else None
+        staff = staff_map.get(t.staff_id)
         
         if clientId and (not client or client.id != clientId):
             continue
@@ -551,7 +825,7 @@ def list_time_entries(
             "staffRank": staff.rank if staff else "associate",
             "engagementRef": t.matter_id,
             "engagementTitle": {"en": matter.title_en if matter else "", "ar": matter.title_ar if matter else ""},
-            "engagementKind": "project" if (matter and matter.reference.startswith("PRJ")) else "matter",
+            "engagementKind": "project" if (matter and matter.work_type == "otherProject") else "matter",
             "clientId": matter.client_id if matter else "",
             "clientName": {"en": client.name_en if client else "", "ar": client.name_ar if client else ""},
             "on": t.entry_date,
@@ -592,11 +866,14 @@ def get_invoice_draft_context(
             TimeEntry.billable == True
         ).order_by(TimeEntry.entry_date.desc()).all()
         
-        matter = db.query(Matter).filter(Matter.reference == engagementRef).first()
+        matter = db.query(Matter).filter(Matter.reference == engagementRef, Matter.firm_id == current_user.firm_id).first()
         client = db.query(Client).filter(Client.id == matter.client_id).first() if matter else None
         
+        staff_ids = {t.staff_id for t in unbilled_entries if t.staff_id}
+        staff_map = {u.id: u for u in db.query(User).filter(User.id.in_(staff_ids)).all()} if staff_ids else {}
+        
         for t in unbilled_entries:
-            staff = db.query(User).filter(User.id == t.staff_id).first()
+            staff = staff_map.get(t.staff_id)
             amount = (t.minutes / 60.0) * t.rate_at_time
             unbilled_results.append({
                 "id": t.id,
@@ -605,7 +882,7 @@ def get_invoice_draft_context(
                 "staffRank": staff.rank if staff else "associate",
                 "engagementRef": t.matter_id,
                 "engagementTitle": {"en": matter.title_en if matter else "", "ar": matter.title_ar if matter else ""},
-                "engagementKind": "project" if (matter and matter.reference.startswith("PRJ")) else "matter",
+                "engagementKind": "project" if (matter and matter.work_type == "otherProject") else "matter",
                 "clientId": matter.client_id if matter else "",
                 "clientName": {"en": client.name_en if client else "", "ar": client.name_ar if client else ""},
                 "on": t.entry_date,
@@ -636,29 +913,38 @@ def list_client_invoices(
     filter_by: Optional[str] = Query("all", alias="filter"),
     page: int = Query(1, ge=1),
     pageSize: int = Query(50, ge=1, le=100),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_client),
     db: Session = Depends(get_db)
 ):
-    target_client_id = current_user.client_id if current_user.side == "client" else "cli-001"
+    target_client_id = current_user.client_id
+    refresh_overdue_invoices(db, firm_id=current_user.firm_id)
     
     invoices = db.query(Invoice).filter(
+        Invoice.firm_id == current_user.firm_id,
         Invoice.client_id == target_client_id,
-        Invoice.status != "draft"
+        Invoice.status.notin_(["draft", "pending_approval"])
     ).order_by(Invoice.issue_date.desc()).all()
     
-    today = datetime.now()
-    items = []
+    engagement_refs = {inv.engagement_ref for inv in invoices if inv.engagement_ref}
+    matters = {m.reference: m for m in db.query(Matter).filter(Matter.reference.in_(engagement_refs), Matter.firm_id == current_user.firm_id).all()} if engagement_refs else {}
     
+    inv_ids = [inv.id for inv in invoices]
+    line_items_by_inv = defaultdict(list)
+    if inv_ids:
+        all_lines = db.query(InvoiceLineItem).filter(InvoiceLineItem.invoice_id.in_(inv_ids)).order_by(InvoiceLineItem.order).all()
+        for li in all_lines:
+            line_items_by_inv[li.invoice_id].append(li)
+            
+    items = []
     counts = {"all": len(invoices), "overdue": 0, "due": 0, "paid": 0}
     
     for inv in invoices:
-        matter = db.query(Matter).filter(Matter.reference == inv.engagement_ref).first()
-        total_amount = sum(i.amount for i in inv.line_items)
+        matter = matters.get(inv.engagement_ref)
+        inv_lines = line_items_by_inv.get(inv.id, [])
+        total_amount = sum(i.amount for i in inv_lines)
         
-        try:
-            due_dt = datetime.strptime(inv.due_date, "%Y-%m-%d")
-            due_in_days = (due_dt - today).days
-        except Exception:
+        due_in_days = days_until(inv.due_date)
+        if due_in_days is None:
             due_in_days = 0
             
         counts[inv.status] = counts.get(inv.status, 0) + 1
@@ -667,7 +953,7 @@ def list_client_invoices(
             "id": inv.id,
             "reference": inv.reference,
             "engagementRef": inv.engagement_ref,
-            "engagementKind": "project" if (matter and matter.reference.startswith("PRJ")) else "matter",
+            "engagementKind": "project" if (matter and matter.work_type == "otherProject") else "matter",
             "engagementTitle": {"en": matter.title_en if matter else "", "ar": matter.title_ar if matter else ""},
             "description": {"en": inv.description_en, "ar": inv.description_ar},
             "status": inv.status,
@@ -684,7 +970,7 @@ def list_client_invoices(
                     "detail": {"en": li.detail_en or "", "ar": li.detail_ar or ""},
                     "amount": li.amount
                 }
-                for li in inv.line_items
+                for li in inv_lines
             ]
         }
         items.append(row)
@@ -707,21 +993,31 @@ def list_client_invoices(
 
 @client_router.get("/summary", response_model=dict)
 def get_client_invoices_summary(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_client),
     db: Session = Depends(get_db)
 ):
-    target_client_id = current_user.client_id if current_user.side == "client" else "cli-001"
+    target_client_id = current_user.client_id
+    refresh_overdue_invoices(db, firm_id=current_user.firm_id)
     
     invoices = db.query(Invoice).filter(
+        Invoice.firm_id == current_user.firm_id,
         Invoice.client_id == target_client_id,
-        Invoice.status != "draft"
+        Invoice.status.notin_(["draft", "pending_approval"])
     ).all()
+    
+    inv_ids = [inv.id for inv in invoices]
+    inv_amounts = dict(
+        db.query(
+            InvoiceLineItem.invoice_id,
+            func.coalesce(func.sum(InvoiceLineItem.amount), 0.0)
+        ).filter(InvoiceLineItem.invoice_id.in_(inv_ids)).group_by(InvoiceLineItem.invoice_id).all()
+    ) if inv_ids else {}
     
     unpaid = [i for i in invoices if i.status != "paid"]
     overdue = [i for i in invoices if i.status == "overdue"]
     settled = [i for i in invoices if i.status == "paid"]
     
-    sum_inv = lambda lst: sum(sum(li.amount for li in inv.line_items) for inv in lst)
+    sum_inv = lambda lst: sum(float(inv_amounts.get(inv.id, 0.0)) for inv in lst)
     
     return {
         "balanceDue": sum_inv(unpaid),
@@ -735,28 +1031,33 @@ def get_client_invoices_summary(
 
 @client_router.get("/engagements", response_model=List[dict])
 def get_client_invoice_engagements(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_client),
     db: Session = Depends(get_db)
 ):
-    target_client_id = current_user.client_id if current_user.side == "client" else "cli-001"
+    target_client_id = current_user.client_id
+    refresh_overdue_invoices(db, firm_id=current_user.firm_id)
     
     invoices = db.query(Invoice).filter(
+        Invoice.firm_id == current_user.firm_id,
         Invoice.client_id == target_client_id,
-        Invoice.status != "draft"
+        Invoice.status.notin_(["draft", "pending_approval"])
     ).all()
     
     seen = set()
     results = []
     
+    engagement_refs = {inv.engagement_ref for inv in invoices if inv.engagement_ref}
+    matters = {m.reference: m for m in db.query(Matter).filter(Matter.reference.in_(engagement_refs), Matter.firm_id == current_user.firm_id).all()} if engagement_refs else {}
+    
     for inv in invoices:
         if inv.engagement_ref in seen:
             continue
         seen.add(inv.engagement_ref)
-        matter = db.query(Matter).filter(Matter.reference == inv.engagement_ref).first()
+        matter = matters.get(inv.engagement_ref)
         if matter:
             results.append({
                 "reference": matter.reference,
-                "kind": (matter.work_type if matter and matter.work_type else "dispute"),
+                "kind": map_work_type_for_display(matter.work_type),
                 "title": {"en": matter.title_en, "ar": matter.title_ar}
             })
             
@@ -765,36 +1066,38 @@ def get_client_invoice_engagements(
 @client_router.get("/{reference}", response_model=dict)
 def get_client_invoice_detail(
     reference: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_client),
     db: Session = Depends(get_db)
 ):
-    target_client_id = current_user.client_id if current_user.side == "client" else "cli-001"
+    target_client_id = current_user.client_id
+    refresh_overdue_invoices(db, firm_id=current_user.firm_id)
     
     inv = db.query(Invoice).filter(
         Invoice.reference == reference,
-        Invoice.client_id == target_client_id
+        Invoice.firm_id == current_user.firm_id,
+        Invoice.client_id == target_client_id,
+        Invoice.status.notin_(["draft", "pending_approval"])
     ).first()
     
     if not inv:
         # Fallback by id
         inv = db.query(Invoice).filter(
             Invoice.id == reference,
-            Invoice.client_id == target_client_id
+            Invoice.firm_id == current_user.firm_id,
+            Invoice.client_id == target_client_id,
+            Invoice.status.notin_(["draft", "pending_approval"])
         ).first()
         
     if not inv:
         raise HTTPException(status_code=404, detail="Invoice not found")
         
-    matter = db.query(Matter).filter(Matter.reference == inv.engagement_ref).first()
-    client = db.query(Client).filter(Client.id == inv.client_id).first()
-    prep = db.query(User).filter(User.id == inv.prepared_by_id).first()
+    matter = db.query(Matter).filter(Matter.reference == inv.engagement_ref, Matter.firm_id == current_user.firm_id).first()
+    client = db.query(Client).filter(Client.id == inv.client_id, Client.firm_id == current_user.firm_id).first()
+    prep = db.query(User).filter(User.id == inv.prepared_by_id, User.firm_id == current_user.firm_id).first()
     total_amount = sum(i.amount for i in inv.line_items)
     
-    today = datetime.now()
-    try:
-        due_dt = datetime.strptime(inv.due_date, "%Y-%m-%d")
-        due_in_days = (due_dt - today).days
-    except Exception:
+    due_in_days = days_until(inv.due_date)
+    if due_in_days is None:
         due_in_days = 0
         
     return {
@@ -802,7 +1105,7 @@ def get_client_invoice_detail(
         "sequence": inv.sequence,
         "reference": inv.reference,
         "engagementRef": inv.engagement_ref,
-        "engagementKind": "project" if (matter and matter.reference.startswith("PRJ")) else "matter",
+        "engagementKind": "project" if (matter and matter.work_type == "otherProject") else "matter",
         "engagementTitle": {"en": matter.title_en if matter else "", "ar": matter.title_ar if matter else ""},
         "clientId": inv.client_id,
         "clientName": {"en": client.name_en if client else "", "ar": client.name_ar if client else ""},
