@@ -504,12 +504,14 @@ export const backendBridge = {
 
   // --- Legal Database ---
   legalDatabase: {
-    async search(params?: { kind?: string; jurisdiction?: string; q?: string }) {
+    async search(params?: { kind?: string; jurisdiction?: string; q?: string; page?: number; limit?: number }) {
       try {
         const query = new URLSearchParams();
         if (params?.kind) query.set('kind', params.kind);
         if (params?.jurisdiction) query.set('jurisdiction', params.jurisdiction);
         if (params?.q) query.set('q', params.q);
+        if (params?.page) query.set('page', String(params.page));
+        if (params?.limit) query.set('limit', String(params.limit));
 
         const res = await fetch(`${BACKEND_URL}/staff/legal-database?${query.toString()}`, {
           headers: await getHeaders(),

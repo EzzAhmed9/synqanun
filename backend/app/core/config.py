@@ -10,6 +10,10 @@ class Settings(BaseSettings):
         default="postgresql+psycopg2://postgres:@localhost:5432/synqanun_db",
         validation_alias="DATABASE_URL"
     )
+    LEGAL_DATABASE_URL: str = Field(
+        default="postgresql+psycopg2://postgres:@localhost:5432/full_saudi",
+        validation_alias="LEGAL_DATABASE_URL"
+    )
     SECRET_KEY: str = Field(
         default="synqanun-super-secret-jwt-key-2026-development-change-in-production",
         validation_alias="SECRET_KEY"
