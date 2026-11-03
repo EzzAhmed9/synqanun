@@ -1,7 +1,7 @@
 'use client';
 
 import { demoFirm, isThemedTenant } from '@/fixtures/firm';
-import { DemoViewerMenu, type DemoViewerOption } from '@/components/chrome/DemoViewerMenu';
+import type { DemoViewerOption } from '@/components/chrome/DemoViewerMenu';
 import * as React from 'react';
 import { useLocale } from 'next-intl';
 import type { Locale } from '@/lib/i18n/routing';
@@ -226,7 +226,6 @@ export function StaffTopBar({ title, subtitle }: StaffTopBarProps) {
       showDigest
       onOpenDigest={openDigest}
       onOpenSearch={openSearch}
-      leading={<DemoViewerMenu viewers={viewers} currentId={viewerId} side="staff" />}
       onOpenNotifications={toggleNotifications}
       // The staff feed — approvals, filings, team activity — derived in
       // mockApi.staff.notifications, not the client's.

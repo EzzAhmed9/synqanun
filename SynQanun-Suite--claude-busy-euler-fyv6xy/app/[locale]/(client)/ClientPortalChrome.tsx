@@ -1,7 +1,6 @@
 'use client';
 
 import { demoFirm, isThemedTenant } from '@/fixtures/firm';
-import { DemoViewerMenu } from '@/components/chrome/DemoViewerMenu';
 import * as React from 'react';
 import { useLocale } from 'next-intl';
 import type { Locale } from '@/lib/i18n/routing';
@@ -244,17 +243,6 @@ export function ClientTopBar({ title, subtitle }: ClientTopBarProps) {
     <TopBar
       title={title}
       subtitle={subtitle}
-      // The magnifier in the header has been inert since the portal was built;
-      // the overlay it should have opened is rendered by the provider above.
-      /*
-        The demo switcher, with an EMPTY rank list. The client portal has one
-        account and one client organisation, so there is nothing to switch
-        between on this side — the menu is here only so the jump back to the
-        firm workspace exists. Without it the staff-to-client jump is one-way
-        and a reviewer is stranded, which is the problem the switcher was built
-        to solve in the first place.
-      */
-      leading={<DemoViewerMenu viewers={[]} currentId={null} side="client" />}
       onOpenSearch={openSearch}
       onOpenNotifications={toggleNotifications}
       // A real count, derived from the feed in the same render — see the
