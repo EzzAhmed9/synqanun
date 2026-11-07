@@ -67,7 +67,7 @@ def map_doc_to_response(doc: Document) -> DocumentResponse:
         engagement_ref=doc.engagement_ref,
         client_id=doc.client_id,
         created_at=doc.created_at.strftime("%Y-%m-%d %H:%M") if doc.created_at else "",
-        download_url=f"/api/documents/{doc.id}/download"
+        download_url=f"/api/docs/{doc.id}/download"
     )
 
 

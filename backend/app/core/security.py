@@ -1,9 +1,69 @@
 import uuid
+import hashlib
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, Set
 import bcrypt
 from jose import jwt, JWTError
 from app.core.config import settings
+from app.core.database import SessionLocal
+from app.models.revocation import RevokedToken
+
+# In-memory revocation cache for instant O(1) checks
+_revoked_token_ids: Set[str] = set()
+
+def token_digest(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+def is_token_revoked(token: str, jti: Optional[str] = None, db=None) -> bool:
+    identifier = jti or token_digest(token)
+    if identifier in _revoked_token_ids:
+        return True
+
+    local_session = False
+    if db is None:
+        db = SessionLocal()
+        local_session = True
+    try:
+        exists = db.query(RevokedToken.id).filter(RevokedToken.id == identifier).first()
+        if exists:
+            _revoked_token_ids.add(identifier)
+            return True
+        return False
+    except Exception:
+        return False
+    finally:
+        if local_session:
+            db.close()
+
+def revoke_token(
+    token: str,
+    jti: Optional[str] = None,
+    token_type: str = "access",
+    expires_at: Optional[datetime] = None,
+    db=None
+) -> None:
+    identifier = jti or token_digest(token)
+    _revoked_token_ids.add(identifier)
+
+    local_session = False
+    if db is None:
+        db = SessionLocal()
+        local_session = True
+    try:
+        existing = db.query(RevokedToken).filter(RevokedToken.id == identifier).first()
+        if not existing:
+            revoked_entry = RevokedToken(
+                id=identifier,
+                token_type=token_type,
+                expires_at=expires_at
+            )
+            db.add(revoked_entry)
+            db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        if local_session:
+            db.close()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
@@ -24,7 +84,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire, "typ": "access"})
+    to_encode.update({"exp": expire, "typ": "access", "jti": uuid.uuid4().hex})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
@@ -44,13 +104,23 @@ def decode_access_token(token: str) -> Optional[dict]:
 
 def create_reset_token(email: str, side: str = "staff") -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    to_encode = {"sub": email, "side": side, "type": "reset", "typ": "reset", "exp": expire}
+    to_encode = {
+        "sub": email,
+        "side": side,
+        "type": "reset",
+        "typ": "reset",
+        "jti": uuid.uuid4().hex,
+        "exp": expire,
+    }
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
-def verify_reset_token(token: str) -> Optional[dict]:
+def verify_reset_token(token: str, db=None) -> Optional[dict]:
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         if payload.get("type") != "reset" and payload.get("typ") != "reset":
+            return None
+        jti = payload.get("jti")
+        if is_token_revoked(token, jti, db):
             return None
         return payload
     except JWTError:

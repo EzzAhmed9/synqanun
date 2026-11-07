@@ -7,6 +7,7 @@ from app.models.invoice import Invoice, InvoiceLineItem, TimeEntry, Quote
 from app.models.legal_db import LegalDatabaseEntry
 from app.models.document import Document
 from app.models.integration import Integration
+from app.models.revocation import RevokedToken
 
 __all__ = [
     "Base",
@@ -25,4 +26,5 @@ __all__ = [
     "LegalDatabaseEntry",
     "Document",
     "Integration",
+    "RevokedToken",
 ]

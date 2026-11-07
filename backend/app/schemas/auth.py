@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional
 from pydantic import BaseModel, EmailStr
 
 class UserResponse(BaseModel):
@@ -26,6 +26,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: Optional[UserResponse] = None
+    must_change_password: bool = False
 
 class PasswordResetRequest(BaseModel):
     email: str
@@ -34,3 +35,6 @@ class PasswordResetComplete(BaseModel):
     token: str
     password: str
 
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str

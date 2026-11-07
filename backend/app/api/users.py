@@ -1,4 +1,6 @@
 import uuid
+import secrets
+import string
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -27,7 +29,7 @@ class AddTeamMemberPayload(BaseModel):
     email: str
     rank: str  # 'partner' | 'seniorAssociate' | 'juniorAssociate' | 'paralegal' | 'legalSecretary'
     phone: Optional[str] = None
-    password: Optional[str] = "password123"
+    password: Optional[str] = None
 
 class SetAccessPayload(BaseModel):
     grant: bool
@@ -105,7 +107,7 @@ def add_team_member(
     db: Session = Depends(get_db)
 ):
     """
-    Add a new colleague to the firm's roster in PostgreSQL with a temporary password.
+    Add a new colleague to the firm's roster in PostgreSQL with a secure temporary password.
     Only partners can add new team members.
     """
     clean_name = payload.name.strip()
@@ -135,7 +137,14 @@ def add_team_member(
 
     name_ar = payload.name_ar or clean_name
     name_en = payload.name_en or clean_name
-    temp_password = payload.password or "password123"
+
+    # Cryptographically secure random password if none specified
+    if payload.password and len(payload.password.strip()) >= 8:
+        temp_password = payload.password.strip()
+    else:
+        # 14 chars with mixed alpha, digits, and safe symbols
+        charset = string.ascii_letters + string.digits + "!@#$%^&*"
+        temp_password = "".join(secrets.choice(charset) for _ in range(14))
 
     new_user = User(
         id=new_staff_id,
@@ -161,7 +170,8 @@ def add_team_member(
         "email": new_user.email,
         "rank": new_user.rank,
         "status": new_user.status,
-        "message": "تم إضافة العضو بنجاح إلى قاعدة البيانات وتعيين كلمة المرور المؤقتة"
+        "temporary_password": temp_password,
+        "message": "تم إضافة العضو بنجاح وتوليد كلمة مرور مؤقتة آمنة"
     }
 
 

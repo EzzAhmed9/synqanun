@@ -606,6 +606,18 @@ export const backendBridge = {
         return { ok: false, error: err.message || 'Connection error' };
       }
     },
+
+    async logout() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/auth/logout`, {
+          method: 'POST',
+          headers: await getHeaders(),
+        });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    },
   },
 
   // --- Documents (Word .docx & Excel .xlsx) ---

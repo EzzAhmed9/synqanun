@@ -10,10 +10,12 @@ import {
   FileSignature,
   FileCheck,
   Loader2,
+  Upload,
+  ExternalLink,
 } from 'lucide-react';
-import { Button, Field, Input, Modal, Textarea, Checkbox } from '@/components/ui';
+import { Button, Input, Modal } from '@/components/ui';
 import { useRouter } from '@/lib/i18n/navigation';
-import { generateWordAction } from './generate-document-actions';
+import { generateWordAction, uploadUpdatedDocxAction } from './generate-document-actions';
 
 interface GenerateLegalDocModalProps {
   engagementRef: string;
@@ -37,6 +39,8 @@ export function GenerateLegalDocModal({
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
   const [successDoc, setSuccessDoc] = React.useState<any | null>(null);
+  const [isUploadingUpdated, setIsUploadingUpdated] = React.useState(false);
+  const [uploadSuccessMsg, setUploadSuccessMsg] = React.useState<string | null>(null);
 
   // Form State
   const [templateType, setTemplateType] = React.useState<'pleading' | 'contract' | 'memo'>('pleading');
@@ -61,6 +65,7 @@ export function GenerateLegalDocModal({
   const reset = () => {
     setError(null);
     setSuccessDoc(null);
+    setUploadSuccessMsg(null);
   };
 
   const close = () => {
@@ -71,6 +76,7 @@ export function GenerateLegalDocModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setUploadSuccessMsg(null);
 
     startTransition(async () => {
       const res = await generateWordAction({
@@ -87,19 +93,54 @@ export function GenerateLegalDocModal({
       if (res.ok && res.data) {
         setSuccessDoc(res.data);
         // Trigger browser download immediately
-        const downloadUrl = `http://127.0.0.1:8000${res.data.download_url}`;
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = res.data.name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const downloadUrl = `/api/docs/${res.data.id}/download`;
+        try {
+          const a = document.createElement('a');
+          a.href = downloadUrl;
+          a.download = res.data.name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        } catch (dlErr) {
+          console.warn('Auto download error:', dlErr);
+        }
+
+        // Open Word in a new tab
+        window.open('https://word.new', '_blank', 'noopener,noreferrer');
 
         router.refresh();
       } else {
         setError(res.error || 'حدث خطأ أثناء توليد المستند');
       }
     });
+  };
+
+  // Upload edited .docx file
+  const handleUploadUpdatedDocx = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !successDoc?.id) return;
+
+    setIsUploadingUpdated(true);
+    setError(null);
+    setUploadSuccessMsg(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await uploadUpdatedDocxAction(successDoc.id, formData);
+      if (res.ok && res.data) {
+        setUploadSuccessMsg('تم رفع وحفظ النسخة المعدلة في القضية بنجاح! ✅');
+        router.refresh();
+      } else {
+        setError(res.error || 'تعذر رفع الملف المحدث.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'حدث خطأ أثناء رفع المستند.');
+    } finally {
+      setIsUploadingUpdated(false);
+      e.target.value = '';
+    }
   };
 
   return (
@@ -117,38 +158,93 @@ export function GenerateLegalDocModal({
       <Modal
         open={open}
         onClose={close}
-        title={successDoc ? 'تم توليد المستند وحفظه بنجاح' : 'توليد وصياغة مستند Word رسمي (.docx)'}
+        title={successDoc ? 'تم فتح Word وتنزيل نسخة من المستند' : 'صياغة مستند جديد في Microsoft Word'}
         description={
           successDoc
-            ? 'تم حفظ المستند تلقائياً في قاعدة البيانات وسيرفر الموقع وربطه بملف القضية.'
-            : 'اختر النموذج وصيغة الوثيقة القانونية، وسيتم إنشاؤها بتنسيق عربي كامل (RTL) وحفظها بالنظام.'
+            ? 'تم حفظ المستند في القضية وتنزيل نسخة منه على جهازك وفتح نافذة Word في تبويب جديد.'
+            : 'اختر النموذج وصيغة الوثيقة القانونية، وسيتم فتح Word وتنزيل نسخة (.docx) وحفظها بالنظام.'
         }
       >
         {successDoc ? (
           <div className="flex flex-col gap-4 p-6 pt-0">
-            <div className="flex items-center gap-3 rounded-md bg-emerald-50 p-4 text-emerald-800">
+            <div className="flex items-center gap-3 rounded-md bg-emerald-50 p-4 text-emerald-800 border border-emerald-200">
               <CheckCircle2 size={24} className="shrink-0 text-emerald-600" />
               <div>
                 <p className="font-semibold">{successDoc.name}</p>
                 <p className="text-xs text-emerald-700">
-                  الحجم: {successDoc.size_label} • الحالة: محفوظ في ملف القضية {engagementRef}
+                  الحجم: {successDoc.size_label} • القضية: {engagementRef} • الحالة: محفوظ بالنظام ✅
                 </p>
               </div>
             </div>
 
-            <p className="text-sm text-gray-600">
-              بدأ تنزيل الملف في جهازك آلياً. يظهر الملف أيضاً في قائمة المستندات أدناه وبوابة الموكل.
-            </p>
+            {uploadSuccessMsg && (
+              <div className="flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-sm font-bold text-emerald-800 border border-emerald-200">
+                <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                <span>{uploadSuccessMsg}</span>
+              </div>
+            )}
 
-            <div className="flex justify-end gap-3 pt-2">
+            {error && (
+              <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-xs font-semibold text-red-700 border border-red-200">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-4 space-y-3">
+              <p className="text-xs font-bold text-gray-800">
+                💡 خطوات التعديل والحفظ في القضية:
+              </p>
+              <ol className="text-xs text-gray-600 space-y-1 list-decimal list-inside pe-2">
+                <li>نافذة Microsoft Word مفتوحة الآن في التبويب الجديد لكتابة مذكرتك.</li>
+                <li>بعد التعديل، اختر من وورد (File &gt; Save As &gt; Download a Copy).</li>
+                <li>ارفع النسخة المعدلة هنا لحفظها وتحديثها فوراً في ملف القضية.</li>
+              </ol>
+
+              {/* Upload Edited Copy */}
+              <label className="w-full inline-flex items-center justify-center gap-2.5 rounded-lg bg-emerald-700 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-800 transition-colors shadow-sm cursor-pointer">
+                {isUploadingUpdated ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>جاري رفع النسخة المعدلة...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload size={18} />
+                    <span>📤 رفع النسخة المعدلة وحفظها في القضية</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept=".docx"
+                  className="hidden"
+                  onChange={handleUploadUpdatedDocx}
+                  disabled={isUploadingUpdated}
+                />
+              </label>
+
+              {/* Re-download button */}
               <a
-                href={`http://127.0.0.1:8000${successDoc.download_url}`}
+                href={`/api/docs/${successDoc.id}/download`}
                 download={successDoc.name}
-                className="inline-flex items-center gap-2 rounded-md bg-action px-4 py-2 text-sm font-semibold text-white hover:bg-action-hover"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-100 transition-colors shadow-xs"
               >
-                <Download size={16} />
-                تنزيل الملف مرة أخرى
+                <Download size={14} />
+                تنزيل نسخة من المستند مرة أخرى (Download a copy)
               </a>
+            </div>
+
+            <div className="flex justify-between items-center gap-3 pt-2">
+              <a
+                href="https://word.new"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0078D4] hover:underline"
+              >
+                التبديل إلى نافذة Microsoft Word
+                <ExternalLink size={13} />
+              </a>
+
               <Button variant="secondary" onClick={close}>
                 إغلاق
               </Button>
@@ -157,7 +253,7 @@ export function GenerateLegalDocModal({
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6 pt-0">
             {error && (
-              <div className="flex items-center gap-2 rounded-md bg-red-50 p-3 text-sm text-red-700">
+              <div className="flex items-center gap-2 rounded-md bg-red-50 p-3 text-sm text-red-700 border border-red-200">
                 <AlertCircle size={18} className="shrink-0" />
                 <span>{error}</span>
               </div>
@@ -170,7 +266,7 @@ export function GenerateLegalDocModal({
                 <button
                   type="button"
                   onClick={() => setTemplateType('pleading')}
-                  className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border p-3 text-center transition-all ${
+                  className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border p-3 text-center transition-all cursor-pointer ${
                     templateType === 'pleading'
                       ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
                       : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
@@ -184,7 +280,7 @@ export function GenerateLegalDocModal({
                 <button
                   type="button"
                   onClick={() => setTemplateType('contract')}
-                  className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border p-3 text-center transition-all ${
+                  className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border p-3 text-center transition-all cursor-pointer ${
                     templateType === 'contract'
                       ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
                       : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
@@ -198,7 +294,7 @@ export function GenerateLegalDocModal({
                 <button
                   type="button"
                   onClick={() => setTemplateType('memo')}
-                  className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border p-3 text-center transition-all ${
+                  className={`flex flex-col items-center justify-center gap-1.5 rounded-lg border p-3 text-center transition-all cursor-pointer ${
                     templateType === 'memo'
                       ? 'border-blue-600 bg-blue-50/50 text-blue-900 ring-2 ring-blue-600/20'
                       : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
@@ -284,9 +380,10 @@ export function GenerateLegalDocModal({
                 variant="primary"
                 type="submit"
                 disabled={pending || !title.trim()}
-                icon={pending ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                icon={pending ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
+                className="bg-[#0078D4] hover:bg-blue-700 text-white shadow-xs"
               >
-                {pending ? 'جاري الصياغة والحفظ...' : 'توليد وحفظ ملف Word (.docx)'}
+                {pending ? 'جاري الفتح والتجهيز...' : 'فتح في Microsoft Word وتنزيل نسخة (.docx)'}
               </Button>
             </div>
           </form>

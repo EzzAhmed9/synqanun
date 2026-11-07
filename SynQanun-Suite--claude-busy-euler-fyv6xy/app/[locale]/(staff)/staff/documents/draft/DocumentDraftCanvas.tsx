@@ -332,6 +332,20 @@ export function DocumentDraftCanvas({
       const res = await openWordOnlineAction(currentDocId);
       if (res.ok && res.data && res.data.webUrl) {
         const targetUrl = res.data.webUrl;
+
+        // Trigger browser download of the copy (Download a copy)
+        try {
+          const downloadUrl = `/api/docs/${currentDocId}/download`;
+          const a = document.createElement('a');
+          a.href = downloadUrl;
+          a.download = currentDocName || 'document.docx';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        } catch (dlErr) {
+          console.warn('Auto download error:', dlErr);
+        }
+
         // Open official Microsoft Word Online in a new browser tab!
         window.open(targetUrl, '_blank', 'noopener,noreferrer');
 
@@ -634,6 +648,15 @@ export function DocumentDraftCanvas({
                 />
               </label>
 
+              <a
+                href={`/api/docs/${wordOnlineSession.docId}/download`}
+                download={wordOnlineSession.docName}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-xs"
+              >
+                <Download size={14} />
+                تنزيل نسخة (Download a copy)
+              </a>
+
               <button
                 type="button"
                 onClick={() => handleOpenPreviewModal()}
@@ -693,7 +716,7 @@ export function DocumentDraftCanvas({
             </div>
             <div className="flex items-center gap-2">
               <a
-                href={`http://127.0.0.1:8000${savedDoc.download_url}`}
+                href={savedDoc.download_url || `/api/docs/${savedDoc.id}/download`}
                 download={savedDoc.name}
                 className="inline-flex items-center gap-1.5 rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-800 transition-colors"
               >

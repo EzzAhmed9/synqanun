@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -10,6 +12,8 @@ from app.core.security import (
     create_access_token,
     create_reset_token,
     verify_reset_token,
+    decode_access_token,
+    revoke_token,
 )
 from app.core.ratelimit import check_rate_limit, record_failure, record_success
 from app.models.user import User
@@ -19,8 +23,9 @@ from app.schemas.auth import (
     UserResponse,
     PasswordResetRequest,
     PasswordResetComplete,
+    ChangePasswordRequest,
 )
-from app.core.permissions import get_current_user
+from app.core.permissions import get_current_user, oauth2_scheme
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -49,10 +54,21 @@ def login_for_access_token(
         )
     
     record_success(request, clean_user)
+    must_change = (user.status == "temporaryPasswordIssued")
     access_token = create_access_token(
-        data={"sub": user.id, "side": user.side, "rank": user.rank, "firm_id": user.firm_id}
+        data={
+            "sub": user.id,
+            "side": user.side,
+            "rank": user.rank,
+            "firm_id": user.firm_id,
+            "must_change_password": must_change,
+        }
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "must_change_password": must_change,
+    }
 
 @router.post("/login", response_model=Token)
 def login_json(
@@ -80,18 +96,81 @@ def login_json(
         )
     
     record_success(request, email_clean)
+    must_change = (user.status == "temporaryPasswordIssued")
     access_token = create_access_token(
-        data={"sub": user.id, "side": user.side, "rank": user.rank, "firm_id": user.firm_id}
+        data={
+            "sub": user.id,
+            "side": user.side,
+            "rank": user.rank,
+            "firm_id": user.firm_id,
+            "must_change_password": must_change,
+        }
     )
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "user": user
+        "user": user,
+        "must_change_password": must_change,
     }
 
 @router.get("/me", response_model=UserResponse)
 def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user
+
+@router.post("/logout")
+def logout_user(
+    request: Request,
+    token: Optional[str] = Depends(oauth2_scheme),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Revoke the current access token on the backend server, invalidating it completely.
+    """
+    active_token = token or request.cookies.get("syn-auth-token")
+    if active_token:
+        payload = decode_access_token(active_token)
+        jti = payload.get("jti") if payload else None
+        exp = payload.get("exp") if payload else None
+        expires_at = datetime.fromtimestamp(exp, tz=timezone.utc) if exp else None
+        revoke_token(token=active_token, jti=jti, token_type="access", expires_at=expires_at, db=db)
+
+    return {"ok": True, "message": "Logged out successfully and token revoked"}
+
+@router.post("/change-password")
+def change_password(
+    payload: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Change user password with current password verification.
+    If the user was in 'temporaryPasswordIssued' status, automatically activates them.
+    """
+    if not verify_password(payload.old_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="كلمة المرور الحالية غير صحيحة"
+        )
+    if len(payload.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="كلمة المرور الجديدة يجب أن تحتوي على 8 خانات على الأقل"
+        )
+
+    current_user.hashed_password = get_password_hash(payload.new_password)
+    if current_user.status == "temporaryPasswordIssued":
+        current_user.status = "active"
+
+    db.commit()
+    db.refresh(current_user)
+
+    return {
+        "ok": True,
+        "message": "تم تحديث كلمة المرور وتفعيل الحساب بنجاح",
+        "email": current_user.email,
+        "status": current_user.status
+    }
 
 @router.post("/password-reset/request")
 def request_password_reset(
@@ -130,7 +209,7 @@ def request_password_reset(
 
 @router.get("/password-reset/verify/{token}")
 def verify_reset(token: str, db: Session = Depends(get_db)):
-    payload = verify_reset_token(token)
+    payload = verify_reset_token(token, db=db)
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -153,11 +232,11 @@ def verify_reset(token: str, db: Session = Depends(get_db)):
 
 @router.post("/password-reset/complete")
 def complete_password_reset(payload: PasswordResetComplete, db: Session = Depends(get_db)):
-    token_payload = verify_reset_token(payload.token)
+    token_payload = verify_reset_token(payload.token, db=db)
     if not token_payload:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired reset token"
+            detail="Invalid, expired, or already-used reset token"
         )
     email = token_payload.get("sub")
     user = db.query(User).filter(func.lower(User.email) == email.lower()).first()
@@ -170,6 +249,13 @@ def complete_password_reset(payload: PasswordResetComplete, db: Session = Depend
     user.hashed_password = get_password_hash(payload.password)
     if user.status == "temporaryPasswordIssued":
         user.status = "active"
+
+    # Immediately revoke the reset token so it can NEVER be reused (Single-Use Token)
+    jti = token_payload.get("jti")
+    exp = token_payload.get("exp")
+    expires_at = datetime.fromtimestamp(exp, tz=timezone.utc) if exp else None
+    revoke_token(token=payload.token, jti=jti, token_type="reset", expires_at=expires_at, db=db)
+
     db.commit()
     db.refresh(user)
     

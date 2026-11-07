@@ -60,8 +60,8 @@ export function ExportExcelModal({
 
       if (res.ok && res.data) {
         setSuccessDoc(res.data);
-        // Trigger browser download immediately
-        const downloadUrl = `http://127.0.0.1:8000${res.data.download_url}`;
+        // Trigger browser download immediately through Next.js authenticated proxy
+        const downloadUrl = `/api/docs/${res.data.id}/download`;
         const a = document.createElement('a');
         a.href = downloadUrl;
         a.download = res.data.name;
@@ -116,7 +116,7 @@ export function ExportExcelModal({
 
             <div className="flex justify-end gap-3 pt-2">
               <a
-                href={`http://127.0.0.1:8000${successDoc.download_url}`}
+                href={`/api/docs/${successDoc.id}/download`}
                 download={successDoc.name}
                 className="inline-flex items-center gap-2 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
               >

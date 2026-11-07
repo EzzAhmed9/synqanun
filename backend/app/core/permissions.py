@@ -1,16 +1,17 @@
 from typing import Optional
-from fastapi import Depends, HTTPException, status, Header
+from fastapi import Depends, HTTPException, status, Header, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.security import decode_access_token
+from app.core.security import decode_access_token, is_token_revoked
 from app.models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token", auto_error=False)
 
 def get_current_user(
+    request: Request,
     token: Optional[str] = Depends(oauth2_scheme),
     x_viewer_staff_id: Optional[str] = Header(None, alias="X-Viewer-Staff-Id"),
     x_viewer_client_id: Optional[str] = Header(None, alias="X-Viewer-Client-Id"),
@@ -22,10 +23,18 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    # 1. Primary Authentication: Bearer token
-    if token:
-        payload = decode_access_token(token)
+    # 1. Primary Authentication: Bearer token or Secure Cookie
+    active_token = token
+    if not active_token:
+        active_token = request.cookies.get("syn-auth-token")
+
+    if active_token:
+        payload = decode_access_token(active_token)
         if payload:
+            jti = payload.get("jti")
+            if is_token_revoked(active_token, jti, db):
+                raise credentials_exception
+
             user_id: Optional[str] = payload.get("sub")
             if user_id:
                 user = db.query(User).filter(User.id == user_id).first()
