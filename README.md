@@ -1,4 +1,4 @@
-# SynQanun Suite (منصة سُنّة القانون)
+# SynQanun Suite (منصة سين القانون)
 ### Bilingual Enterprise Legal Practice Management & Client Portal Platform
 
 **SynQanun Suite** is an enterprise-grade, bilingual (**Arabic / English**, **RTL / LTR**) legal practice management system and client portal designed for premier law firms, dispute resolution practices, and corporate legal departments.
