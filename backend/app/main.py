@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api import auth, clients, matters, billing, legal_db, documents, integrations, users
+from app.api import auth, clients, matters, billing, legal_db, documents, integrations, users, onlyoffice
 
 is_prod = settings.ENVIRONMENT.lower() == "production"
 
@@ -36,6 +36,7 @@ app.include_router(documents.client_router, prefix=settings.API_V1_STR)
 app.include_router(documents.public_download_router, prefix=settings.API_V1_STR)
 app.include_router(integrations.router, prefix=settings.API_V1_STR)
 app.include_router(users.router, prefix=settings.API_V1_STR)
+app.include_router(onlyoffice.router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def root():

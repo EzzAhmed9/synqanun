@@ -16,6 +16,7 @@ flowchart TD
         ClientPortal["Client Portal (/dashboard, /invoices, /documents)"]
         AuthGateways["Dual Gateways (/gateway/firm & /gateway/client)"]
         DocCanvas["Dedicated Word Canvas (/staff/documents/draft)"]
+        OnlyOfficeModal["OnlyOffice In-Browser Editor Modal"]
         LegalDBUI["Legal Precedents UI (/staff/legal-database)"]
         I18n["next-intl (Arabic RTL & English LTR)"]
     end
@@ -25,9 +26,13 @@ flowchart TD
         MattersAPI["Matters & Docket API (/staff/matters, /client/matters)"]
         ClientsAPI["CRM & Clients API (/staff/clients)"]
         BillingAPI["Billing & Time Tracking API (/staff/billing, /client/invoices)"]
-        DocsAPI["Documents & MS Graph API (/documents, /integrations)"]
+        DocsAPI["Documents API (/documents, /staff/onlyoffice)"]
         LegalDBAPI["Legal Database API (/staff/legal-database)"]
         UsersAPI["Team & Roster API (/staff/users)"]
+    end
+
+    subgraph DocServerLayer["📄 On-Premises Document Server"]
+        OOServer["OnlyOffice Document Server (Docker :8080)"]
     end
 
     subgraph DataLayer["🗄️ Database (PostgreSQL - synqanun_db)"]
@@ -42,6 +47,8 @@ flowchart TD
     end
 
     ClientLayer <-->|REST + Server Actions| APILayer
+    ClientLayer <-->|DocsAPI JavaScript| OOServer
+    OOServer <-->|Callbacks & Downloads| APILayer
     APILayer <-->|SQLAlchemy ORM| DataLayer
 ```
 
@@ -122,15 +129,17 @@ flowchart TD
 
 ---
 
-### 5. توليد وتصدير ملفات Word (.docx) و Excel (.xlsx) والمستندات الرسمية
+### 5. محرر المستندات الداخلي (OnlyOffice Docs On-Premises) وتوليد ملفات Word و Excel 📄
+* **محرر المستندات المباشر داخل المتصفح (OnlyOffice Docs Integration):**
+  * **فتح ملف وورد جديد وتعديله في المتصفح:** إمكانية فتح وتعديل مذكرات الدفاع، العقود، والتكليفات الرسمية مباشرة داخل المتصفح بنقرة واحدة دون الحاجة لتثبيت برامج مكتبية أو مغادرة النظام.
+  * **استضافة ذاتية وخصوصية تامة 100% (On-Premises):** لا يتم إرسال أي وثائق أو بيانات إلى أي خوادم سحابية خارجية (Microsoft أو Google)؛ كافة التعديلات تُعالج محلياً على سيرفر المكتب الداخلي.
+  * **دعم فائق للغة العربية والتنسيق (RTL):** محاذاة دقيقة من اليمين لليسار، خطوط عربية، جداول، وهوامش متوافقة تماماً مع Microsoft Word.
+  * **حفظ تلقائي فوري وتزامن مع PostgreSQL:** بمجرد تعديل أو إغلاق المستند، يقوم محرك OnlyOffice باستدعاء الـ Callback وتحميل النسخة المحدثة وتخزينها محلياً وتسجيل الحدث في السجل الزمني للقضية (`MatterTimelineEvent`).
+  * **تحرير جداول Excel المالية (.xlsx):** دعم فتح وتحرير كشوف الحساب وسجلات الفواتير عبر OnlyOffice Sheets داخل المتصفح مباشرة.
 * **صياغة وتوليد مستندات Word رسمية (.docx):**
   * **مذكرات الدفاع والدفوع القضائية:** توليد مذكرات دفاع بتنسيق RTL متضمنة أطراف الخصومة، الوقائع، الدفوع، والمواد القانونية.
   * **عقود تقديم الخدمات القانونية والأتعاب:** صياغة اتفاقيات التمثيل وجداول الأتعاب والالتزامات.
   * **التكليفات والتفويضات الرسمية:** خطابات تمثيل ومباشرة إجراءات.
-* **شاشة محرر ومسودة Word المخصصة (`/staff/documents/draft`):**
-  * مساحة صياغة تفاعلية (A4 Canvas) تدعم تنسيق RTL وضبط الهوامش وهوية المكتب.
-* **التكامل مع Microsoft Word Online و OneDrive:**
-  * إمكانية فتح المستند في Microsoft Word Online عبر `Microsoft Graph API` ودعم المزامنة السحابية.
 * **تصدير جداول Excel مالية تفاعلية (.xlsx):**
   * كشف حساب موكل رسمي (Statement of Account).
   * سجل فواتير المسألة القانونية (Invoices Ledger).
@@ -142,10 +151,6 @@ flowchart TD
   * **فحص البايتات السحرية وحجم الملفات المرفوعة (ZIP Magic Bytes & Size Validation):**
     * حظر رفع أي ملفات تتجاوز 10 ميجابايت (`MAX_UPLOAD_SIZE_MB`).
     * التحقق الصارم من البايتات السحرية للأرشيفات المضغوطة `b"PK\x03\x04"` في ملفات `.docx` و `.xlsx` لمنع رفع أي ملفات نصية أو برمجية ضارة منتحلة للامتداد.
-  * **تحصين تكامل Microsoft Word Online و OAuth:**
-    * اشتراط إصدار تذكرة دخول موقعة وموثقة مسبقاً (`POST /api/staff/integrations/microsoft/ticket`) صالحة لـ 5 دقائق فقط لبدء عملية الربط.
-    * تشفير معامل الحالة `state` كتوكن JWT موقع رقمياً يحتوي على عشوائية `nonce` وتاريخ صلاحية (10 دقائق) ومسار العودة `return_to` المنظف ضد هجمات الـ Open Redirects.
-    * ربط التوكنات وتحديثات التكامل بمكتب المستخدم المستخرج من التوكن الموقع حصرياً ومنع تسريب أي رسائل خطأ داخلية `str(e)`.
 
 ---
 
@@ -240,15 +245,25 @@ python tests/test_matter_permissions_and_timeline.py
 * **Node.js** الإصدار 18.18 فما فوق و **npm**
 * **Python** الإصدار 3.11 فما فوق
 * خادم **PostgreSQL** يعمل محلياً على المنفذ `5432`
+* **Docker Desktop** (لتشغيل محرر المستندات الداخلي OnlyOffice Docs)
 
-### 2. إعداد قاعدة البيانات
+### 2. تشغيل خادم محرر المستندات (OnlyOffice Document Server)
+```bash
+# تشغيل الخادم بحاوية Docker بأمر واحد (يشمل السيكريت الموحد تلقائياً):
+docker compose up -d
+
+# أو عبر أمر Docker المباشر:
+docker run -i -t -d -p 8080:80 -e JWT_SECRET=nGlWP0WLjXiyf9eMOHSQlnAKvM109xPh --restart=always onlyoffice/documentserver
+```
+
+### 3. إعداد قاعدة البيانات
 ```sql
 CREATE DATABASE synqanun_db;
 CREATE USER postgres WITH PASSWORD 'postgres';
 GRANT ALL PRIVILEGES ON DATABASE synqanun_db TO postgres;
 ```
 
-### 3. تشغيل الواجهة الخلفية (FastAPI Backend)
+### 4. تشغيل الواجهة الخلفية (FastAPI Backend)
 ```bash
 cd backend
 python -m venv venv
@@ -271,7 +286,7 @@ uvicorn app.main:app --reload --port 8000
 ```
 سيكون خادم الـ API متاحاً على الرابط: `http://127.0.0.1:8000` (وتوثيق Swagger التفاعلي على `/docs`).
 
-### 4. تشغيل الواجهة الأمامية (Next.js Frontend)
+### 5. تشغيل الواجهة الأمامية (Next.js Frontend)
 ```bash
 cd SynQanun-Suite--claude-busy-euler-fyv6xy
 npm install
@@ -279,7 +294,7 @@ npm run dev
 ```
 ستكون الواجهة الأمامية متاحة على الرابط: `http://localhost:3000`.
 
-### 5. التحقق من بناء الإنتاج (Production Build Check)
+### 6. التحقق من بناء الإنتاج (Production Build Check)
 ```bash
 cd SynQanun-Suite--claude-busy-euler-fyv6xy
 npm run build

@@ -1,8 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { Eye, Loader2, Download, ExternalLink, RefreshCw } from 'lucide-react';
+import { Eye, Loader2, Download, ExternalLink, RefreshCw, Server } from 'lucide-react';
 import { Button, Modal } from '@/components/ui';
+import { OnlyOfficeEditorModal } from '@/components/editor/OnlyOfficeEditorModal';
 
 interface DocumentPreviewModalButtonProps {
   documentId: string;
@@ -20,6 +21,7 @@ export function DocumentPreviewModalButton({
   locale = 'ar',
 }: DocumentPreviewModalButtonProps) {
   const [open, setOpen] = React.useState(false);
+  const [onlyOfficeOpen, setOnlyOfficeOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -83,25 +85,25 @@ export function DocumentPreviewModalButton({
         footer={
           <div className="flex flex-wrap items-center justify-between w-full gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <a
-                href={`/${locale}/staff/documents/draft?matter=${matterRef || 'MAT-2201'}&doc_id=${documentId}&auto_open=word`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#0078D4] px-3.5 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors shadow-xs"
+              <button
+                type="button"
+                onClick={() => setOnlyOfficeOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition-colors shadow-xs"
+                title="فتح وتعديل المستند عبر محرر OnlyOffice الداخلي On-Premises مع الحفاظ على سرية البيانات"
               >
-                <span>✏️ متابعة التعديل في Word Online</span>
-                <ExternalLink size={13} />
-              </a>
+                <Server size={13} />
+                <span>تعديل داخلي (OnlyOffice)</span>
+              </button>
 
               <button
                 type="button"
                 onClick={() => fetchPreview(true)}
                 disabled={isRefreshing}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors"
-                title="سحب آخر تعديل قمت به في Word Online الآن"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                title="تحديث نص المعاينة"
               >
                 <RefreshCw size={13} className={isRefreshing ? 'animate-spin' : ''} />
-                <span>{isRefreshing ? 'جارٍ المزامنة من Word...' : '🔄 تحديث من Word'}</span>
+                <span>{isRefreshing ? 'جارٍ التحديث...' : '🔄 تحديث المعاينة'}</span>
               </button>
 
               <a
@@ -162,6 +164,16 @@ export function DocumentPreviewModalButton({
           )}
         </div>
       </Modal>
+
+      {/* OnlyOffice In-Browser Editor Modal */}
+      <OnlyOfficeEditorModal
+        open={onlyOfficeOpen}
+        onClose={() => setOnlyOfficeOpen(false)}
+        documentId={documentId}
+        documentName={data?.title || documentName}
+        documentKind="docx"
+        onSaved={() => fetchPreview(true)}
+      />
     </>
   );
 }

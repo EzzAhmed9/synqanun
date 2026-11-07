@@ -18,11 +18,13 @@ import {
   ExternalLink,
   Upload,
   ArrowRight,
+  Server,
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Button, Input, Modal } from '@/components/ui';
 import { FeatherMark } from '@/components/brand/FeatherMark';
 import { useRouter, Link } from '@/lib/i18n/navigation';
+import { OnlyOfficeEditorModal } from '@/components/editor/OnlyOfficeEditorModal';
 import {
   generateWordAction,
   exportExcelAction,
@@ -44,8 +46,13 @@ export function DashboardQuickActions() {
 
   // Transitions & Loaders
   const [isOpeningWordOnline, setIsOpeningWordOnline] = React.useState(false);
+  const [isOpeningOnlyOffice, setIsOpeningOnlyOffice] = React.useState(false);
   const [isUploadingUpdated, setIsUploadingUpdated] = React.useState(false);
   const [pendingReport, startReportTransition] = React.useTransition();
+
+  // OnlyOffice In-Browser Editor State
+  const [onlyOfficeOpen, setOnlyOfficeOpen] = React.useState(false);
+  const [onlyOfficeDoc, setOnlyOfficeDoc] = React.useState<{ id: string; name: string; kind?: string } | null>(null);
 
   // Errors & Success
   const [draftError, setDraftError] = React.useState<string | null>(null);
@@ -173,6 +180,37 @@ export function DashboardQuickActions() {
       setDraftError(err.message || 'حدث خطأ أثناء فتح Word.');
     } finally {
       setIsOpeningWordOnline(false);
+    }
+  };
+
+  // 1.b. Action: Generate Word Document & Launch in OnlyOffice On-Premises Editor
+  const handleOpenOnlyOfficeDraft = async () => {
+    setIsOpeningOnlyOffice(true);
+    setDraftError(null);
+    try {
+      const genRes = await generateWordAction({
+        matter_reference: selectedMatter,
+        template_type: templateType,
+        title: draftTitle,
+        is_firm_only: !shareDraft,
+      });
+
+      if (!genRes.ok || !genRes.data) {
+        throw new Error(genRes.error || 'تعذر توليد المستند.');
+      }
+
+      setOnlyOfficeDoc({
+        id: genRes.data.id,
+        name: genRes.data.name,
+        kind: 'docx',
+      });
+      setDraftOpen(false);
+      setOnlyOfficeOpen(true);
+      router.refresh();
+    } catch (err: any) {
+      setDraftError(err.message || 'حدث خطأ أثناء فتح OnlyOffice.');
+    } finally {
+      setIsOpeningOnlyOffice(false);
     }
   };
 
@@ -384,15 +422,34 @@ export function DashboardQuickActions() {
 
             {/* Navigation & Controls */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <a
-                href={wordOnlineSession.webUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0078D4] hover:underline"
-              >
-                التبديل إلى نافذة Microsoft Word
-                <ExternalLink size={13} />
-              </a>
+              <div className="flex items-center gap-3">
+                <a
+                  href={wordOnlineSession.webUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0078D4] hover:underline"
+                >
+                  التبديل إلى نافذة Microsoft Word
+                  <ExternalLink size={13} />
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOnlyOfficeDoc({
+                      id: wordOnlineSession.docId,
+                      name: wordOnlineSession.docName,
+                      kind: 'docx',
+                    });
+                    setDraftOpen(false);
+                    setOnlyOfficeOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:underline cursor-pointer"
+                >
+                  <Server size={13} />
+                  <span>التبديل إلى محرر OnlyOffice الداخلي</span>
+                </button>
+              </div>
 
               <div className="flex items-center gap-2">
                 <Link
@@ -512,23 +569,24 @@ export function DashboardQuickActions() {
               </label>
             </div>
 
-            {/* PRIMARY BUTTON: Launch Word & Download Copy */}
+            {/* PRIMARY BUTTON: Launch Word Editor */}
             <div className="mt-2 pt-2 border-t border-gray-200">
               <button
                 type="button"
-                onClick={handleOpenWordOnlineFromModal}
-                disabled={isOpeningWordOnline}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#0078D4] px-4 py-3.5 text-sm font-bold text-white hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
+                onClick={handleOpenOnlyOfficeDraft}
+                disabled={isOpeningOnlyOffice}
+                style={{ backgroundColor: '#107c41', color: '#ffffff' }}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-bold shadow-sm hover:opacity-90 transition-all cursor-pointer disabled:opacity-50"
               >
-                {isOpeningWordOnline ? (
+                {isOpeningOnlyOffice ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" />
-                    <span>جاري تجهيز المستند وفتح Word...</span>
+                    <Loader2 size={18} className="animate-spin text-white" />
+                    <span>جاري فتح ملف وورد جديد...</span>
                   </>
                 ) : (
                   <>
-                    <FileText size={18} />
-                    <span>فتح في Microsoft Word وتنزيل نسخة (.docx)</span>
+                    <FileText size={18} className="text-white" />
+                    <span>فتح ملف وورد جديد</span>
                   </>
                 )}
               </button>
@@ -559,18 +617,37 @@ export function DashboardQuickActions() {
                 </p>
               </div>
             </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <a
-                href={`/api/docs/${reportSuccess.id}/download`}
-                download={reportSuccess.name}
-                className="inline-flex items-center gap-2 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setOnlyOfficeDoc({
+                    id: reportSuccess.id,
+                    name: reportSuccess.name,
+                    kind: 'xlsx',
+                  });
+                  setReportOpen(false);
+                  setOnlyOfficeOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md bg-emerald-800 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-900 transition-colors cursor-pointer"
               >
-                <Download size={16} />
-                تنزيل الملف مرة أخرى
-              </a>
-              <Button variant="secondary" onClick={() => setReportOpen(false)}>
-                إغلاق
-              </Button>
+                <Server size={14} />
+                <span>فتح وتعديل في OnlyOffice Sheets (.xlsx)</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <a
+                  href={`/api/docs/${reportSuccess.id}/download`}
+                  download={reportSuccess.name}
+                  className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  <Download size={14} />
+                  تنزيل نسخة
+                </a>
+                <Button variant="secondary" onClick={() => setReportOpen(false)}>
+                  إغلاق
+                </Button>
+              </div>
             </div>
           </div>
         ) : (
@@ -673,6 +750,21 @@ export function DashboardQuickActions() {
           </form>
         )}
       </Modal>
+
+      {/* OnlyOffice In-Browser Editor Modal */}
+      {onlyOfficeDoc && (
+        <OnlyOfficeEditorModal
+          open={onlyOfficeOpen}
+          onClose={() => {
+            setOnlyOfficeOpen(false);
+            setOnlyOfficeDoc(null);
+          }}
+          documentId={onlyOfficeDoc.id}
+          documentName={onlyOfficeDoc.name}
+          documentKind={onlyOfficeDoc.kind || 'docx'}
+          onSaved={() => router.refresh()}
+        />
+      )}
     </>
   );
 }

@@ -8,6 +8,7 @@ import { mockApi, type IntegrationSummary } from '@/lib/mock-api';
 import type { Rank } from '@/lib/ranks';
 import { SettingsNotPermitted, SettingsShell } from '../SettingsShell';
 import { settingsTabAllows } from '../tabs';
+import { OnlyOfficeSettingsCard } from './OnlyOfficeSettingsCard';
 
 /**
  * Settings → Integrations — BUILD_PLAN.md §3, Batch 6.
@@ -147,6 +148,9 @@ function Integrations({
           <p className="mt-2 text-caption text-gray-600">{t('notice.noControls')}</p>
         </div>
       </div>
+
+      {/* Dedicated On-Premises Self-Hosted Document Server Integration */}
+      <OnlyOfficeSettingsCard locale={locale} />
 
       <p className="text-caption text-gray-500">
         {/* Counted from the rows below, never a headline with its own number. */}

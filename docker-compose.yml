@@ -1,0 +1,11 @@
+services:
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    container_name: synqanun-onlyoffice
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - JWT_ENABLED=true
+      - JWT_SECRET=nGlWP0WLjXiyf9eMOHSQlnAKvM109xPh
+      - JWT_HEADER=Authorization

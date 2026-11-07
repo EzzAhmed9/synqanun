@@ -53,6 +53,18 @@ class Settings(BaseSettings):
         default=10,
         validation_alias="MAX_UPLOAD_SIZE_MB"
     )
+    ONLYOFFICE_DOCS_URL: str = Field(
+        default="http://localhost:8080",
+        validation_alias="ONLYOFFICE_DOCS_URL"
+    )
+    ONLYOFFICE_JWT_SECRET: str = Field(
+        default="nGlWP0WLjXiyf9eMOHSQlnAKvM109xPh",
+        validation_alias="ONLYOFFICE_JWT_SECRET"
+    )
+    BACKEND_HOST_URL: str = Field(
+        default="http://host.docker.internal:8000",
+        validation_alias="BACKEND_HOST_URL"
+    )
 
     @model_validator(mode="after")
     def validate_secret_key_and_environment(self):

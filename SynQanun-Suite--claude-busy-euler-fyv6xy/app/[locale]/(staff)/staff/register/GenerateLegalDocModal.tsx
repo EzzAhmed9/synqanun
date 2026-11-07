@@ -12,8 +12,10 @@ import {
   Loader2,
   Upload,
   ExternalLink,
+  Server,
 } from 'lucide-react';
 import { Button, Input, Modal } from '@/components/ui';
+import { OnlyOfficeEditorModal } from '@/components/editor/OnlyOfficeEditorModal';
 import { useRouter } from '@/lib/i18n/navigation';
 import { generateWordAction, uploadUpdatedDocxAction } from './generate-document-actions';
 
@@ -41,6 +43,7 @@ export function GenerateLegalDocModal({
   const [successDoc, setSuccessDoc] = React.useState<any | null>(null);
   const [isUploadingUpdated, setIsUploadingUpdated] = React.useState(false);
   const [uploadSuccessMsg, setUploadSuccessMsg] = React.useState<string | null>(null);
+  const [onlyOfficeOpen, setOnlyOfficeOpen] = React.useState(false);
 
   // Form State
   const [templateType, setTemplateType] = React.useState<'pleading' | 'contract' | 'memo'>('pleading');
@@ -105,9 +108,8 @@ export function GenerateLegalDocModal({
           console.warn('Auto download error:', dlErr);
         }
 
-        // Open Word in a new tab
-        window.open('https://word.new', '_blank', 'noopener,noreferrer');
-
+        // Open OnlyOffice directly in-browser
+        setOnlyOfficeOpen(true);
         router.refresh();
       } else {
         setError(res.error || 'حدث خطأ أثناء توليد المستند');
@@ -158,11 +160,11 @@ export function GenerateLegalDocModal({
       <Modal
         open={open}
         onClose={close}
-        title={successDoc ? 'تم فتح Word وتنزيل نسخة من المستند' : 'صياغة مستند جديد في Microsoft Word'}
+        title={successDoc ? 'محرر المستندات — تم إنشاء المستند بنجاح' : 'صياغة مستند جديد (OnlyOffice Docs)'}
         description={
           successDoc
-            ? 'تم حفظ المستند في القضية وتنزيل نسخة منه على جهازك وفتح نافذة Word في تبويب جديد.'
-            : 'اختر النموذج وصيغة الوثيقة القانونية، وسيتم فتح Word وتنزيل نسخة (.docx) وحفظها بالنظام.'
+            ? 'تم حفظ المستند في القضية وجاهز للتعديل المباشر في المتصفح أو التنزيل.'
+            : 'اختر النموذج وصيغة الوثيقة القانونية، وسيتم فتح محرر OnlyOffice الداخلي فوراً للتعديل والحفظ التلقائي.'
         }
       >
         {successDoc ? (
@@ -191,15 +193,23 @@ export function GenerateLegalDocModal({
               </div>
             )}
 
+            {/* OnlyOffice In-Browser Direct Edit Action */}
+            <button
+              type="button"
+              onClick={() => setOnlyOfficeOpen(true)}
+              className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-800 px-5 py-3.5 text-sm font-bold text-white hover:from-emerald-800 hover:to-teal-900 transition-all shadow-sm cursor-pointer"
+            >
+              <Server size={18} />
+              <span>🖥️ فتح وتعديل فوري في محرر OnlyOffice الداخلي (On-Premises)</span>
+            </button>
+
             <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-4 space-y-3">
               <p className="text-xs font-bold text-gray-800">
-                💡 خطوات التعديل والحفظ في القضية:
+                💡 التعديل والمزامنة المباشرة:
               </p>
-              <ol className="text-xs text-gray-600 space-y-1 list-decimal list-inside pe-2">
-                <li>نافذة Microsoft Word مفتوحة الآن في التبويب الجديد لكتابة مذكرتك.</li>
-                <li>بعد التعديل، اختر من وورد (File &gt; Save As &gt; Download a Copy).</li>
-                <li>ارفع النسخة المعدلة هنا لحفظها وتحديثها فوراً في ملف القضية.</li>
-              </ol>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                يمكنك التعديل مباشرة عبر محرر OnlyOffice الداخلي أعلاه، وسيتم حفظ كافة التغييرات تلقائياً في ملف القضية دون مغادرة الموقع. كما يمكنك رفع نسخة معدلة يدوياً إن أردت:
+              </p>
 
               {/* Upload Edited Copy */}
               <label className="w-full inline-flex items-center justify-center gap-2.5 rounded-lg bg-emerald-700 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-800 transition-colors shadow-sm cursor-pointer">
@@ -376,19 +386,31 @@ export function GenerateLegalDocModal({
               <Button variant="secondary" type="button" onClick={close} disabled={pending}>
                 إلغاء
               </Button>
-              <Button
-                variant="primary"
+              <button
                 type="submit"
                 disabled={pending || !title.trim()}
-                icon={pending ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
-                className="bg-[#0078D4] hover:bg-blue-700 text-white shadow-xs"
+                style={{ backgroundColor: '#107c41', color: '#ffffff' }}
+                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-bold shadow-sm hover:opacity-90 transition-all cursor-pointer disabled:opacity-50"
               >
-                {pending ? 'جاري الفتح والتجهيز...' : 'فتح في Microsoft Word وتنزيل نسخة (.docx)'}
-              </Button>
+                {pending ? <Loader2 size={16} className="animate-spin text-white" /> : <FileText size={16} className="text-white" />}
+                <span>فتح ملف وورد جديد</span>
+              </button>
             </div>
           </form>
         )}
       </Modal>
+
+      {/* OnlyOffice In-Browser Editor Modal */}
+      {successDoc && (
+        <OnlyOfficeEditorModal
+          open={onlyOfficeOpen}
+          onClose={() => setOnlyOfficeOpen(false)}
+          documentId={successDoc.id}
+          documentName={successDoc.name || title}
+          documentKind="docx"
+          onSaved={() => router.refresh()}
+        />
+      )}
     </>
   );
 }

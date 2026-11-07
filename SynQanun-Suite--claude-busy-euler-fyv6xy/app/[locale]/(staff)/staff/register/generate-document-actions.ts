@@ -70,3 +70,25 @@ export async function getMatterDocumentsAction(matterReference: string) {
 export async function disconnectMicrosoftAction() {
   return await backendBridge.integrations.disconnectMicrosoft();
 }
+
+export async function getOnlyOfficeConfigAction(documentId: string) {
+  return await backendBridge.onlyoffice.getConfig(documentId);
+}
+
+export async function getOnlyOfficeStatusAction() {
+  return await backendBridge.onlyoffice.getStatus();
+}
+
+export async function configureOnlyOfficeAction(
+  serverUrlOrInput: string | { server_url: string; jwt_secret?: string; is_active?: boolean },
+  jwtSecret?: string
+) {
+  if (typeof serverUrlOrInput === 'object') {
+    return await backendBridge.onlyoffice.configure(
+      serverUrlOrInput.server_url,
+      serverUrlOrInput.jwt_secret,
+      serverUrlOrInput.is_active
+    );
+  }
+  return await backendBridge.onlyoffice.configure(serverUrlOrInput, jwtSecret);
+}

@@ -952,4 +952,55 @@ export const backendBridge = {
       }
     },
   },
+
+  // --- OnlyOffice Docs (On-Premises Document Server) ---
+  onlyoffice: {
+    async getConfig(documentId: string) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/onlyoffice/config/${documentId}`, {
+          headers: await getHeaders(),
+          cache: 'no-store',
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          return { ok: false, error: err.detail || 'Failed to fetch OnlyOffice configuration' };
+        }
+        return await res.json();
+      } catch (err: any) {
+        return { ok: false, error: err.message || 'Connection error' };
+      }
+    },
+
+    async getStatus() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/onlyoffice/status`, {
+          headers: await getHeaders(),
+          cache: 'no-store',
+        });
+        if (!res.ok) {
+          return { ok: false, isConnected: false, details: 'Server offline' };
+        }
+        return await res.json();
+      } catch {
+        return { ok: false, isConnected: false, details: 'Connection failed' };
+      }
+    },
+
+    async configure(serverUrl: string, jwtSecret?: string, isActive: boolean = true) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/staff/onlyoffice/configure`, {
+          method: 'POST',
+          headers: await getHeaders(),
+          body: JSON.stringify({ server_url: serverUrl, jwt_secret: jwtSecret, is_active: isActive }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          return { ok: false, error: err.detail || 'Configuration failed' };
+        }
+        return await res.json();
+      } catch (err: any) {
+        return { ok: false, error: err.message || 'Connection error' };
+      }
+    },
+  },
 };

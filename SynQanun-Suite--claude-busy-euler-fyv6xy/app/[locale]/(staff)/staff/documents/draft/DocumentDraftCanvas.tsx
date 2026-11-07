@@ -25,8 +25,10 @@ import {
   Settings,
   X,
   Share2,
+  Server,
 } from 'lucide-react';
 import { Button, Input, Modal } from '@/components/ui';
+import { OnlyOfficeEditorModal } from '@/components/editor/OnlyOfficeEditorModal';
 import { Link } from '@/lib/i18n/navigation';
 import {
   generateWordAction,
@@ -141,6 +143,10 @@ export function DocumentDraftCanvas({
   const [previewModalOpen, setPreviewModalOpen] = React.useState(false);
   const [previewData, setPreviewData] = React.useState<any | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = React.useState(false);
+
+  // OnlyOffice Docs On-Premises Modal State
+  const [onlyOfficeOpen, setOnlyOfficeOpen] = React.useState(false);
+  const [isOpeningOnlyOffice, setIsOpeningOnlyOffice] = React.useState(false);
 
   // Active Word Online Session State
   const [wordOnlineSession, setWordOnlineSession] = React.useState<{
@@ -366,6 +372,64 @@ export function DocumentDraftCanvas({
     }
   };
 
+  // 1.b. Open inside self-hosted OnlyOffice Docs In-Browser Editor (On-Premises)
+  const handleOpenOnlyOffice = async () => {
+    setIsOpeningOnlyOffice(true);
+    setErrorMessage(null);
+    try {
+      let currentDocId = savedDoc?.id || initialDocId;
+      if (!currentDocId) {
+        // Auto-save the draft first so OnlyOffice has an existing document to mount and edit
+        const res = await generateWordAction({
+          matter_reference: selectedMatter,
+          template_type: templateType,
+          title,
+          court_name: court,
+          case_number: caseNumber,
+          circuit: circuit,
+          client_role: clientRole,
+          opposing_party: opposing,
+          body: bodyText,
+          is_firm_only: !shareWithClient,
+        });
+
+        if (res.ok && res.data) {
+          currentDocId = res.data.id;
+          setSavedDoc({
+            id: res.data.id,
+            name: res.data.name,
+            title: res.data.title,
+            download_url: `/api/docs/${res.data.id}/download`,
+            size_label: res.data.size_label,
+            engagement_ref: selectedMatter,
+          });
+        } else {
+          throw new Error(res.error || 'تعذر حفظ المستند لتجهيز محرر OnlyOffice.');
+        }
+      }
+
+      setOnlyOfficeOpen(true);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'حدث خطأ أثناء فتح محرر OnlyOffice.');
+    } finally {
+      setIsOpeningOnlyOffice(false);
+    }
+  };
+
+  const handleOnlyOfficeSaved = React.useCallback(() => {
+    const docId = savedDoc?.id || initialDocId;
+    if (docId) {
+      fetch(`/api/docs/${docId}/preview`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.paragraphs && data.paragraphs.length > 0) {
+            setSyncedPreview(data.paragraphs.slice(-3).join('\n'));
+          }
+        })
+        .catch(() => null);
+    }
+  }, [savedDoc?.id, initialDocId]);
+
   // Open Preview Modal
   const handleOpenPreviewModal = async (targetDocId?: string) => {
     const docId = targetDocId || wordOnlineSession?.docId || savedDoc?.id || initialDocId;
@@ -476,18 +540,16 @@ export function DocumentDraftCanvas({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-sm text-gray-900">محرر مستندات Word الرسمي</span>
-                <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-800">
-                  Microsoft 365 / .DOCX
+                <span className="font-bold text-sm text-gray-900">محرر وصياغة المستندات</span>
+                <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                  OnlyOffice On-Premises / .DOCX
                 </span>
-                {msStatus.is_connected && (
-                  <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                    <Cloud size={10} /> OneDrive متصل
-                  </span>
-                )}
+                <span className="inline-flex items-center gap-1 rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-800">
+                  حفظ تلقائي في PostgreSQL
+                </span>
               </div>
               <p className="text-[11px] text-gray-500">
-                صياغة وتعديل مباشر مع الحفظ في PostgreSQL والمزامنة مع Microsoft Word Online
+                صياغة وتعديل مباشر داخل المتصفح مع حفظ تلقائي وتصدير .docx رسمي
               </p>
             </div>
           </div>
@@ -567,116 +629,79 @@ export function DocumentDraftCanvas({
             {isLoadingPreview ? 'جاري التحميل...' : '👁️ عرض المستند في الموقع'}
           </Button>
 
-          {/* PRIMARY BUTTON 1: Open in Official Microsoft Word Online Tab */}
+          {/* OPEN WORD FILE BUTTON */}
+          <button
+            type="button"
+            onClick={handleOpenOnlyOffice}
+            disabled={isOpeningOnlyOffice}
+            style={{ backgroundColor: '#107c41', color: '#ffffff' }}
+            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-bold shadow-sm hover:opacity-90 transition-all cursor-pointer disabled:opacity-50"
+          >
+            {isOpeningOnlyOffice ? <Loader2 size={15} className="animate-spin text-white" /> : <FileText size={15} className="text-white" />}
+            <span>فتح ملف وورد جديد</span>
+          </button>
+
+          {/* PRIMARY BUTTON: Save to Site & Export Local Docx */}
           <Button
             variant="secondary"
-            onClick={handleOpenWordOnline}
-            disabled={isOpeningWordOnline}
-            icon={isOpeningWordOnline ? <Loader2 size={16} className="animate-spin" /> : <ExternalLink size={16} className="text-[#0078D4]" />}
-            className="border-[#0078D4] bg-white text-[#0078D4] hover:bg-blue-50 font-bold shadow-xs transition-all"
-          >
-            {isOpeningWordOnline ? 'جاري التجهيز والفتح...' : 'فتح في Microsoft Word Online (الرسمي)'}
-          </Button>
-
-          {/* PRIMARY BUTTON 2: Save to Site & Export Local Docx */}
-          <Button
-            variant="primary"
             onClick={handleSaveAndExport}
             disabled={isSaving}
             icon={isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            className="bg-blue-700 hover:bg-blue-800 text-white shadow-xs"
+            className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-xs"
           >
             {isSaving ? 'جاري الحفظ والتصدير...' : 'حفظ في الموقع وتصدير (.docx)'}
           </Button>
         </div>
       </header>
 
-      {/* 2. Interactive Word Online Session Banner */}
+      {/* Main Draft Content Container */}
       <div className="mx-auto max-w-5xl px-6 pt-4">
-        {wordOnlineSession && (
-          <div className="mb-4 rounded-xl border border-blue-400 bg-gradient-to-r from-blue-50 via-white to-blue-50 p-5 shadow-sm animate-in fade-in duration-300">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0078D4] text-white shadow-xs">
-                  <FileText size={22} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <h3 className="font-bold text-base text-gray-900">
-                      المستند مفتوح الآن في تاب Microsoft Word Online الرسمي 🌐
-                    </h3>
-                  </div>
-                  <p className="mt-1 text-xs text-gray-600">
-                    يمكنك كتابة وتنسيق مذكرتك في نافذة وورد الرسمية. عند الانتهاء، استخدم الأزرار التالية لحفظ التعديلات في الموقع:
-                  </p>
-                </div>
+        {/* Prominent Direct Launch Banner */}
+        <div
+          style={{
+            backgroundColor: '#f0f9f4',
+            borderColor: '#107c41',
+          }}
+          className="mb-6 rounded-2xl border-2 p-6 shadow-sm text-right"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div
+                style={{ backgroundColor: '#107c41' }}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
+              >
+                <FileText size={24} className="text-white" />
               </div>
-
-              <a
-                href={wordOnlineSession.webUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#0078D4] px-3.5 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-colors shadow-xs"
-              >
-                التبديل إلى نافذة Word Online
-                <ExternalLink size={14} />
-              </a>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-gray-900">
+                    محرر المستندات الداخلي (OnlyOffice Word Editor)
+                  </h3>
+                  <span
+                    style={{ backgroundColor: '#dcfce7', color: '#14532d' }}
+                    className="rounded-md px-2 py-0.5 text-xs font-bold"
+                  >
+                    بديل Microsoft Word المباشر
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-gray-600 leading-relaxed">
+                  صياغة وتعديل مباشر في المتصفح بكامل أدوات Word واللغة العربية وحفظ التعديلات تلقائياً في الموقع.
+                </p>
+              </div>
             </div>
 
-            {/* Sync & Save Controls */}
-            <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-blue-200 pt-3">
-              <button
-                type="button"
-                onClick={handleSyncFromWordOnline}
-                disabled={isSyncing}
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition-colors shadow-xs"
-              >
-                {isSyncing ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
-                مزامنة التعديلات من Word Online وحفظ في الموقع
-              </button>
-
-              <label className="inline-flex items-center gap-2 rounded-lg border border-blue-300 bg-white px-4 py-2 text-xs font-bold text-blue-900 hover:bg-blue-50 transition-colors cursor-pointer shadow-xs">
-                {isUploadingUpdated ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} className="text-blue-700" />}
-                رفع النسخة المعدلة وحفظها في الموقع (.docx)
-                <input
-                  type="file"
-                  accept=".docx"
-                  className="hidden"
-                  onChange={handleUploadUpdatedDocx}
-                  disabled={isUploadingUpdated}
-                />
-              </label>
-
-              <a
-                href={`/api/docs/${wordOnlineSession.docId}/download`}
-                download={wordOnlineSession.docName}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-xs"
-              >
-                <Download size={14} />
-                تنزيل نسخة (Download a copy)
-              </a>
-
-              <button
-                type="button"
-                onClick={() => handleOpenPreviewModal()}
-                disabled={isLoadingPreview}
-                className="inline-flex items-center gap-2 rounded-lg border border-blue-300 bg-white px-4 py-2 text-xs font-bold text-gray-800 hover:bg-blue-50 transition-colors shadow-xs"
-              >
-                {isLoadingPreview ? <Loader2 size={15} className="animate-spin" /> : <Eye size={15} className="text-gray-700" />}
-                👁️ عرض المستند في الموقع
-              </button>
-
-              <Link
-                href={`/staff/matters/${selectedMatter}`}
-                className="ms-auto inline-flex items-center gap-1 text-xs font-bold text-blue-800 hover:underline"
-              >
-                عرض المستند في صفحة القضية ({selectedMatter})
-                <ArrowRight size={14} className="rotate-180" />
-              </Link>
-            </div>
+            <button
+              type="button"
+              onClick={handleOpenOnlyOffice}
+              disabled={isOpeningOnlyOffice}
+              style={{ backgroundColor: '#107c41', color: '#ffffff' }}
+              className="inline-flex items-center gap-2.5 rounded-xl px-6 py-3.5 text-sm font-bold shadow-md hover:opacity-90 transition-all cursor-pointer disabled:opacity-50"
+            >
+              {isOpeningOnlyOffice ? <Loader2 size={18} className="animate-spin text-white" /> : <FileText size={18} className="text-white" />}
+              <span>فتح ملف وورد جديد</span>
+            </button>
           </div>
-        )}
+        </div>
 
         {/* Synced Content Live Preview */}
         {syncedPreview && (
@@ -913,15 +938,18 @@ export function DocumentDraftCanvas({
             <div className="flex items-center gap-2">
               <Button
                 variant="primary"
-                onClick={handleOpenWordOnline}
-                disabled={isOpeningWordOnline}
-                icon={isOpeningWordOnline ? <Loader2 size={15} className="animate-spin" /> : <ExternalLink size={15} />}
+                onClick={() => {
+                  setPreviewModalOpen(false);
+                  handleOpenOnlyOffice();
+                }}
+                icon={<Server size={15} />}
+                className="bg-emerald-700 hover:bg-emerald-800 text-white"
               >
-                فتح ومتابعة التعديل في Word Online
+                تعديل داخلي (OnlyOffice)
               </Button>
               {savedDoc && (
                 <a
-                  href={`http://localhost:8000/api/documents/${savedDoc.id}/download`}
+                  href={`/api/docs/${savedDoc.id}/download`}
                   download
                   className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                 >
@@ -971,6 +999,19 @@ export function DocumentDraftCanvas({
           </div>
         </div>
       </Modal>
+
+      {/* Self-Hosted OnlyOffice Docs In-Browser Editor Modal */}
+      <OnlyOfficeEditorModal
+        open={onlyOfficeOpen}
+        onClose={() => {
+          setOnlyOfficeOpen(false);
+          handleOnlyOfficeSaved();
+        }}
+        documentId={savedDoc?.id || initialDocId || ''}
+        documentName={savedDoc?.name || title}
+        documentKind="docx"
+        onSaved={handleOnlyOfficeSaved}
+      />
     </div>
   );
 }
